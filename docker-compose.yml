@@ -1,0 +1,42 @@
+# Local development stack: WordPress (CMS + LexRanked Core plugin) and MariaDB.
+# The Next.js frontend runs on the host with `npm run dev` (see README).
+# This file is for local development only; production hosting is described in docs/deployment.md.
+
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${LOCAL_DB_NAME:-lexranked}
+      MARIADB_USER: ${LOCAL_DB_USER:-lexranked}
+      MARIADB_PASSWORD: ${LOCAL_DB_PASSWORD:?set LOCAL_DB_PASSWORD in .env}
+      MARIADB_ROOT_PASSWORD: ${LOCAL_DB_ROOT_PASSWORD:?set LOCAL_DB_ROOT_PASSWORD in .env}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  wordpress:
+    image: wordpress:6-php8.3-apache
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${LOCAL_WP_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${LOCAL_DB_NAME:-lexranked}
+      WORDPRESS_DB_USER: ${LOCAL_DB_USER:-lexranked}
+      WORDPRESS_DB_PASSWORD: ${LOCAL_DB_PASSWORD:?set LOCAL_DB_PASSWORD in .env}
+      WORDPRESS_DEBUG: "1"
+    volumes:
+      - wp_data:/var/www/html
+      - ./wordpress/plugins/lexranked-core:/var/www/html/wp-content/plugins/lexranked-core
+
+volumes:
+  db_data:
+  wp_data:

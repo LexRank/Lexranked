@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<ruleset name="LexRanked Core">
+	<description>WordPress Coding Standards for LexRanked Core.</description>
+
+	<file>lexranked-core.php</file>
+	<file>src</file>
+	<file>tests</file>
+
+	<exclude-pattern>vendor/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg value="sp"/>
+	<arg name="colors"/>
+
+	<config name="minimum_wp_version" value="6.5"/>
+	<config name="testVersion" value="8.2-"/>
+
+	<rule ref="WordPress">
+		<!-- PSR-4 file names (Plugin.php) instead of class-plugin.php so the
+		     autoloader and Composer share one mapping. -->
+		<exclude name="WordPress.Files.FileName"/>
+	</rule>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="lexranked-core"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="PHPCompatibilityWP"/>
+
+	<!-- Tests use PHPUnit's camelCase conventions. -->
+	<rule ref="WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+	<rule ref="Squiz.Commenting">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+	<rule ref="Generic.Commenting.DocComment">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+</ruleset>
