@@ -55,6 +55,21 @@ jobs:
       - run: composer lint
       - run: composer test
 
+  wordpress-integration:
+    name: WordPress integration (real WP + MariaDB)
+    runs-on: ubuntu-latest
+    needs: wordpress-plugin
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run end-to-end API assertions against the packaged plugin
+        run: scripts/wp-integration-test.sh
+      - name: Upload installable plugin ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: lexranked-core-plugin
+          path: dist/lexranked-core-*.zip
+          if-no-files-found: error
+
   repo-hygiene:
     name: Repository hygiene
     runs-on: ubuntu-latest

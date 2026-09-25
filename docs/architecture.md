@@ -101,3 +101,40 @@ therefore secrets — from being imported into client components). Styling uses
 plain CSS with design tokens; no CSS framework yet. Dev-only: ESLint
 (`eslint-config-next`), TypeScript, Vitest (fast, ESM-native unit tests).
 Plugin dev-only: PHPUnit, WordPress Coding Standards, PHPCompatibilityWP.
+
+### ADR-010 — CPTs are not exposed through `/wp/v2`
+All LexRanked post types use `show_in_rest = false` and the classic editor
+with a generated "Structured data" meta box. The only public contract is
+`lexranked/v1` with DTOs, so private fields can never leak through core
+endpoints and the frontend never couples to WordPress internals. Anonymous
+access to `/wp/v2/users` is also removed (user enumeration).
+
+### ADR-011 — One field schema per entity
+`Schema\Field` definitions in each `PostTypes/*` class are the single source
+for meta registration, admin forms, validation (`FieldSanitizer`), storage
+(`MetaCodec`) and DTO mapping. Validation is pure PHP and unit-tested;
+empty input is stored as absence (unknown), never as a guess.
+
+### ADR-012 — Verification status is derived at read time
+Profile verification is computed from verification records by
+`VerificationPolicy` on every read (batched per request). Expiry therefore
+takes effect immediately without cron jobs, and no editor can mark a profile
+"verified" by hand.
+
+### ADR-013 — Pure mappers, thin WordPress adapters
+`EntityRepository` is the only class that reads `WP_Post`/meta/terms and
+produces plain arrays; `REST/DTO/*` mappers are pure functions of those
+arrays. This keeps the API testable without WordPress and is the seam for a
+future storage migration (ADR-003/004).
+
+### ADR-014 — Demo data policy
+Mock data exists only through `wp lexranked seed-demo`, is flagged
+`is_demo`, uses reserved/fictional identifiers (example.com, 555-01xx,
+"(Demo)" names, score version `demo`), is exposed as `isDemo`, and demo
+rankings are never indexable. `purge-demo` removes it.
+
+### ADR-015 — Frontend authenticates only to avoid rate limits
+The Next.js server uses an Application Password of a `lexranked_api` user
+(no editing capabilities). It only ever requests `context=view` data, so
+responses are safe to cache in the Next data cache. Credentials are read in
+`server-only` modules and never reach client bundles.

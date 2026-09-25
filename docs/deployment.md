@@ -20,6 +20,10 @@ On every PR and push to `main`:
 - **Frontend:** `npm ci`, lint, typecheck, test, build (Node from `.nvmrc`).
 - **Plugin:** `composer install`, `php -l` + PHPCS (WPCS, PHPCompatibilityWP),
   PHPUnit on PHP 8.2 / 8.3 / 8.4.
+- **WordPress integration:** builds the plugin ZIP, runs it in real
+  WordPress + MariaDB (Docker), seeds demo data and asserts on every API
+  endpoint, auth and rate limiting (`scripts/wp-integration-test.sh`). The
+  installable ZIP is uploaded as the `lexranked-core-plugin` artifact.
 - **Hygiene:** fails if any `.env` file is committed.
 
 Run all of it locally with `scripts/check.sh`.
@@ -37,12 +41,14 @@ Run all of it locally with `scripts/check.sh`.
 ## WordPress (wp.lexranked.com)
 
 - Managed WordPress host with PHP ≥ 8.2, HTTPS, daily backups.
-- Deploy the plugin from `wordpress/plugins/lexranked-core` (without
-  `vendor/`, `tests/`, dev config) — automation added in Phase 8.
+- Install/update the plugin from the CI artifact ZIP (or
+  `scripts/build-plugin-zip.sh`); it contains no `vendor/`, tests or dev
+  config. Step-by-step: [connecting-wordpress.md](connecting-wordpress.md).
+  Automated deployment is planned for Phase 8.
 - No public theme: install a minimal theme and redirect front-end requests
   to `lexranked.com`; send `X-Robots-Tag: noindex` on the WP host.
-- Create a dedicated API user with an Application Password for the
-  frontend/workers.
+- Create a dedicated user with the **LexRanked API** role and an
+  Application Password for the frontend/workers.
 
 ## Cloudflare
 

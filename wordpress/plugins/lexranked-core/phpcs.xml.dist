@@ -3,6 +3,7 @@
 	<description>WordPress Coding Standards for LexRanked Core.</description>
 
 	<file>lexranked-core.php</file>
+	<file>uninstall.php</file>
 	<file>src</file>
 	<file>tests</file>
 
@@ -29,7 +30,30 @@
 		</properties>
 	</rule>
 
+	<!-- Exception messages are never rendered as HTML: the admin UI escapes
+	     them with esc_html() at output time. -->
+	<rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped">
+		<severity>0</severity>
+	</rule>
+
+	<!-- LexRanked queries are bounded by design (small, curated datasets;
+	     see docs/architecture.md). Meta/tax queries are the data model. -->
+	<rule ref="WordPress.DB.SlowDBQuery">
+		<severity>0</severity>
+	</rule>
+	<rule ref="WordPress.WP.PostsPerPage">
+		<severity>0</severity>
+	</rule>
+
 	<rule ref="PHPCompatibilityWP"/>
+
+	<!-- False positives: PHP 8.1 enum methods may use $this and self. -->
+	<rule ref="PHPCompatibility.Variables.ForbiddenThisUseContexts.OutsideObjectContext">
+		<exclude-pattern>src/Domain/*</exclude-pattern>
+	</rule>
+	<rule ref="PHPCompatibility.FunctionDeclarations.NewParamTypeDeclarations.SelfOutsideClassScopeFound">
+		<exclude-pattern>src/Domain/*</exclude-pattern>
+	</rule>
 
 	<!-- Tests use PHPUnit's camelCase conventions. -->
 	<rule ref="WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid">

@@ -9,13 +9,24 @@ declare(strict_types=1);
 
 namespace LexRanked\Core;
 
+use LexRanked\Core\Admin\ListColumns;
+use LexRanked\Core\Admin\MetaBoxes;
+use LexRanked\Core\Admin\Menu;
+use LexRanked\Core\CLI\Command;
+use LexRanked\Core\Database\Installer;
+use LexRanked\Core\REST\EntitiesController;
+use LexRanked\Core\REST\RankingsController;
+use LexRanked\Core\REST\SearchController;
+use LexRanked\Core\REST\SourcesController;
 use LexRanked\Core\REST\StatusController;
+use LexRanked\Core\REST\TaxonomiesController;
+use LexRanked\Core\Security\ApiGuard;
+use LexRanked\Core\Security\Headless;
+use LexRanked\Core\Taxonomies\Location;
+use LexRanked\Core\Taxonomies\PracticeArea;
 
 /**
  * Wires plugin services into WordPress hooks.
- *
- * Phase 1 only registers the public status endpoint. Post types, taxonomies,
- * the full REST API and admin screens are added in Phase 2.
  */
 final class Plugin {
 
@@ -23,30 +34,83 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.0.0';
+	public const API_VERSION = '1.1.0';
 
 	/**
-	 * Whether boot() has already run.
+	 * Services, available after boot().
 	 *
-	 * @var bool
+	 * @var Services|null
 	 */
-	private static bool $booted = false;
+	private static ?Services $services = null;
 
 	/**
 	 * Register hooks. Idempotent.
 	 */
 	public static function boot(): void {
-		if ( self::$booted ) {
+		if ( null !== self::$services ) {
 			return;
 		}
-		self::$booted = true;
+		$services       = new Services();
+		self::$services = $services;
 
-		$status = new StatusController( LEXRANKED_CORE_VERSION );
-		add_action( 'rest_api_init', array( $status, 'register_routes' ) );
+		Installer::maybe_upgrade();
+
+		add_action( 'init', array( self::class, 'register_content_model' ) );
+
+		( new ApiGuard( $services->settings ) )->register();
+		( new Headless( $services->settings ) )->register();
+
+		$controllers = array(
+			new StatusController( LEXRANKED_CORE_VERSION ),
+			new EntitiesController( $services ),
+			new RankingsController( $services ),
+			new TaxonomiesController(),
+			new SourcesController( $services ),
+			new SearchController( $services ),
+		);
+		foreach ( $controllers as $controller ) {
+			add_action( 'rest_api_init', array( $controller, 'register_routes' ) );
+		}
+
+		if ( is_admin() ) {
+			( new Menu( $services ) )->register();
+			( new MetaBoxes( $services ) )->register();
+			( new ListColumns( $services ) )->register();
+		}
+
+		if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( '\WP_CLI' ) ) {
+			\WP_CLI::add_command( 'lexranked', new Command( $services ) );
+		}
 	}
 
 	/**
-	 * Activation hook: refuse to activate on unsupported PHP versions.
+	 * Services container.
+	 */
+	public static function services(): Services {
+		if ( null === self::$services ) {
+			self::$services = new Services();
+		}
+		return self::$services;
+	}
+
+	/**
+	 * Register post types and taxonomies. Hooked to init.
+	 */
+	public static function register_content_model(): void {
+		$services = self::services();
+		$located  = array();
+		foreach ( $services->post_types() as $type ) {
+			$type->register();
+			if ( in_array( Location::SLUG, $type->taxonomies(), true ) ) {
+				$located[] = $type->slug();
+			}
+		}
+		Location::register( $located );
+		PracticeArea::register( $located );
+	}
+
+	/**
+	 * Activation hook.
 	 */
 	public static function activate(): void {
 		if ( ! self::meets_php_requirement( PHP_VERSION ) ) {
@@ -62,11 +126,13 @@ final class Plugin {
 				)
 			);
 		}
+		Installer::install();
+		self::register_content_model();
 		flush_rewrite_rules();
 	}
 
 	/**
-	 * Deactivation hook. Data is intentionally kept; removal belongs in uninstall.
+	 * Deactivation hook. Data is intentionally kept.
 	 */
 	public static function deactivate(): void {
 		flush_rewrite_rules();

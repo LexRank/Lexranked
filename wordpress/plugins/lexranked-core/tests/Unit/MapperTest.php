@@ -1,0 +1,237 @@
+<?php
+/**
+ * DTO mapper tests.
+ *
+ * @package LexRanked\Core\Tests
+ */
+
+declare(strict_types=1);
+
+namespace LexRanked\Core\Tests\Unit;
+
+use LexRanked\Core\REST\DTO\EntityMapper;
+use LexRanked\Core\REST\DTO\LocationMapper;
+use LexRanked\Core\REST\DTO\RankingMapper;
+use LexRanked\Core\REST\DTO\SourceMapper;
+use LexRanked\Core\Sources\SourceTiers;
+use PHPUnit\Framework\TestCase;
+
+final class MapperTest extends TestCase {
+
+	private const FL = array(
+		'id'         => 1,
+		'slug'       => 'florida',
+		'name'       => 'Florida',
+		'parent'     => 0,
+		'state_code' => 'FL',
+	);
+
+	private const MIAMI = array(
+		'id'         => 2,
+		'slug'       => 'miami',
+		'name'       => 'Miami',
+		'parent'     => 1,
+		'state_code' => null,
+	);
+
+	private static function lawyer( int $id, ?float $score, string $commercial = 'free', array $overrides = array() ): array {
+		return array(
+			'id'             => $id,
+			'type'           => 'lr_lawyer',
+			'slug'           => 'lawyer-' . $id,
+			'title'          => 'Lawyer ' . $id,
+			'content'        => '',
+			'status'         => 'publish',
+			'created_at'     => '2026-09-01T00:00:00Z',
+			'updated_at'     => '2026-09-02T00:00:00Z',
+			'fields'         => array_merge(
+				array(
+					'first_name'          => 'L',
+					'last_name'           => (string) $id,
+					'title'               => null,
+					'firm_id'             => null,
+					'zip_code'            => null,
+					'country'             => 'US',
+					'website'             => null,
+					'phone'               => null,
+					'email'               => 'private@example.com',
+					'years_experience'    => 10,
+					'rating'              => 4.8,
+					'review_count'        => 100,
+					'bar_state'           => 'FL',
+					'bar_number'          => null,
+					'bar_status'          => 'active',
+					'education'           => array(),
+					'awards'              => array(),
+					'languages'           => array(),
+					'commercial_status'   => $commercial,
+					'score'               => $score,
+					'score_version'       => null === $score ? null : 'v1.0',
+					'score_calculated_at' => null,
+					'is_demo'             => false,
+				),
+				$overrides
+			),
+			'locations'      => array( self::MIAMI, self::FL ),
+			'practice_areas' => array(
+				array(
+					'id'   => 9,
+					'slug' => 'personal-injury',
+					'name' => 'Personal Injury',
+				),
+			),
+		);
+	}
+
+	private static function verification(): array {
+		return array(
+			'status'      => 'verified',
+			'verified_at' => '2026-09-01T00:00:00Z',
+			'types'       => array(),
+		);
+	}
+
+	public function testLocationPrefersCityAndResolvesStateName(): void {
+		$this->assertSame(
+			array(
+				'city'      => 'Miami',
+				'citySlug'  => 'miami',
+				'state'     => 'Florida',
+				'stateSlug' => 'florida',
+				'stateCode' => 'FL',
+			),
+			LocationMapper::from_terms( array( self::MIAMI, self::FL ) )
+		);
+		$this->assertSame( 'Florida', LocationMapper::from_terms( array( self::FL ) )['state'] );
+		$this->assertNull( LocationMapper::from_terms( array() ) );
+	}
+
+	public function testPublicDtoNeverContainsPrivateEmail(): void {
+		$dto  = EntityMapper::lawyer_detail( self::lawyer( 1, 90.0 ), null, self::verification(), array(), array(), '' );
+		$json = (string) json_encode( $dto ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- WordPress is not loaded in unit tests.
+		$this->assertStringNotContainsString( 'private@example.com', $json );
+		$this->assertArrayNotHasKey( 'private', $dto );
+
+		$edit = EntityMapper::lawyer_detail( self::lawyer( 1, 90.0 ), null, self::verification(), array(), array(), '', true );
+		$this->assertSame( 'private@example.com', $edit['private']['email'] );
+	}
+
+	public function testRankingAndCommercialAreSeparateBlocks(): void {
+		$dto = EntityMapper::lawyer_summary( self::lawyer( 1, 90.0, 'sponsored' ), null, self::verification() );
+		$this->assertSame(
+			array(
+				'score'        => 90.0,
+				'scoreVersion' => 'v1.0',
+				'calculatedAt' => null,
+			),
+			$dto['ranking']
+		);
+		$this->assertSame(
+			array(
+				'status'          => 'sponsored',
+				'isPaidPlacement' => true,
+			),
+			$dto['commercial']
+		);
+		$this->assertSame( 'free', EntityMapper::commercial( array( 'commercial_status' => 'bogus' ) )['status'] );
+	}
+
+	public function testRankingOrderIsDeterministicAndIgnoresPayment(): void {
+		$summaries = array_map(
+			static fn( array $r ): array => EntityMapper::lawyer_summary( $r, null, self::verification() ),
+			array(
+				self::lawyer( 5, 80.0, 'sponsored' ),
+				self::lawyer( 3, 90.0 ),
+				self::lawyer( 4, 90.0, 'premium' ),
+				self::lawyer( 2, null, 'featured' ),
+				self::lawyer( 1, 70.0 ),
+			)
+		);
+		$entries   = RankingMapper::order( $summaries, 'v1.0' );
+		$this->assertSame( array( 3, 4, 5, 1 ), array_map( static fn( array $e ): int => $e['entity']['id'], $entries ) );
+		$this->assertSame( array( 1, 2, 3, 4 ), array_column( $entries, 'position' ) );
+
+		// Same input in a different order → identical output.
+		$this->assertSame( $entries, RankingMapper::order( array_reverse( $summaries ), 'v1.0' ) );
+
+		// Entities scored with another version are not mixed in.
+		$this->assertSame( array(), RankingMapper::order( $summaries, 'v2.0' ) );
+	}
+
+	private static function ranking_record( bool $demo = false ): array {
+		return array(
+			'id'             => 50,
+			'slug'           => 'best-pi-miami',
+			'title'          => 'Best Personal Injury Lawyers in Miami, Florida',
+			'updated_at'     => '2026-09-23T00:00:00Z',
+			'fields'         => array(
+				'entity_type'   => 'lawyer',
+				'score_version' => 'v1.0',
+				'min_entities'  => 3,
+				'max_entities'  => 2,
+				'is_demo'       => $demo,
+			),
+			'locations'      => array( self::MIAMI, self::FL ),
+			'practice_areas' => array(
+				array(
+					'id'   => 9,
+					'slug' => 'personal-injury',
+					'name' => 'Personal Injury',
+				),
+			),
+		);
+	}
+
+	public function testThinRankingsHaveNoEntriesAndAreNotIndexable(): void {
+		$entries = RankingMapper::order(
+			array( EntityMapper::lawyer_summary( self::lawyer( 1, 90.0 ), null, self::verification() ) ),
+			'v1.0'
+		);
+		$dto     = RankingMapper::ranking( self::ranking_record(), $entries, 5 );
+		$this->assertTrue( $dto['isThin'] );
+		$this->assertFalse( $dto['indexable'] );
+		$this->assertSame( array(), $dto['entries'] );
+		$this->assertSame( '/rankings/florida/miami/personal-injury/', $dto['path'] );
+	}
+
+	public function testRankingCapsEntriesAndDemoIsNeverIndexable(): void {
+		$summaries = array_map(
+			static fn( int $id ): array => EntityMapper::lawyer_summary( self::lawyer( $id, 50.0 + $id ), null, self::verification() ),
+			array( 1, 2, 3 )
+		);
+		$entries   = RankingMapper::order( $summaries, 'v1.0' );
+
+		$dto = RankingMapper::ranking( self::ranking_record(), $entries, 5 );
+		$this->assertFalse( $dto['isThin'] );
+		$this->assertTrue( $dto['indexable'] );
+		$this->assertCount( 2, $dto['entries'] );
+
+		$this->assertFalse( RankingMapper::ranking( self::ranking_record( true ), $entries, 5 )['indexable'] );
+	}
+
+	public function testEvidenceIsSortedByFieldThenSourceTier(): void {
+		$claim  = static fn( string $field, string $type, string $at ): array => array(
+			'field_name'          => $field,
+			'value'               => 'x',
+			'source_id'           => null,
+			'source_url'          => 'https://example.com',
+			'source_type'         => $type,
+			'retrieved_at'        => $at,
+			'confidence'          => 0.9,
+			'verification_status' => 'verified',
+		);
+		$result = SourceMapper::evidence(
+			array(
+				$claim( 'rating', 'review_platform', '2026-09-01T00:00:00Z' ),
+				$claim( 'bar_status', 'official_website', '2026-09-01T00:00:00Z' ),
+				$claim( 'bar_status', 'official_registry', '2026-08-01T00:00:00Z' ),
+			),
+			array(),
+			new SourceTiers()
+		);
+		$this->assertSame(
+			array( array( 'bar_status', 1 ), array( 'bar_status', 2 ), array( 'rating', 4 ) ),
+			array_map( static fn( array $e ): array => array( $e['field'], $e['source']['tier'] ), $result )
+		);
+	}
+}

@@ -36,10 +36,15 @@ cp .env.example frontend/.env.local        # frontend config (server-only vars s
 
 # WordPress + MariaDB at http://localhost:8080 (plugin is bind-mounted)
 docker compose up -d
-# then finish the WP install in the browser and activate "LexRanked Core"
-curl http://localhost:8080/wp-json/lexranked/v1/status
+docker compose run --rm wpcli wp core install --url=http://localhost:8080 --title=LexRanked \
+  --admin_user=admin --admin_password=admin --admin_email=admin@example.com --skip-email
+docker compose run --rm wpcli wp rewrite structure '/%postname%/'
+docker compose run --rm wpcli wp plugin activate lexranked-core
+docker compose run --rm wpcli wp lexranked seed-demo      # clearly-labelled mock data
+curl http://localhost:8080/wp-json/lexranked/v1/lawyers
 
-# Frontend at http://localhost:3000
+# Frontend at http://localhost:3000 (set WORDPRESS_API_URL=http://localhost:8080/wp-json
+# in frontend/.env.local), then open http://localhost:3000/status/
 cd frontend && npm install && npm run dev
 
 # Plugin tooling
@@ -49,13 +54,17 @@ cd wordpress/plugins/lexranked-core && composer install && composer lint && comp
 ## Checks
 
 ```bash
-scripts/check.sh   # lint, typecheck, tests, build — same as CI
+scripts/check.sh                 # lint, typecheck, tests, build — same as CI
+scripts/wp-integration-test.sh   # real WordPress in Docker + API assertions
+scripts/build-plugin-zip.sh      # installable plugin ZIP → dist/
 ```
+
+Connecting your own WordPress: [`docs/connecting-wordpress.md`](docs/connecting-wordpress.md).
 
 ## Roadmap
 
-1. ✅ **Repository and architecture** (this phase)
-2. WordPress core: entities, REST API, admin UI, validation
+1. ✅ Repository and architecture
+2. ✅ **WordPress core**: entities, REST API, admin UI, validation (+ frontend API client and `/status/`)
 3. Frontend: pages, SEO, structured data, sitemap
 4. Ranking engine: ScoreCalculator, RankingEngine, ScoreVersion, RankingSnapshot
 5. Research engine: resumable jobs, evidence, verification

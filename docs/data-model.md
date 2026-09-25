@@ -1,7 +1,8 @@
 # Data model
 
-> Status: **design** (Phase 1). Implemented in Phase 2 (entities), Phase 4
-> (ranking), Phase 5 (evidence/research).
+> Status: entities, taxonomies, evidence storage and verification are
+> **implemented (Phase 2)**. Score calculation (Phase 4), ranking snapshots
+> (Phase 4) and research execution (Phase 5) are still to come.
 
 ## Principles
 
@@ -23,12 +24,33 @@
 | Source | CPT `lr_source` | Source registry incl. tier |
 | Verification record | CPT `lr_verification` | |
 | Research job | CPT `lr_research_job` | Cursor for resumability |
-| Evidence claim | Custom table `{prefix}lr_claims` | High volume, append-mostly |
-| Ranking snapshot | Custom table `{prefix}lr_ranking_snapshots` | Append-only history |
-| Audit log | Custom table `{prefix}lr_audit_log` | Append-only |
+| Evidence claim | Custom table `{prefix}lr_claims` | High volume, append-mostly (implemented) |
+| Ranking snapshot | Custom table `{prefix}lr_ranking_snapshots` | Append-only history (Phase 4) |
+| Audit log | Custom table `{prefix}lr_audit_log` | Append-only (implemented) |
 | Editorial article | Core `post` | |
 
 CPT slugs are prefixed `lr_` to avoid collisions (≤ 20 chars, WP limit).
+
+### How fields are stored (Phase 2)
+
+- Every entity's fields are declared once in its `PostTypes/*` class as
+  `Schema\Field` objects. That single list drives meta registration, the
+  admin form, sanitization (`FieldSanitizer`), storage (`MetaCodec`) and the
+  DTO mapping.
+- Meta keys are `_lr_<field>` (underscore = hidden from the generic Custom
+  Fields box). Lists are JSON. **Empty input deletes the meta row** — unknown
+  stays unknown, it is never stored as a guess or an empty string.
+- Post title = lawyer full name / firm name; post content = bio/description.
+- `city`, `state`, `state_code` come from the assigned **Location** term
+  (state term → city child term; state terms carry a validated USPS code).
+  `practice_areas[]` come from the **Practice Area** taxonomy.
+- `lawyer_ids[]` of a firm are derived from lawyers whose `firm_id` points to it.
+- `verification_status` and `last_verified_at` are **derived at read time**
+  from verification records (`VerificationPolicy`), so expiry is always
+  evaluated against the current time rather than a stale stored flag.
+- `score`, `score_version`, `score_calculated_at` are read-only in the admin;
+  only the ranking engine (Phase 4) or trusted tooling may write them.
+- `created_at` / `updated_at` are the post's GMT dates.
 
 ## Lawyer
 
@@ -50,8 +72,10 @@ CPT slugs are prefixed `lr_` to avoid collisions (≤ 20 chars, WP limit).
 | score | decimal(5,2)? | organic score |
 | score_version | string? | e.g. `v1.0` |
 | ranking_position | int? | per ranking, stored in snapshots |
-| verification_status | enum | `unverified`, `pending`, `verified`, `failed`, `expired` |
-| last_verified_at | datetime? | |
+| verification_status | enum (derived) | `unverified`, `pending`, `verified`, `failed`, `expired` |
+| last_verified_at | datetime? (derived) | oldest `verified_at` among required checks |
+| commercial_status | enum | `free` … `premium`; separate from ranking |
+| is_demo | bool | mock data flag; exposed as `isDemo` |
 | created_at, updated_at | datetime | |
 
 ## Law firm
@@ -76,7 +100,12 @@ score_version, verification_status, last_verified_at, created_at, updated_at`.
 | confidence | decimal(4,3) 0–1 |
 | verification_status | `pending` \| `verified` \| `failed` \| `expired` |
 
-Field-value resolution picks the claim with the best (source tier,
+`ClaimValidator` rejects any claim without a source (URL or registered
+source), with an unconfigured source type, a confidence outside 0–1, or a
+field that is not traceable (system and commercial fields such as `score`
+or `commercial_status` can never be "evidenced").
+
+Field-value resolution (Phase 5) picks the claim with the best (source tier,
 verification status, recency, confidence). Ties never resolve by guessing;
 conflicting high-tier claims are flagged for review.
 
@@ -99,12 +128,21 @@ hard-coded as authoritative.
 `license`, `bar_status`, `practice_area`, `review_data`), `status`
 (`pending`, `verified`, `failed`, `expired`), `source`, `verified_at`,
 `expires_at`, `verified_by`, `notes`. A profile is "verified" only when its
-required verification types are `verified` and unexpired.
+required verification types are `verified` and unexpired. Required types are
+configurable (Settings); defaults: lawyers `identity, license, bar_status`,
+firms `business, website`. Any required `failed` → profile `failed`; any
+required `expired` → `expired`; otherwise `pending` if a check is pending,
+else `unverified`.
 
 ## Research job
 
 `job_id, job_type, location, practice_area, status (pending|running|completed|failed|cancelled),
 cursor, processed_count, started_at, completed_at, retry_count, error_message, created_at`.
+
+Lifecycle is enforced (`ResearchJobStatus::can_transition_to`): pending →
+running | cancelled; running → completed | failed | cancelled; failed →
+pending (retry, `retry_count`+1, resumes from `cursor`) | cancelled.
+Administrator-only (custom capability type `lr_research_job`).
 
 ## Ranking snapshot
 
@@ -124,3 +162,13 @@ calculator.
 | Review data | 7 days |
 | Website | 30 days |
 | General profile | 90 days |
+
+Configured in **LexRanked › Settings**; unknown categories fall back to `profile`.
+
+## Demo data
+
+`wp lexranked seed-demo` creates clearly-labelled mock records (names end in
+"(Demo)", `example.com` URLs, fictional 555-01xx phones, `DEMO-` bar
+numbers, score version `demo`, `is_demo = true`). They are exposed as
+`isDemo: true`, demo rankings are never indexable, and
+`wp lexranked purge-demo` removes them.
