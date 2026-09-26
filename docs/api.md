@@ -33,7 +33,7 @@ limits. Credentials live in server-side environment variables only.
 ### `GET /status`
 Health/version. `Cache-Control: no-store`.
 ```json
-{ "status": "ok", "service": "lexranked-core", "pluginVersion": "0.2.0", "apiVersion": "1.1.0", "namespace": "lexranked/v1" }
+{ "status": "ok", "service": "lexranked-core", "pluginVersion": "0.4.0", "apiVersion": "1.1.0", "namespace": "lexranked/v1" }
 ```
 
 ### `GET /lawyers` · `GET /law-firms`
