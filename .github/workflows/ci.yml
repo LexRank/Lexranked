@@ -93,7 +93,7 @@ jobs:
       - name: API + research worker + rendered-page assertions against the packaged plugin
         run: scripts/wp-integration-test.sh --frontend
       - name: Upload installable plugin ZIP
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lexranked-core-plugin
           path: dist/lexranked-core-*.zip
