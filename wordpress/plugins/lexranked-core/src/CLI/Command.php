@@ -455,6 +455,34 @@ final class Command {
 	}
 
 	/**
+	 * Operational health checks (exit code 1 when a check is critical).
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--format=<format>]
+	 * : table or json.
+	 * ---
+	 * default: table
+	 * ---
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function health( array $args, array $assoc_args ): void {
+		unset( $args );
+		$report = $this->services->health->report();
+		if ( 'json' === ( $assoc_args['format'] ?? 'table' ) ) {
+			\WP_CLI::line( (string) wp_json_encode( $report, JSON_PRETTY_PRINT ) );
+		} else {
+			\WP_CLI\Utils\format_items( 'table', $report['checks'], array( 'key', 'status', 'message' ) );
+			\WP_CLI::line( 'Overall: ' . $report['status'] );
+		}
+		if ( 'critical' === $report['status'] ) {
+			\WP_CLI::halt( 1 );
+		}
+	}
+
+	/**
 	 * Delete all demo data (posts flagged is_demo, their claims, and demo-created empty terms).
 	 *
 	 * ## OPTIONS

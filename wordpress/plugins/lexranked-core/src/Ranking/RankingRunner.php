@@ -26,6 +26,9 @@ final class RankingRunner {
 	public const CRON_HOOK  = 'lexranked_recalculate';
 	public const DEBOUNCE_S = 60;
 
+	/** Option holding the time of the last full recalculation (health checks). */
+	public const LAST_RUN_OPTION = 'lexranked_last_calculation';
+
 	/**
 	 * Constructor.
 	 *
@@ -96,6 +99,11 @@ final class RankingRunner {
 			$this->run_ranking( (int) $ranking_id );
 			++$rankings;
 		}
+		update_option( self::LAST_RUN_OPTION, gmdate( 'Y-m-d\TH:i:s\Z' ), false );
+		/**
+		 * Scores and rankings were recalculated (public data changed).
+		 */
+		do_action( 'lexranked_scores_updated' );
 		return array(
 			'entities' => $entities,
 			'rankings' => $rankings,

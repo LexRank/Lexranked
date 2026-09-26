@@ -19,6 +19,7 @@ use LexRanked\Core\CLI\Command;
 use LexRanked\Core\Content\TermContent;
 use LexRanked\Core\Database\Installer;
 use LexRanked\Core\REST\ArticlesController;
+use LexRanked\Core\REST\HealthController;
 use LexRanked\Core\REST\EntitiesController;
 use LexRanked\Core\REST\RankingsController;
 use LexRanked\Core\REST\ResearchController;
@@ -27,6 +28,7 @@ use LexRanked\Core\REST\SourcesController;
 use LexRanked\Core\REST\StatusController;
 use LexRanked\Core\REST\TaxonomiesController;
 use LexRanked\Core\Security\ApiGuard;
+use LexRanked\Core\Security\Hardening;
 use LexRanked\Core\Security\Headless;
 use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
@@ -40,7 +42,7 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.5.0';
+	public const API_VERSION = '1.6.0';
 
 	/**
 	 * Services, available after boot().
@@ -67,6 +69,8 @@ final class Plugin {
 		$services->runner->register();
 		$services->jobs->register();
 		$services->entity_index->register();
+		$services->revalidator->register();
+		( new Hardening( $services->settings ) )->register();
 		( new Headless( $services->settings ) )->register();
 
 		$controllers = array(
@@ -78,6 +82,7 @@ final class Plugin {
 			new SearchController( $services ),
 			new ResearchController( $services ),
 			new ArticlesController( $services ),
+			new HealthController( $services ),
 		);
 		foreach ( $controllers as $controller ) {
 			add_action( 'rest_api_init', array( $controller, 'register_routes' ) );
@@ -154,6 +159,7 @@ final class Plugin {
 		wp_clear_scheduled_hook( \LexRanked\Core\Ranking\RankingRunner::CRON_HOOK . '_soon' );
 		wp_clear_scheduled_hook( \LexRanked\Core\Research\JobService::INTERNAL_HOOK );
 		wp_clear_scheduled_hook( \LexRanked\Core\Research\JobService::INTERNAL_HOOK . '_soon' );
+		wp_clear_scheduled_hook( \LexRanked\Core\Integration\Revalidator::RETRY_HOOK );
 		flush_rewrite_rules();
 	}
 

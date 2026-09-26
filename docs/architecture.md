@@ -231,3 +231,22 @@ practice area; profile summaries are entity fields; guides are standard
 WordPress Posts. Each page renders its own text only when the page exists
 by the data rules (ADR-016), so writing text can never create a thin
 page. Article pages under 300 words are never indexed.
+
+### ADR-028 — Signed push invalidation on top of ISR
+Pages stay statically generated with a 5-minute ISR window. WordPress
+pushes a signed (HMAC, timestamped) revalidation webhook when public
+data changes, so edits appear within seconds, and retries on failure. The
+same events bump a content version that keys the CMS response cache, so
+cache invalidation needs no dependency tracking.
+
+### ADR-029 — Health is data, alerts are external
+Operational checks are computed in one place (`HealthCheck`, pure) and
+exposed three ways: a private REST endpoint, WP-CLI with exit codes, and
+a public frontend endpoint that reveals only check names and levels.
+Alerting is left to standard uptime and log tooling.
+
+### ADR-030 — SEO rules are tested against rendered pages
+Metadata, canonical, robots, sitemap consistency and JSON-LD rules are
+checked on the HTML crawlers receive, in CI, against a real WordPress
+build. Metadata is never streamed (`htmlLimitedBots`), so every crawler
+sees the same `<head>`.

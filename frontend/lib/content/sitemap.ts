@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo/urls";
 import type { ArticleSummary, CityDto, LawFirmSummary, LawyerSummary, PracticeAreaDto, RankingSummary, StateDto } from "@/types/api";
-import { articleEligibility, MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
+import { articleEligibility, listingEligibility, MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
 
 /**
  * Pure sitemap assembly: only indexable pages. Excludes demo data, thin
@@ -18,7 +18,10 @@ export interface SitemapInput {
   articles?: ArticleSummary[];
 }
 
-export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/rankings/", "/lawyers/", "/law-firms/", "/states/", "/cities/", "/practice-areas/"];
+export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/rankings/", "/states/", "/cities/", "/practice-areas/"];
+
+/** Listing pages that are noindex until they list real profiles (see listingEligibility). */
+export const LISTING_PATHS = { lawyers: "/lawyers/", lawFirms: "/law-firms/" } as const;
 
 type Entry = MetadataRoute.Sitemap[number];
 
@@ -41,6 +44,8 @@ function realLawyerCount(lawyers: LawyerSummary[], match: (l: LawyerSummary) => 
 
 export function buildSitemap(input: SitemapInput): MetadataRoute.Sitemap {
   const entries: Entry[] = STATIC_PATHS.map((p) => entry(p, undefined, p === "/" ? 1 : 0.6));
+  if (listingEligibility(input.lawyers).indexable) entries.push(entry(LISTING_PATHS.lawyers, undefined, 0.6));
+  if (listingEligibility(input.lawFirms).indexable) entries.push(entry(LISTING_PATHS.lawFirms, undefined, 0.6));
 
   for (const ranking of input.rankings) {
     if (ranking.path && rankingEligibility(ranking).indexable) {

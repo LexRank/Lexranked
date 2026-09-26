@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState, Monogram, UnavailableNotice } from "@/components/ui";
 import { load } from "@/lib/data/loaders";
 import { formatLocation } from "@/lib/format";
+import { clientKey, searchLimiter } from "@/lib/rateLimit";
 import { searchEntities } from "@/lib/wordpress/api";
 
 // Search result pages are never indexed (spec §20) and are excluded in robots.txt.
@@ -20,7 +22,8 @@ function readQuery(value: string | string[] | undefined): string {
 export default async function SearchPage(props: PageProps<"/search">) {
   const q = readQuery((await props.searchParams).q);
   const valid = q.length >= 2;
-  const result = valid ? await load(async () => (await searchEntities(q)).data) : null;
+  const limited = valid && !searchLimiter.take(clientKey(await headers()));
+  const result = valid && !limited ? await load(async () => (await searchEntities(q)).data) : null;
 
   return (
     <>
@@ -53,6 +56,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
         </form>
       </PageHeader>
       <div className="container section stack">
+        {limited && <p className="muted" role="status">Too many searches in a short time. Please wait a minute and try again.</p>}
         {result && !result.ok && <UnavailableNotice />}
         {!valid && <p className="muted">Enter at least two characters of a lawyer&apos;s or firm&apos;s name.</p>}
         {result?.ok && result.data.length === 0 && (

@@ -34,9 +34,10 @@ Run all of it locally with `scripts/check.sh`.
 2. Production branch: `main`.
 3. Environment variables (Production / Preview separately):
    `NEXT_PUBLIC_SITE_URL`, `WORDPRESS_API_URL`, `WORDPRESS_USERNAME`,
-   `WORDPRESS_APP_PASSWORD`, and `ALLOW_INDEXING=true` **only** in Production
-   once launch-ready.
-4. Mark the WordPress password as *Sensitive*.
+   `WORDPRESS_APP_PASSWORD`, `REVALIDATE_SECRET` (instant refresh; same value
+   as `LEXRANKED_REVALIDATE_SECRET` in wp-config.php), and `ALLOW_INDEXING=true`
+   **only** in Production once launch-ready.
+4. Mark the WordPress password and `REVALIDATE_SECRET` as *Sensitive*.
 
 ## WordPress (wp.lexranked.com)
 
@@ -52,6 +53,13 @@ Run all of it locally with `scripts/check.sh`.
 - WP-cron must run (real cron hitting `wp-cron.php`, or `wp cron event run
   --due-now` every few minutes): it recalculates rankings and runs internal
   research jobs (verification expiry, ranking recalculation).
+
+## Instant refresh, monitoring and backups
+
+See [operations.md](operations.md): shared `REVALIDATE_SECRET` /
+`LEXRANKED_REVALIDATE_SECRET`, uptime monitoring of `/api/health/`,
+`wp lexranked health` in cron, daily `scripts/backup.sh` with off-site copy,
+and the Cloudflare rules.
 
 ## Research worker
 

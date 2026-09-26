@@ -224,6 +224,17 @@ final class Menu {
 		}
 		echo '</select><p class="description">Methodology version used for new calculations. Weights of a version never change; a new version is added instead.</p></td></tr>';
 		printf(
+			'<tr><th scope="row">XML-RPC</th><td><input type="hidden" name="%1$s[disable_xmlrpc]" value="0"><label><input type="checkbox" name="%1$s[disable_xmlrpc]" value="1"%2$s> Disable XML-RPC (recommended for a headless CMS)</label></td></tr>',
+			esc_attr( $name ),
+			checked( (bool) $s['disable_xmlrpc'], true, false )
+		);
+		$rev = \LexRanked\Core\Integration\Revalidator::last_status();
+		printf(
+			'<tr><th scope="row">Instant page refresh</th><td>%s<p class="description">Needs the frontend URL above and <code>define( \'LEXRANKED_REVALIDATE_SECRET\', \'…\' );</code> in wp-config.php (the same value as REVALIDATE_SECRET on the frontend). Last result: %s</p></td></tr>',
+			\LexRanked\Core\Integration\Signature::usable( \LexRanked\Core\Integration\Revalidator::secret() ) ? 'Secret configured.' : '<strong>Secret not configured</strong> — pages refresh within 5 minutes instead of seconds.',
+			esc_html( null === $rev ? '—' : $rev['state'] . ' · ' . $rev['message'] . ' · ' . $rev['at'] )
+		);
+		printf(
 			'<tr><th scope="row">AI assistance</th><td><input type="hidden" name="%1$s[ai_enabled]" value="0"><label><input type="checkbox" name="%1$s[ai_enabled]" value="1"%2$s> Accept AI-assisted research and content drafts from workers</label><p class="description">Off by default. AI output never publishes: extracted facts are low-confidence, quote-checked evidence; match suggestions are advisory; generated content arrives as drafts with a QA report.</p></td></tr>',
 			esc_attr( $name ),
 			checked( (bool) $s['ai_enabled'], true, false )

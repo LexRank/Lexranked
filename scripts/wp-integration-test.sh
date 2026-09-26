@@ -16,6 +16,8 @@ export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-lexranked-it}"
 export LOCAL_WP_PORT="${IT_PORT:-8089}"
 export LOCAL_DB_PASSWORD="${LOCAL_DB_PASSWORD:-it-only-password}"
 export LOCAL_DB_ROOT_PASSWORD="${LOCAL_DB_ROOT_PASSWORD:-it-only-root-password}"
+# Shared by WordPress and Next.js for signed on-demand revalidation (test-only value).
+export LEXRANKED_REVALIDATE_SECRET="${LEXRANKED_REVALIDATE_SECRET:-it-only-revalidate-secret-$(date +%s)-0123456789abcdef}"
 KEEP=""
 FRONTEND=""
 for arg in "$@"; do
@@ -214,6 +216,10 @@ if [[ -n "$FRONTEND" ]]; then
   echo "==> Frontend end-to-end (Next.js against this WordPress)"
   wp option delete lexranked_settings >/dev/null 2>&1 || true
   WEB="http://127.0.0.1:${FRONTEND_PORT}"
+  if curl -s -o /dev/null "$WEB/"; then
+    echo "Port $FRONTEND_PORT is already in use (a leftover server?). Stop it or set FRONTEND_PORT." >&2
+    exit 1
+  fi
   (
     cd frontend
     [[ -d node_modules ]] || npm ci --no-audit --no-fund >/dev/null
@@ -225,7 +231,7 @@ if [[ -n "$FRONTEND" ]]; then
   (
     cd frontend
     WORDPRESS_API_URL="$BASE/wp-json" WORDPRESS_USERNAME=apiuser WORDPRESS_APP_PASSWORD="$APP_PW" \
-      exec npx next start -p "$FRONTEND_PORT" >/dev/null 2>&1
+      REVALIDATE_SECRET="$LEXRANKED_REVALIDATE_SECRET" exec node node_modules/next/dist/bin/next start -p "$FRONTEND_PORT" >/dev/null 2>&1
   ) &
   NEXT_PID=$!
   for _ in $(seq 1 60); do curl -s -o /dev/null "$WEB/" && break; sleep 1; done
@@ -274,6 +280,36 @@ if [[ -n "$FRONTEND" ]]; then
   if grep -q "/methodology/" <<<"$sitemap" && ! grep -q "demo" <<<"$sitemap"; then pass "sitemap has static pages and excludes demo pages"; else fail "sitemap content"; fi
   html="$(curl -sS "$WEB/lawyers/avery-example-demo/")"
   if grep -q "$APP_PW" <<<"$html" || grep -rqF "$APP_PW" frontend/.next/static; then fail "credentials leaked into HTML or client bundle"; else pass "no credentials in HTML or client bundle"; fi
+
+  echo "==> Production hardening (Phase 8)"
+  headers="$(curl -sSI "$WEB/")"
+  if grep -qi "content-security-policy: default-src 'self'" <<<"$headers" && grep -qi "strict-transport-security" <<<"$headers"; then pass "CSP and HSTS headers"; else fail "security headers missing"; fi
+  expect_status "unsigned revalidation is rejected" 401 "$WEB/api/revalidate/" -X POST -d '{"tags":["lexranked"]}'
+  expect "frontend health relays CMS checks" '.cms.reachable == true and (.cms.checks | length) >= 5 and (.status | test("ok|degraded"))' "$WEB/api/health/"
+  expect_status "CMS health needs credentials" 401 "$API/health"
+  expect "CMS health for the API role" '.checks | map(.key) | index("database") != null' "$API/health" -u "apiuser:$APP_PW"
+  check "wp lexranked health reports" 'test("Overall: (ok|warning)")' "$(wp lexranked health | tail -1 | jq -Rs .)"
+
+  # Signed revalidation: a title change in WordPress reaches the page without waiting for ISR.
+  wp option update lexranked_settings "{\"frontend_url\":\"http://host.docker.internal:${FRONTEND_PORT}\"}" --format=json >/dev/null
+  RANKING_ID="$(wp post list --post_type=lr_ranking --field=ID --posts_per_page=1 | tail -1)"
+  curl -sS -o /dev/null "$WEB/rankings/florida/miami/personal-injury/"
+  wp post update "$RANKING_ID" --post_title="Best Personal Injury Lawyers in Miami, Florida (Demo) Updated" >/dev/null
+  check "WordPress reports the frontend refresh" '.state == "ok"' "$(wp option get lexranked_revalidation_status --format=json)"
+  refreshed=""
+  for _ in $(seq 1 10); do
+    if curl -sS "$WEB/rankings/florida/miami/personal-injury/" | grep -qF "(Demo) Updated"; then refreshed=1; break; fi
+    sleep 1
+  done
+  if [[ -n "$refreshed" ]]; then pass "page refreshed within seconds of the change"; else fail "page was not refreshed after the signed webhook"; fi
+
+  echo "==> SEO and structured-data audit (live)"
+  if (cd frontend && AUDIT_BASE_URL="$WEB" AUDIT_SITE_URL=https://lexranked.com npm run audit:seo >"$DATA_DIR/seo-audit.log" 2>&1); then
+    pass "live SEO audit: $(grep -o 'SEO audit: .*' "$DATA_DIR/seo-audit.log" | head -1)"
+  else
+    fail "live SEO audit failed:"; grep -E "^[a-z_]+ /|AssertionError" "$DATA_DIR/seo-audit.log" | head -20
+  fi
+
   if [[ "$KEEP" != "--keep" ]]; then
     kill "$NEXT_PID" >/dev/null 2>&1 || true
     NEXT_PID=""

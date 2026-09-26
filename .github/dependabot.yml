@@ -1,0 +1,20 @@
+# Weekly dependency updates; security fixes arrive as soon as they are published.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      next-react: { patterns: ["next", "react", "react-dom", "eslint-config-next", "@types/react", "@types/react-dom"] }
+  - package-ecosystem: npm
+    directory: /workers/research
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+  - package-ecosystem: composer
+    directory: /wordpress/plugins/lexranked-core
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }

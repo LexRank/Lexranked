@@ -15,6 +15,7 @@ use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\REST\DTO\LocationMapper;
 use LexRanked\Core\Repository\EntityRepository;
+use LexRanked\Core\Support\ResponseCache;
 use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
 
@@ -85,23 +86,30 @@ final class TaxonomiesController extends RestController {
 		if ( null !== $error ) {
 			return $error;
 		}
-		$items = array();
-		foreach ( $this->terms( Location::SLUG, array( 'parent' => 0 ) ) as $term ) {
-			$counts = $this->counts( Location::SLUG, $term->term_id );
-			if ( $request['hide_empty'] && 0 === $counts['lawyerCount'] + $counts['lawFirmCount'] ) {
-				continue;
+		[ $items ] = ResponseCache::remember(
+			'/states',
+			$request->get_params(),
+			function () use ( $request ): array {
+				$items = array();
+				foreach ( $this->terms( Location::SLUG, array( 'parent' => 0 ) ) as $term ) {
+					$counts = $this->counts( Location::SLUG, $term->term_id );
+					if ( $request['hide_empty'] && 0 === $counts['lawyerCount'] + $counts['lawFirmCount'] ) {
+						continue;
+					}
+					$location = LocationMapper::build( null, EntityRepository::location_term( $term ) );
+					$items[]  = array(
+						'id'        => (int) $term->term_id,
+						'slug'      => $term->slug,
+						'name'      => $location['state'],
+						'code'      => $location['stateCode'],
+						'path'      => '/states/' . $term->slug . '/',
+						'cityCount' => count( $this->terms( Location::SLUG, array( 'parent' => $term->term_id ) ) ),
+						'content'   => TermContent::dto( (int) $term->term_id ),
+					) + $counts;
+				}
+				return $items;
 			}
-			$location = LocationMapper::build( null, EntityRepository::location_term( $term ) );
-			$items[]  = array(
-				'id'        => (int) $term->term_id,
-				'slug'      => $term->slug,
-				'name'      => $location['state'],
-				'code'      => $location['stateCode'],
-				'path'      => '/states/' . $term->slug . '/',
-				'cityCount' => count( $this->terms( Location::SLUG, array( 'parent' => $term->term_id ) ) ),
-				'content'   => TermContent::dto( (int) $term->term_id ),
-			) + $counts;
-		}
+		);
 		return $this->collection_response( $items, count( $items ), max( 1, count( $items ) ) );
 	}
 
@@ -125,28 +133,35 @@ final class TaxonomiesController extends RestController {
 			$states = array_filter( $states, static fn( array $s ): bool => $s['slug'] === $wanted || strtoupper( $wanted ) === $s['state_code'] );
 		}
 
-		$items = array();
-		foreach ( $states as $state_id => $state ) {
-			foreach ( $this->terms( Location::SLUG, array( 'parent' => $state_id ) ) as $city ) {
-				$counts = $this->counts( Location::SLUG, $city->term_id );
-				if ( $request['hide_empty'] && 0 === $counts['lawyerCount'] + $counts['lawFirmCount'] ) {
-					continue;
-				}
-				$location = LocationMapper::build( EntityRepository::location_term( $city ), $state );
-				$items[]  = array(
-					'id'      => (int) $city->term_id,
-					'slug'    => $city->slug,
-					'name'    => $city->name,
-					'path'    => '/cities/' . $city->slug . '/',
-					'state'   => array(
-						'slug' => $location['stateSlug'],
-						'name' => $location['state'],
-						'code' => $location['stateCode'],
-					),
-					'content' => TermContent::dto( (int) $city->term_id ),
-				) + $counts;
+		[ $items ] = ResponseCache::remember(
+			'/cities',
+			$request->get_params(),
+			function () use ( $request, $states ): array {
+				$items = array();
+				foreach ( $states as $state_id => $state ) {
+					foreach ( $this->terms( Location::SLUG, array( 'parent' => $state_id ) ) as $city ) {
+						$counts = $this->counts( Location::SLUG, $city->term_id );
+						if ( $request['hide_empty'] && 0 === $counts['lawyerCount'] + $counts['lawFirmCount'] ) {
+							continue;
+						}
+						$location = LocationMapper::build( EntityRepository::location_term( $city ), $state );
+						$items[]  = array(
+							'id'      => (int) $city->term_id,
+							'slug'    => $city->slug,
+							'name'    => $city->name,
+							'path'    => '/cities/' . $city->slug . '/',
+							'state'   => array(
+								'slug' => $location['stateSlug'],
+								'name' => $location['state'],
+								'code' => $location['stateCode'],
+							),
+							'content' => TermContent::dto( (int) $city->term_id ),
+						) + $counts;
+					}
+				}//end foreach
+				return $items;
 			}
-		}//end foreach
+		);
 		return $this->collection_response( $items, count( $items ), max( 1, count( $items ) ) );
 	}
 
@@ -161,21 +176,28 @@ final class TaxonomiesController extends RestController {
 		if ( null !== $error ) {
 			return $error;
 		}
-		$items = array();
-		foreach ( $this->terms( PracticeArea::SLUG ) as $term ) {
-			$counts = $this->counts( PracticeArea::SLUG, $term->term_id );
-			if ( $request['hide_empty'] && 0 === $counts['lawyerCount'] + $counts['lawFirmCount'] ) {
-				continue;
+		[ $items ] = ResponseCache::remember(
+			'/practice-areas',
+			$request->get_params(),
+			function () use ( $request ): array {
+				$items = array();
+				foreach ( $this->terms( PracticeArea::SLUG ) as $term ) {
+					$counts = $this->counts( PracticeArea::SLUG, $term->term_id );
+					if ( $request['hide_empty'] && 0 === $counts['lawyerCount'] + $counts['lawFirmCount'] ) {
+						continue;
+					}
+					$items[] = array(
+						'id'          => (int) $term->term_id,
+						'slug'        => $term->slug,
+						'name'        => $term->name,
+						'description' => $term->description,
+						'path'        => '/practice-areas/' . $term->slug . '/',
+						'content'     => TermContent::dto( (int) $term->term_id ),
+					) + $counts;
+				}
+				return $items;
 			}
-			$items[] = array(
-				'id'          => (int) $term->term_id,
-				'slug'        => $term->slug,
-				'name'        => $term->name,
-				'description' => $term->description,
-				'path'        => '/practice-areas/' . $term->slug . '/',
-				'content'     => TermContent::dto( (int) $term->term_id ),
-			) + $counts;
-		}
+		);
 		return $this->collection_response( $items, count( $items ), max( 1, count( $items ) ) );
 	}
 

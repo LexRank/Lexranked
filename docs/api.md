@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.5.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.6.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) also accepts
@@ -96,6 +96,12 @@ Public verification records of published entities: `{ id, entity, type,
 status, verifiedAt, expiresAt, source, sourceUrl, isDemo }`. `status` is the
 *effective* status (a verified record past `expiresAt` reports `expired`).
 Params: `entity_id`, `verification_type`, `status`.
+
+### `GET /health` (API 1.6, private)
+Operational checks for monitoring; requires the `lexranked_api` role or an
+administrator (401 otherwise). `{ status: ok|warning|critical, checks[{key,
+status, message}], version, apiVersion, time }`; HTTP 503 when critical.
+See [operations.md](operations.md#monitoring).
 
 ### `GET /articles` · `GET /articles/{id|slug}` (API 1.5)
 Published editorial articles (WordPress Posts, no password). List params:

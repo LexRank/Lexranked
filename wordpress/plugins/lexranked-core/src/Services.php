@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace LexRanked\Core;
 
+use LexRanked\Core\Integration\Revalidator;
+use LexRanked\Core\Monitoring\HealthService;
 use LexRanked\Core\PostTypes\Article;
 use LexRanked\Core\PostTypes\ContentDraft;
 use LexRanked\Core\PostTypes\LawFirm;
@@ -186,6 +188,20 @@ final class Services {
 	public readonly ResearchIngest $ingest;
 
 	/**
+	 * Frontend revalidation.
+	 *
+	 * @var Revalidator
+	 */
+	public readonly Revalidator $revalidator;
+
+	/**
+	 * Health facts.
+	 *
+	 * @var HealthService
+	 */
+	public readonly HealthService $health;
+
+	/**
 	 * Build the graph.
 	 *
 	 * @param Settings|null $settings Settings (injectable for tests).
@@ -220,6 +236,8 @@ final class Services {
 		$this->entity_index  = new EntityIndex( $this->entities, $this->lawyer, $this->law_firm );
 		$this->jobs          = new JobService( $this, $this->research_log );
 		$this->ingest        = new ResearchIngest( $this, $this->candidates, $this->entity_index, $this->research_log );
+		$this->revalidator   = new Revalidator( $this->settings );
+		$this->health        = new HealthService( $this, $this->revalidator );
 	}
 
 	/**

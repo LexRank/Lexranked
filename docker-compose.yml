@@ -36,6 +36,10 @@ services:
       # "local" enables Application Passwords over plain HTTP (localhost only).
       WORDPRESS_CONFIG_EXTRA: |
         define( 'WP_ENVIRONMENT_TYPE', 'local' );
+      # Instant frontend refresh (optional locally; see docs/operations.md).
+      LEXRANKED_REVALIDATE_SECRET: ${LEXRANKED_REVALIDATE_SECRET:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - wp_data:/var/www/html
       - ${LEXRANKED_PLUGIN_DIR:-./wordpress/plugins/lexranked-core}:/var/www/html/wp-content/plugins/lexranked-core
@@ -47,7 +51,10 @@ services:
     user: "33:33"
     depends_on:
       - wordpress
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
+      LEXRANKED_REVALIDATE_SECRET: ${LEXRANKED_REVALIDATE_SECRET:-}
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_NAME: ${LOCAL_DB_NAME:-lexranked}
       WORDPRESS_DB_USER: ${LOCAL_DB_USER:-lexranked}
