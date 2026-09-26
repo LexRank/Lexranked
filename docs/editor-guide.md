@@ -78,17 +78,48 @@ To draft the text with AI, run a `content_generation` job; see below.
 
 **LexRanked → AI Content Drafts** (when AI assistance is enabled in
 Settings). Each draft shows a QA report (✅ ready / ⚠️ needs review) and the
-exact numbered facts the text was written from. Edit if needed, save,
-then press **Apply to ranking**. See `docs/ai.md`.
+exact numbered facts the text was written from. Edit if needed and save,
+then press the button:
 
-## Blog / editorial articles
+| Draft type | Button | What it does |
+|---|---|---|
+| Ranking content | Apply to ranking | summary, guide and FAQ of the ranking |
+| Hub content | Apply to page | summary, guide and FAQ of the state / city / practice area |
+| Profile summary | Apply to profile | the profile summary |
+| Article | Create article draft | a new **draft** Post; review and publish it like any post |
 
-Editorial articles will be normal **WordPress Posts** (Posts → Add New):
-title, text, featured image, category. **The public site does not show
-them yet**: the `/articles/` section (article pages, list, author and
-date, `Article` JSON-LD, sitemap) is built in **Phase 7**, together with
-AI-assisted article drafts. Posts you write now will appear there once
-Phase 7 ships.
+Jobs: `content_generation` with `{"kind":"ranking"}` (default), `{"kind":"hub"}`,
+`{"kind":"profile"}` or `{"kind":"article","topic":"…","ranking":42}`.
+See `docs/ai.md`.
+
+## Blog / editorial articles (guides)
+
+Articles are normal **WordPress Posts** (**Posts → Add New**) and appear at
+`/articles/<slug>/`, in the **Guides** menu and on the home page.
+
+- Write the title and text in the editor, set a featured image and alt
+  text, and a category if you use them. The *Excerpt* is the summary shown on
+  cards and in search results.
+- In the **Structured data** box: optionally pick the *Related ranking*,
+  which is linked from the article, and fill *Reviewed by* / *Reviewed on*.
+- The author shown is the WordPress user's *Display name*.
+- Articles under **300 words** are published but kept out of search
+  engines, like any thin page. Delete WordPress's default "Hello world!" post.
+- Articles are marked up as `Article` for search engines (author, dates,
+  reviewer, image) and are listed in the sitemap.
+
+## Text on state, city and practice-area pages
+
+Open the location or practice area (**LexRanked → Locations / Practice
+Areas → Edit**). The fields below the standard ones are:
+*Page summary* (above the list), *Guide* (below the list, basic HTML),
+*FAQ* (`Question | Answer` per line), *Reviewed by* and *Reviewed on*. The text
+shows only when the page exists, which needs at least 3 published lawyers.
+
+## Profile summaries
+
+Lawyers and law firms have a *Profile summary* field: 2–4 plain sentences
+shown at the top of the profile and used as its search description.
 
 ## Research jobs
 

@@ -41,7 +41,7 @@ export async function generateMetadata(props: PageProps<"/law-firms/[slug]">): P
   const practice = firm.practiceAreas[0]?.name;
   return buildMetadata({
     title: [firm.name, practice && where ? `${practice} Law Firm in ${where}` : where].filter(Boolean).join(" – "),
-    description: `${firm.name}${where ? `, ${where}` : ""}: ${pluralize(firm.lawyers.length, "lawyer")} profiled${firm.ranking.score !== null ? `, LexRank score ${firm.ranking.score.toFixed(2)}` : ""}. Verification status, sources and related rankings.`,
+    description: firm.summary ? firm.summary : `${firm.name}${where ? `, ${where}` : ""}: ${pluralize(firm.lawyers.length, "lawyer")} profiled${firm.ranking.score !== null ? `, LexRank score ${firm.ranking.score.toFixed(2)}` : ""}. Verification status, sources and related rankings.`,
     path: firm.path,
     type: "profile",
     noindex: !profileEligibility(firm).indexable,
@@ -90,6 +90,13 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
       <div className="container section layout-sidebar">
         <div className="stack">
           {firm.isDemo && <DemoNotice />}
+          {firm.summary && (
+            <section className="overview" aria-label="Profile summary">
+              <p className="overview__summary" style={{ margin: 0 }}>
+                {firm.summary}
+              </p>
+            </section>
+          )}
           {firm.rating !== null && (
             <dl className="facts">
               <div>

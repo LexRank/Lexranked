@@ -853,12 +853,9 @@ final class ResearchIngest {
 		} catch ( ValidationException $e ) {
 			throw new JobException( 'lexranked_invalid_param', $e->field_key . ' ' . $e->reason . '.', 400 );
 		}
-		$target = get_post( $draft['target_id'] );
-		if ( ! $target instanceof \WP_Post || Ranking::SLUG !== $target->post_type || 'publish' !== $target->post_status ) {
-			throw new JobException( 'lexranked_invalid_target', 'target_id must reference a published ranking.', 400 );
-		}
+		$label = $this->draft_target_label( $draft );
 
-		$key      = sha1( $job_id . '|' . $draft['content_type'] . '|' . $draft['target_id'] );
+		$key      = sha1( implode( '|', array( $job_id, $draft['content_type'], (string) $draft['target_id'], (string) $draft['target_term'], 'article' === $draft['content_type'] ? $draft['title'] : '' ) ) );
 		$existing = get_posts(
 			array(
 				'post_type'        => ContentDraft::SLUG,
@@ -880,7 +877,7 @@ final class ResearchIngest {
 			'post_type'                  => ContentDraft::SLUG,
 			'post_status'                => 'draft',
 			// Never published by the generator.
-							'post_title' => sprintf( 'AI draft: %s (%s)', get_the_title( $target ), gmdate( 'Y-m-d' ) ),
+							'post_title' => sprintf( 'AI draft: %s (%s)', $label, gmdate( 'Y-m-d' ) ),
 			'post_content'               => ContentDraftInput::to_html( $draft['sections'] ),
 		);
 		if ( array() !== $existing ) {
@@ -895,16 +892,18 @@ final class ResearchIngest {
 			$id,
 			$this->services->content_draft,
 			array(
-				'content_type'   => $draft['content_type'],
-				'target_id'      => $draft['target_id'],
-				'qa_status'      => $draft['qa_status'],
-				'summary'        => $draft['summary'],
-				'faq'            => ContentDraftInput::faq_for_field( $draft['faq'] ),
-				'qa_report'      => (string) wp_json_encode( $draft['issues'] ),
-				'facts'          => (string) wp_json_encode( $draft['facts'] ),
-				'model'          => $draft['model'],
-				'prompt_version' => $draft['prompt_version'],
-				'job_id'         => $job_id,
+				'content_type'    => $draft['content_type'],
+				'target_id'       => $draft['target_id'],
+				'target_term'     => $draft['target_term'],
+				'target_taxonomy' => $draft['target_taxonomy'],
+				'qa_status'       => $draft['qa_status'],
+				'summary'         => $draft['summary'],
+				'faq'             => ContentDraftInput::faq_for_field( $draft['faq'] ),
+				'qa_report'       => (string) wp_json_encode( $draft['issues'] ),
+				'facts'           => (string) wp_json_encode( $draft['facts'] ),
+				'model'           => $draft['model'],
+				'prompt_version'  => $draft['prompt_version'],
+				'job_id'          => $job_id,
 			),
 			true
 		);
@@ -913,7 +912,7 @@ final class ResearchIngest {
 			$job_id,
 			ContentDraft::QA_READY === $draft['qa_status'] ? 'info' : 'warning',
 			'content',
-			sprintf( 'Content draft #%d for ranking #%d: %s (%d QA issue(s)).', $id, $draft['target_id'], $draft['qa_status'], count( $draft['issues'] ) )
+			sprintf( 'Content draft #%d (%s) for %s: %s (%d QA issue(s)).', $id, $draft['content_type'], $label, $draft['qa_status'], count( $draft['issues'] ) )
 		);
 		AuditLog::log( 'content_draft.stored', ContentDraft::SLUG, $id, array( 'job_id' => $job_id ) );
 		return array(
@@ -921,6 +920,35 @@ final class ResearchIngest {
 			'qaStatus' => $draft['qa_status'],
 			'updated'  => array() !== $existing,
 		);
+	}
+
+	/**
+	 * Check a draft's target and return a label for titles and logs.
+	 *
+	 * @param array<string, mixed> $draft Validated draft.
+	 * @throws JobException When the target is not allowed.
+	 */
+	private function draft_target_label( array $draft ): string {
+		$type = (string) $draft['content_type'];
+		if ( 'hub_content' === $type ) {
+			$term = get_term( (int) $draft['target_term'], (string) $draft['target_taxonomy'] );
+			if ( ! $term instanceof \WP_Term ) {
+				throw new JobException( 'lexranked_invalid_target', 'target_term must reference an existing location or practice area.', 400 );
+			}
+			return (string) $term->name;
+		}
+		$post = null === $draft['target_id'] ? null : get_post( (int) $draft['target_id'] );
+		$want = match ( $type ) {
+			'profile_summary' => array( Lawyer::SLUG, LawFirm::SLUG ),
+			default           => array( Ranking::SLUG ),
+		};
+		if ( 'article' === $type && null === $post ) {
+			return (string) $draft['title'];
+		}
+		if ( ! $post instanceof \WP_Post || ! in_array( $post->post_type, $want, true ) || 'publish' !== $post->post_status ) {
+			throw new JobException( 'lexranked_invalid_target', 'target_id must reference a published ' . implode( ' or ', $want ) . '.', 400 );
+		}
+		return 'article' === $type ? (string) $draft['title'] : get_the_title( $post );
 	}
 
 	// ─── Helpers ────────────────────────────────────────────────────────────

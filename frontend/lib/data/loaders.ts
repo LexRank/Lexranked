@@ -1,7 +1,7 @@
 import "server-only";
 
-import type { LawFirmSummary, LawyerSummary, RankingSummary } from "@/types/api";
-import { getLawFirms, getLawyers, getRankings, type ListQuery } from "@/lib/wordpress/api";
+import type { ArticleSummary, LawFirmSummary, LawyerSummary, RankingSummary } from "@/types/api";
+import { getArticles, getLawFirms, getLawyers, getRankings, type ListQuery } from "@/lib/wordpress/api";
 import { WordPressApiError } from "@/lib/wordpress/client";
 
 /**
@@ -48,4 +48,8 @@ export function allLawFirms(query: ListQuery = {}): Promise<LawFirmSummary[]> {
 
 export async function allRankings(): Promise<RankingSummary[]> {
   return collect((page) => getRankings({ per_page: 100, page }));
+}
+
+export function allArticles(): Promise<ArticleSummary[]> {
+  return collect((page) => getArticles({ per_page: 100, page }));
 }

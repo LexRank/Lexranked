@@ -127,6 +127,8 @@ export interface LawyerSummary extends EntityBase {
 }
 
 export interface LawyerDetail extends LawyerSummary {
+  /** Answer-first profile summary (API 1.5). */
+  summary?: string | null;
   contact: { website: string | null; phone: string | null };
   address: { zipCode: string | null; country: string | null };
   professional: {
@@ -152,6 +154,8 @@ export interface LawFirmSummary extends EntityBase {
 }
 
 export interface LawFirmDetail extends LawFirmSummary {
+  /** Answer-first profile summary (API 1.5). */
+  summary?: string | null;
   contact: { website: string | null; phone: string | null; email: string | null };
   address: { street: string | null; zipCode: string | null; country: string | null };
   lawyers: LawyerSummary[];
@@ -219,6 +223,7 @@ export interface StateDto {
   cityCount: number;
   lawyerCount: number;
   lawFirmCount: number;
+  content?: TermContentDto | null;
 }
 
 export interface CityDto {
@@ -229,6 +234,7 @@ export interface CityDto {
   state: { slug: string | null; name: string | null; code: string | null };
   lawyerCount: number;
   lawFirmCount: number;
+  content?: TermContentDto | null;
 }
 
 export interface PracticeAreaDto {
@@ -239,6 +245,7 @@ export interface PracticeAreaDto {
   path: string;
   lawyerCount: number;
   lawFirmCount: number;
+  content?: TermContentDto | null;
 }
 
 export interface SourceDto {
@@ -265,4 +272,41 @@ export interface ScoreVersionDto {
 export interface ScoreVersionsDto {
   active: string;
   versions: ScoreVersionDto[];
+}
+
+/** Editorial content of a state, city or practice-area page (API 1.5). */
+export interface TermContentDto {
+  summary: string | null;
+  /** Sanitized HTML. */
+  body: string;
+  faq: FaqItem[];
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+}
+
+export interface ArticleSummary {
+  id: number;
+  slug: string;
+  path: string;
+  title: string;
+  excerpt: string;
+  author: { name: string };
+  publishedAt: string | null;
+  updatedAt: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  categories: PracticeAreaRef[];
+  image: { url: string; width: number; height: number; alt: string } | null;
+  wordCount: number;
+  readingMinutes: number;
+  /** Fewer than 300 words: published but never indexed. */
+  isThin: boolean;
+  relatedRankingId: number | null;
+  isDemo: boolean;
+}
+
+export interface ArticleDetail extends ArticleSummary {
+  /** Sanitized HTML. */
+  body: string;
+  relatedRanking: { id: number; title: string; path: string | null } | null;
 }

@@ -141,8 +141,8 @@ describe('content_generation and ai_candidate_review pipelines', () => {
     wp.rankings = [RANKING, { ...RANKING, id: 43, isThin: true, entries: RANKING.entries.slice(0, 1) }];
     const job = wp.addJob('content_generation', {});
     expect(await runOnce(deps)).toBe('completed');
-    expect(job.cursor).toBe('ranking:43');
-    expect(job.stats).toMatchObject({ drafts_ready: 1, rankings_skipped_thin: 1, ai_calls: 2 });
+    expect(job.cursor).toBe('after:ranking:0000000043');
+    expect(job.stats).toMatchObject({ drafts_ready: 1, targets_skipped_thin: 1, ai_calls: 2 });
     expect(wp.drafts).toHaveLength(1);
     const draft = wp.drafts[0] as { target_id: number; qaStatus: string; qa: { issues: { code: string }[] }; facts: unknown[]; prompt_version: string };
     expect(draft.target_id).toBe(42);

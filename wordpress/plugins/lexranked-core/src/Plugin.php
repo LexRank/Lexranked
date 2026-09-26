@@ -16,7 +16,9 @@ use LexRanked\Core\Admin\Menu;
 use LexRanked\Core\Admin\RankingCalculation;
 use LexRanked\Core\Admin\ResearchAdmin;
 use LexRanked\Core\CLI\Command;
+use LexRanked\Core\Content\TermContent;
 use LexRanked\Core\Database\Installer;
+use LexRanked\Core\REST\ArticlesController;
 use LexRanked\Core\REST\EntitiesController;
 use LexRanked\Core\REST\RankingsController;
 use LexRanked\Core\REST\ResearchController;
@@ -38,7 +40,7 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.4.0';
+	public const API_VERSION = '1.5.0';
 
 	/**
 	 * Services, available after boot().
@@ -75,6 +77,7 @@ final class Plugin {
 			new SourcesController( $services ),
 			new SearchController( $services ),
 			new ResearchController( $services ),
+			new ArticlesController( $services ),
 		);
 		foreach ( $controllers as $controller ) {
 			add_action( 'rest_api_init', array( $controller, 'register_routes' ) );
@@ -87,6 +90,7 @@ final class Plugin {
 			( new RankingCalculation( $services ) )->register();
 			( new ResearchAdmin( $services ) )->register();
 			( new ContentDraftAdmin( $services ) )->register();
+			( new TermContent() )->register();
 		}
 
 		if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( '\WP_CLI' ) ) {

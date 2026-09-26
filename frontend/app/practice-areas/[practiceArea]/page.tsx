@@ -59,6 +59,7 @@ export default async function PracticeAreaPage(props: PageProps<"/practice-areas
       title={`Top-rated ${a.name.toLowerCase()} lawyers`}
       lead={a.description || `${a.name} lawyers and law firms, ranked by location with the LexRank methodology.`}
       counts={a}
+      content={a.content ?? null}
       rankings={data.rankings}
       lawyers={data.lawyers}
       firms={data.firms}

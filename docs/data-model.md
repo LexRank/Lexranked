@@ -159,8 +159,10 @@ updated_at`. Internal research data — never in the public API.
 
 ## AI content draft (`lr_content_draft`)
 
-Post (always `draft`) with `content_type` (`ranking_content`), `target_id`
-(ranking), `qa_status` (`needs_review` \| `ready_for_review` \| `applied`),
+Post (always `draft`) with `content_type` (`ranking_content`,
+`hub_content`, `profile_summary`, `article`), `target_id` (ranking, lawyer,
+firm; for articles the optional related ranking), `target_term` +
+`target_taxonomy` (hubs), `article_id` (post created on apply), `qa_status` (`needs_review` \| `ready_for_review` \| `applied`),
 `summary`, body (post content, built from escaped plain text), `faq`,
 `qa_report` (JSON issues), `facts` (JSON, the numbered facts the model was
 given), `model`, `prompt_version`, `job_id`, `applied_at`. Never public;
@@ -170,6 +172,17 @@ applied to its ranking only by an editor. See [ai.md](ai.md).
 
 `id, job_id, level (debug|info|warning|error), stage, message (≤500),
 context (JSON, secrets redacted), created_at`.
+
+## Editorial article (core `post`)
+
+Standard WordPress post (title, content, excerpt, featured image, author,
+categories) plus `related_ranking`, `reviewed_by`, `reviewed_at`, `is_demo`
+(`_lr_*` meta). Served by `/articles`.
+
+## Hub content (term meta on locations and practice areas)
+
+`_lr_summary`, `_lr_body` (sanitized HTML), `_lr_faq` (JSON list),
+`_lr_reviewed_by`, `_lr_reviewed_at`.
 
 ## Ranking snapshot
 

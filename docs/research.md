@@ -68,7 +68,7 @@ Seed dataset (curated CSV) ──► Candidates ──► Deterministic matching
 | `verification` | WordPress (cron) | marks published verification records past `expires_at` as `expired` | — |
 | `ranking_recalculation` | WordPress (cron) | scores all entities and recalculates published rankings | — |
 | `ai_candidate_review` | worker + AI | advisory AI verdict on candidates in review ([ai.md](ai.md)) | — |
-| `content_generation` | worker + AI | ranking summary/sections/FAQ drafts with QA ([ai.md](ai.md)) | `rankings` (IDs, optional), `ai_qa` (default `true`) |
+| `content_generation` | worker + AI | drafts with QA for rankings, hubs, profiles and articles ([ai.md](ai.md)) | `kind` (ranking\|hub\|profile\|article), `rankings`, `hubs`, `entities`, `topic`, `ranking`, `ai_qa` |
 
 `source_refresh` and `candidate_discovery` also accept `ai_extraction: true`
 (quote-checked AI extraction for pages without structured data). AI job

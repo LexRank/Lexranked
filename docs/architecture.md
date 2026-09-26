@@ -224,3 +224,10 @@ discarded. Content drafts may only use a deterministic, numbered fact list
 and must cite fact IDs (schema enum), so deterministic QA can check every
 number, name and position. The AI reviewer can add issues but never clear
 them.
+
+### ADR-027 — Editorial content lives next to its data
+Ranking text is ranking fields; hub text is term meta on the location or
+practice area; profile summaries are entity fields; guides are standard
+WordPress Posts. Each page renders its own text only when the page exists
+by the data rules (ADR-016), so writing text can never create a thin
+page. Article pages under 300 words are never indexed.

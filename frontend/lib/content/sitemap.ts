@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo/urls";
-import type { CityDto, LawFirmSummary, LawyerSummary, PracticeAreaDto, RankingSummary, StateDto } from "@/types/api";
-import { MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
+import type { ArticleSummary, CityDto, LawFirmSummary, LawyerSummary, PracticeAreaDto, RankingSummary, StateDto } from "@/types/api";
+import { articleEligibility, MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
 
 /**
  * Pure sitemap assembly: only indexable pages. Excludes demo data, thin
@@ -15,6 +15,7 @@ export interface SitemapInput {
   states: StateDto[];
   cities: CityDto[];
   practiceAreas: PracticeAreaDto[];
+  articles?: ArticleSummary[];
 }
 
 export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/rankings/", "/lawyers/", "/law-firms/", "/states/", "/cities/", "/practice-areas/"];
@@ -67,6 +68,10 @@ export function buildSitemap(input: SitemapInput): MetadataRoute.Sitemap {
       entries.push(entry(area.path, undefined, 0.6));
     }
   }
+
+  const articles = (input.articles ?? []).filter((a) => articleEligibility(a).indexable);
+  if (articles.length > 0) entries.push(entry("/articles/", undefined, 0.6));
+  for (const article of articles) entries.push(entry(article.path, article.updatedAt, 0.6));
 
   // De-duplicate by URL (first wins) for safety.
   const seen = new Set<string>();

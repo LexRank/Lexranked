@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { LawFirmSummary, LawyerSummary, RankingEntry as RankingEntryDto, RankingSummary } from "@/types/api";
+import type { ArticleSummary, LawFirmSummary, LawyerSummary, RankingEntry as RankingEntryDto, RankingSummary } from "@/types/api";
 import { formatDate, formatLocation, pluralize } from "@/lib/format";
 import { rankingScopeLabel } from "@/lib/content/rankings";
 import { CommercialBadge, DemoBadge, Monogram, ScoreRing, StarRating, VerificationBadge } from "./ui";
@@ -59,6 +59,28 @@ export function FirmCard({ firm }: { firm: LawFirmSummary }) {
       </div>
       <ScoreRing score={firm.ranking.score} size="sm" />
     </article>
+  );
+}
+
+export function ArticleCard({ article }: { article: ArticleSummary }) {
+  const date = formatDate(article.updatedAt ?? article.publishedAt);
+  return (
+    <Link href={article.path} className="card card--link">
+      <p className="eyebrow" style={{ marginBottom: "0.5rem" }}>
+        Guide{article.categories[0] ? ` · ${article.categories[0].name}` : ""}
+      </p>
+      <h3>{article.title}</h3>
+      {article.excerpt && <p style={{ margin: "0 0 0.75rem", color: "var(--ink-2)" }}>{article.excerpt}</p>}
+      <p className="card__meta" style={{ margin: "0 0 0.75rem" }}>
+        {article.readingMinutes} min read{date && <> · Updated {date}</>}
+      </p>
+      <span className="card__foot">
+        <span className="link-arrow" style={{ color: "var(--navy-700)" }}>
+          Read the guide
+        </span>
+        {article.isDemo && <DemoBadge />}
+      </span>
+    </Link>
   );
 }
 

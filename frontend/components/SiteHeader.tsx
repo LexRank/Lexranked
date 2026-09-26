@@ -7,6 +7,7 @@ const NAV = [
   { href: "/law-firms/", label: "Law Firms" },
   { href: "/states/", label: "Locations" },
   { href: "/practice-areas/", label: "Practice Areas" },
+  { href: "/articles/", label: "Guides" },
   { href: "/methodology/", label: "Methodology" },
 ];
 

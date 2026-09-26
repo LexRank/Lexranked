@@ -32,7 +32,7 @@ final class ContentDraftInput {
 	 * Validate.
 	 *
 	 * @param array<string, mixed> $input Raw payload.
-	 * @return array{content_type: string, target_id: int, summary: string, sections: array<int, array{heading: string, paragraphs: array<int, string>}>, faq: array<int, array{question: string, answer: string}>, qa_status: string, issues: array<int, array<string, string>>, facts: array<int, array{id: string, label: string, value: string}>, model: string, prompt_version: string}
+	 * @return array{content_type: string, target_id: int|null, target_term: int|null, target_taxonomy: string|null, title: string, summary: string, sections: array<int, array{heading: string, paragraphs: array<int, string>}>, faq: array<int, array{question: string, answer: string}>, qa_status: string, issues: array<int, array<string, string>>, facts: array<int, array{id: string, label: string, value: string}>, model: string, prompt_version: string}
 	 * @throws ValidationException When invalid.
 	 */
 	public static function validate( array $input ): array {
@@ -40,9 +40,23 @@ final class ContentDraftInput {
 		if ( ! in_array( $type, ContentDraft::CONTENT_TYPES, true ) ) {
 			throw new ValidationException( 'content_type', 'must be one of ' . implode( ', ', ContentDraft::CONTENT_TYPES ) );
 		}
-		$target = filter_var( $input['target_id'] ?? null, FILTER_VALIDATE_INT, array( 'options' => array( 'min_range' => 1 ) ) );
-		if ( false === $target ) {
-			throw new ValidationException( 'target_id', 'must be a positive integer' );
+		$target = null;
+		if ( isset( $input['target_id'] ) && null !== $input['target_id'] ) {
+			$target = filter_var( $input['target_id'], FILTER_VALIDATE_INT, array( 'options' => array( 'min_range' => 1 ) ) );
+			if ( false === $target ) {
+				throw new ValidationException( 'target_id', 'must be a positive integer' );
+			}
+		}
+		$term     = null;
+		$taxonomy = null;
+		if ( 'hub_content' === $type ) {
+			$term     = filter_var( $input['target_term'] ?? null, FILTER_VALIDATE_INT, array( 'options' => array( 'min_range' => 1 ) ) );
+			$taxonomy = (string) ( $input['target_taxonomy'] ?? '' );
+			if ( false === $term || ! in_array( $taxonomy, ContentDraft::HUB_TAXONOMIES, true ) ) {
+				throw new ValidationException( 'target_term', 'hub content needs a target_term and target_taxonomy' );
+			}
+		} elseif ( 'article' !== $type && null === $target ) {
+			throw new ValidationException( 'target_id', 'is required for ' . $type );
 		}
 
 		$content  = is_array( $input['content'] ?? null ) ? $input['content'] : array();
@@ -68,7 +82,17 @@ final class ContentDraftInput {
 				'answer'   => self::text( $item['answer'] ?? '', "faq.$i.answer", 1000, true ),
 			);
 		}
-		if ( array() === $sections && array() === $faq ) {
+		$title = '';
+		if ( 'profile_summary' === $type ) {
+			if ( array() !== $sections || array() !== $faq || mb_strlen( $summary ) > 800 ) {
+				throw new ValidationException( 'content', 'a profile summary is only a summary of at most 800 characters' );
+			}
+		} elseif ( 'article' === $type ) {
+			$title = self::text( $content['title'] ?? '', 'title', 150, true );
+			if ( count( $sections ) < 2 ) {
+				throw new ValidationException( 'sections', 'an article needs at least two sections' );
+			}
+		} elseif ( array() === $sections && array() === $faq ) {
 			throw new ValidationException( 'content', 'needs at least one section or FAQ item' );
 		}
 
@@ -102,16 +126,19 @@ final class ContentDraftInput {
 		$status    = ( ! $has_error && ContentDraft::QA_READY === $claimed ) ? ContentDraft::QA_READY : ContentDraft::QA_NEEDS_REVIEW;
 
 		return array(
-			'content_type'   => $type,
-			'target_id'      => (int) $target,
-			'summary'        => $summary,
-			'sections'       => $sections,
-			'faq'            => $faq,
-			'qa_status'      => $status,
-			'issues'         => $issues,
-			'facts'          => $facts,
-			'model'          => self::text( $input['model'] ?? '', 'model', 100, true ),
-			'prompt_version' => self::text( $input['prompt_version'] ?? '', 'prompt_version', 40, true ),
+			'content_type'    => $type,
+			'target_id'       => null === $target ? null : (int) $target,
+			'target_term'     => null === $term ? null : (int) $term,
+			'target_taxonomy' => $taxonomy,
+			'title'           => $title,
+			'summary'         => $summary,
+			'sections'        => $sections,
+			'faq'             => $faq,
+			'qa_status'       => $status,
+			'issues'          => $issues,
+			'facts'           => $facts,
+			'model'           => self::text( $input['model'] ?? '', 'model', 100, true ),
+			'prompt_version'  => self::text( $input['prompt_version'] ?? '', 'prompt_version', 40, true ),
 		);
 	}
 

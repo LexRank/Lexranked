@@ -1,6 +1,8 @@
 import "server-only";
 
 import type {
+  ArticleDetail,
+  ArticleSummary,
   CityDto,
   LawFirmDetail,
   LawFirmSummary,
@@ -89,3 +91,8 @@ export const searchEntities = (q: string, opts?: Opts) =>
   apiRequest<SearchResult[]>("search", { query: { q, per_page: 20 }, revalidate: 60, ...opts });
 
 export const getScoreVersions = (opts?: Opts) => apiRequest<ScoreVersionsDto>("score-versions", { revalidate: 3600, ...opts });
+
+export const getArticles = (query: { page?: number; per_page?: number; category?: string } = {}, opts?: Opts) =>
+  apiRequest<ArticleSummary[]>("articles", { query: { ...query }, ...opts });
+
+export const getArticle = (slug: string, opts?: Opts) => getOrNull<ArticleDetail>(`articles/${encodeURIComponent(slug)}`, opts);

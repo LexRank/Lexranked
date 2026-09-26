@@ -63,6 +63,7 @@ export default async function CityPage(props: PageProps<"/cities/[city]">) {
       title={`Top-rated lawyers in ${label(c)}`}
       lead={`Rankings, lawyers and law firms in ${label(c)}, scored with the LexRank methodology from sourced, verified data.`}
       counts={c}
+      content={c.content ?? null}
       rankings={data.rankings}
       lawyers={data.lawyers}
       firms={data.firms}

@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\CLI;
 
+use LexRanked\Core\Content\TermContent;
 use LexRanked\Core\Database\Installer;
 use LexRanked\Core\Plugin;
 use LexRanked\Core\PostTypes\PostType;
@@ -213,10 +214,36 @@ final class Command {
 		wp_set_object_terms( $ranking, array( $city ), Location::SLUG );
 		wp_set_object_terms( $ranking, array( $practice ), PracticeArea::SLUG );
 
+		TermContent::store(
+			$city,
+			array(
+				'summary'     => DemoData::CITY_SUMMARY,
+				'faq'         => DemoData::city_faq(),
+				'reviewed_by' => 'LexRanked Demo Editor',
+				'reviewed_at' => gmdate( 'Y-m-d' ),
+			)
+		);
+		$article = $this->create(
+			$s->article,
+			DemoData::ARTICLE_TITLE,
+			DemoData::article_body(),
+			array(
+				'related_ranking' => $ranking,
+				'reviewed_by'     => 'LexRanked Demo Editor',
+				'reviewed_at'     => gmdate( 'Y-m-d' ),
+			)
+		);
+		wp_update_post(
+			array(
+				'ID'           => $article,
+				'post_excerpt' => 'Demo content: how positions, scores, verification and sources work on a LexRanked ranking page.',
+			)
+		);
+
 		$result = $s->runner->run_all();
 		\WP_CLI::success(
 			sprintf(
-				'Demo data created: %d lawyers, %d firms, 1 ranking (scored %d entities, calculated %d ranking). All records are flagged isDemo.',
+				'Demo data created: %d lawyers, %d firms, 1 ranking, 1 article (scored %d entities, calculated %d ranking). All records are flagged isDemo.',
 				count( DemoData::lawyers() ),
 				count( $firms ),
 				$result['entities'],
@@ -467,7 +494,7 @@ final class Command {
 				++$count;
 			}
 		}
-		foreach ( $this->services->post_types() as $type ) {
+		foreach ( array_merge( $this->services->post_types(), array( $this->services->article ) ) as $type ) {
 			foreach ( $this->demo_ids( $type ) as $id ) {
 				$this->services->claims->delete_for_entity( $id );
 				$this->services->snapshots->delete_for( $id );

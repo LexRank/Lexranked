@@ -61,6 +61,7 @@ export default async function StatePage(props: PageProps<"/states/[state]">) {
       title={`Top-rated lawyers in ${s.name}`}
       lead={`Rankings, lawyers and law firms in ${s.name}, scored with the LexRank methodology from sourced, verified data.`}
       counts={s}
+      content={s.content ?? null}
       rankings={data.rankings}
       lawyers={data.lawyers}
       firms={data.firms}

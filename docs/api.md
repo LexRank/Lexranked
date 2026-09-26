@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.4.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.5.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) also accepts
@@ -81,6 +81,8 @@ scoreVersion, entries: [{ entityId, name, position, score }] }] }`.
 This is the single source of methodology weights for the frontend.
 
 ### `GET /states` · `GET /cities?state=` · `GET /practice-areas`
+Each item carries `content` (API 1.5): `{ summary, body (HTML), faq[],
+reviewedBy, reviewedAt }` edited on the term, or `null`.
 Terms with published `lawyerCount` / `lawFirmCount`. `hide_empty` (default
 `true`) hides terms with no published entities, so the frontend only builds
 pages that have data.
@@ -94,6 +96,14 @@ Public verification records of published entities: `{ id, entity, type,
 status, verifiedAt, expiresAt, source, sourceUrl, isDemo }`. `status` is the
 *effective* status (a verified record past `expiresAt` reports `expired`).
 Params: `entity_id`, `verification_type`, `status`.
+
+### `GET /articles` · `GET /articles/{id|slug}` (API 1.5)
+Published editorial articles (WordPress Posts, no password). List params:
+`page`, `per_page`, `orderby=date|modified|title`, `order`, `category`.
+Summary: `{ id, slug, path, title, excerpt, author{name}, publishedAt,
+updatedAt, reviewedBy, reviewedAt, categories[], image{url,width,height,alt}|null,
+wordCount, readingMinutes, isThin (< 300 words), relatedRankingId, isDemo }`.
+Detail adds `body` (sanitized HTML) and `relatedRanking {id, title, path}`.
 
 ### `GET /search?q=`
 Name search across lawyers and firms (`q` 2–100 chars, `type=all|lawyer|law_firm`,
@@ -127,7 +137,7 @@ Name search across lawyers and firms (`q` 2–100 chars, `type=all|lawyer|law_fi
 entity's position in the latest run of each ranking).
 
 ### Lawyer (detail) adds
-`contact {website, phone}`, `address {zipCode, country}`, `professional
+`summary` (API 1.5, plain text), `contact {website, phone}`, `address {zipCode, country}`, `professional
 {yearsExperience, barState, barNumber, barStatus, education[], awards[],
 languages[]}`, `bio` (sanitized HTML), `freshness {category, maxAgeDays,
 lastVerifiedAt, isStale, staleAt}`, `sources[]` (evidence), `createdAt`.

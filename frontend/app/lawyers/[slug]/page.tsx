@@ -46,7 +46,7 @@ export async function generateMetadata(props: PageProps<"/lawyers/[slug]">): Pro
   ].filter(Boolean);
   return buildMetadata({
     title,
-    description: `${lawyer.name}${where ? `, ${where}` : ""}. ${facts.join(", ")}. Practice areas, credentials, verification status and sources.`,
+    description: lawyer.summary ? lawyer.summary : `${lawyer.name}${where ? `, ${where}` : ""}. ${facts.join(", ")}. Practice areas, credentials, verification status and sources.`,
     path: lawyer.path,
     type: "profile",
     noindex: !profileEligibility(lawyer).indexable,
@@ -118,6 +118,13 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
       <div className="container section layout-sidebar">
         <div className="stack">
           {lawyer.isDemo && <DemoNotice />}
+          {lawyer.summary && (
+            <section className="overview" aria-label="Profile summary">
+              <p className="overview__summary" style={{ margin: 0 }}>
+                {lawyer.summary}
+              </p>
+            </section>
+          )}
 
           <dl className="facts">
             {lawyer.rating !== null && (

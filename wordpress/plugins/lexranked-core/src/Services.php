@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core;
 
+use LexRanked\Core\PostTypes\Article;
 use LexRanked\Core\PostTypes\ContentDraft;
 use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
@@ -85,6 +86,13 @@ final class Services {
 	 * @var ResearchJob
 	 */
 	public readonly ResearchJob $research_job;
+
+	/**
+	 * Editorial article fields (core posts).
+	 *
+	 * @var Article
+	 */
+	public readonly Article $article;
 
 	/**
 	 * AI content drafts.
@@ -191,6 +199,7 @@ final class Services {
 		$this->verification  = new VerificationRecord();
 		$this->research_job  = new ResearchJob();
 		$this->content_draft = new ContentDraft();
+		$this->article       = new Article();
 		$this->entities      = new EntityRepository();
 		$this->verifications = new VerificationRepository( $this->entities, $this->verification );
 		$this->claims        = new ClaimRepository(
@@ -246,7 +255,7 @@ final class Services {
 	public static function traceable_fields( PostType $type ): array {
 		$fields = array();
 		foreach ( $type->fields() as $field ) {
-			if ( $field->is_public && ! $field->read_only && ! in_array( $field->key, array( 'is_demo', 'commercial_status' ), true ) ) {
+			if ( $field->is_public && ! $field->read_only && ! in_array( $field->key, array( 'is_demo', 'commercial_status', 'summary' ), true ) ) {
 				$fields[] = $field->key;
 			}
 		}

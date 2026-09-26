@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Content\TermContent;
 use LexRanked\Core\Plugin;
 use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
@@ -98,6 +99,7 @@ final class TaxonomiesController extends RestController {
 				'code'      => $location['stateCode'],
 				'path'      => '/states/' . $term->slug . '/',
 				'cityCount' => count( $this->terms( Location::SLUG, array( 'parent' => $term->term_id ) ) ),
+				'content'   => TermContent::dto( (int) $term->term_id ),
 			) + $counts;
 		}
 		return $this->collection_response( $items, count( $items ), max( 1, count( $items ) ) );
@@ -132,18 +134,19 @@ final class TaxonomiesController extends RestController {
 				}
 				$location = LocationMapper::build( EntityRepository::location_term( $city ), $state );
 				$items[]  = array(
-					'id'    => (int) $city->term_id,
-					'slug'  => $city->slug,
-					'name'  => $city->name,
-					'path'  => '/cities/' . $city->slug . '/',
-					'state' => array(
+					'id'      => (int) $city->term_id,
+					'slug'    => $city->slug,
+					'name'    => $city->name,
+					'path'    => '/cities/' . $city->slug . '/',
+					'state'   => array(
 						'slug' => $location['stateSlug'],
 						'name' => $location['state'],
 						'code' => $location['stateCode'],
 					),
+					'content' => TermContent::dto( (int) $city->term_id ),
 				) + $counts;
 			}
-		}
+		}//end foreach
 		return $this->collection_response( $items, count( $items ), max( 1, count( $items ) ) );
 	}
 
@@ -170,6 +173,7 @@ final class TaxonomiesController extends RestController {
 				'name'        => $term->name,
 				'description' => $term->description,
 				'path'        => '/practice-areas/' . $term->slug . '/',
+				'content'     => TermContent::dto( (int) $term->term_id ),
 			) + $counts;
 		}
 		return $this->collection_response( $items, count( $items ), max( 1, count( $items ) ) );

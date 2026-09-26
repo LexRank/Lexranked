@@ -11,7 +11,7 @@ anything. Nothing the model produces is published or decides a ranking position.
 | **Extraction** | `ai/extract.ts` (source refresh / discovery, `ai_extraction: true`) | propose field values from one fetched page, with a verbatim quote each | the quote must be in the page, the value must be in the quote (phone numbers compared by digits), and the page must name the entity | `method: "ai"` claims, confidence ≤ 0.6 → drafts / review queue only |
 | **Classification** | same call | pick practice areas from the **existing** taxonomy (enum), with quotes | the quote must be in the page; unknown areas are impossible | `practice_areas` claim |
 | **Entity matching** | `ai/matchReview.ts` (`ai_candidate_review` job) | second opinion on candidates the rule-based matcher sent to review | advisory only | a note beside the candidate on **Research review** |
-| **Content drafting** | `content/generate.ts` (`content_generation` job) | write a ranking summary, sections and FAQ from a numbered fact list, citing fact IDs | schema enum of fact IDs + deterministic QA + optional AI QA | an **AI Content Draft** (WordPress draft) with a QA report |
+| **Content drafting** | `content/generate.ts` (`content_generation` job) | ranking, hub (state/city/practice area) and profile text, and editorial articles, from a numbered fact list, citing fact IDs | schema enum of fact IDs + deterministic QA + optional AI QA | an **AI Content Draft** (WordPress draft) with a QA report |
 | **QA** | `content/qa.ts` (+ `content/aiQa.ts`) | the AI reviewer may add issues | issues must quote text that exists in the draft; it can never clear a deterministic error | issues in the draft's QA report |
 
 ## Switching it on
@@ -34,6 +34,9 @@ anything. Nothing the model produces is published or decides a ranking position.
 ```bash
 wp lexranked research-job content_generation                          # all published, non-thin rankings
 wp lexranked research-job content_generation --params='{"rankings":[42]}'
+wp lexranked research-job content_generation --params='{"kind":"hub","hubs":"city"}'
+wp lexranked research-job content_generation --params='{"kind":"profile","entities":[101,102]}'
+wp lexranked research-job content_generation --params='{"kind":"article","topic":"What to ask a personal injury lawyer in Miami","ranking":42}'
 wp lexranked research-job ai_candidate_review                         # candidates waiting for review
 wp lexranked research-job source_refresh --params='{"ai_extraction":true}' --location=miami
 ```
@@ -86,6 +89,19 @@ report and the facts, edit the text if needed and save, then press
 the previous body stays in the ranking's revisions. A `needs_review` draft
 requires ticking "I have checked every problem". Every apply is recorded in the
 audit log.
+
+## Content kinds (Phase 7)
+
+| `kind` | Targets | Facts | Skipped when | Applied to |
+|---|---|---|---|---|
+| `ranking` (default) | published rankings (`rankings` IDs to narrow) | positions, scores, verification, movement, methodology | thin (< 3 entries) | ranking summary, body, FAQ |
+| `hub` | states, cities, practice areas (`hubs`: all/state/city/practice_area) | counts, highest-scoring profiles, practice areas, rankings | < 3 published lawyers (the page does not exist) | term summary, guide, FAQ |
+| `profile` | published lawyers and firms (`entities` IDs to narrow) | published fields, score, verification, positions | < 5 facts beyond name and type | profile `summary` |
+| `article` | one article per job (`topic` brief, optional `ranking` for context) | ranking facts (if given) + methodology facts | — | a new **draft** Post |
+
+Articles may contain *uncited general guidance* ("ask who will handle your
+case"), which is the only exception to citing facts. QA forbids numbers
+in uncited text, and flags names of lawyers or firms that are not cited.
 
 ## Evidence transparency
 

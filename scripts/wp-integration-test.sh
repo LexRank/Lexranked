@@ -198,6 +198,14 @@ check "generated content is stored as a draft, never published" '. == "draft"' "
 check "draft carries its facts and QA status" 'test("ready_for_review|needs_review")' "\"$(wp post meta get "$DRAFT_ID" _lr_qa_status)\""
 check "draft body is built from escaped plain text" 'test("<h2>How positions are decided</h2>")' "$(wp post get "$DRAFT_ID" --field=post_content | jq -Rs .)"
 check "ranking content unchanged until an editor applies the draft" '(.summary | test("LexRank methodology") | not)' "$(curl -sS "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo")"
+HUB_JOB="$(wp lexranked research-job content_generation --params='{"kind":"hub","hubs":"city"}' --porcelain | tail -1)"
+ART_JOB="$(wp lexranked research-job content_generation --params='{"kind":"article","topic":"How LexRanked decides ranking positions"}' --porcelain | tail -1)"
+run_ai_worker && run_ai_worker && pass "hub and article content jobs ran" || fail "hub/article content jobs failed (see $DATA_DIR/worker.log)"
+check "hub content job drafted the Miami page" '.status == "completed" and (.stats.drafts_ready + .stats.drafts_need_review) >= 1' "$(wp lexranked research-status "$HUB_JOB" --format=json)"
+check "article content job drafted an article" '.status == "completed" and (.stats.drafts_ready + .stats.drafts_need_review) == 1' "$(wp lexranked research-status "$ART_JOB" --format=json)"
+HUB_DRAFT="$(wp post list --post_type=lr_content_draft --post_status=any --meta_key=_lr_content_type --meta_value=hub_content --field=ID --posts_per_page=1 | tail -1)"
+check "hub draft targets the city term" '. == "lr_location"' "\"$(wp post meta get "$HUB_DRAFT" _lr_target_taxonomy)\""
+check "the generator creates no WordPress posts (only content drafts)" '. == "2"' "\"$(wp post list --post_type=post --post_status=any --format=count)\""
 if grep -q "sk-fake-it-only" "$DATA_DIR/worker.log"; then fail "worker logged the OpenAI key"; else pass "OpenAI key never logged"; fi
 kill "$AI_PID" >/dev/null 2>&1 || true
 AI_PID=""
@@ -238,6 +246,13 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "ranking shows editorial summary" "/rankings/florida/miami/personal-injury/" "Demo content: this sample ranking compares"
   page_has "ranking shows editorial body below the list" "/rankings/florida/miami/personal-injury/" "What to ask a personal injury lawyer"
   page_has "ranking FAQ with FAQPage JSON-LD" "/rankings/florida/miami/personal-injury/" '"@type":"FAQPage"'
+  expect_status "guides index" 200 "$WEB/articles/"
+  page_has "guides index lists the demo guide" "/articles/" "How to Read a Lawyer Ranking (Demo)"
+  page_has "article has Article JSON-LD" "/articles/how-to-read-a-lawyer-ranking-demo/" '"@type":"Article"'
+  page_has "demo article is noindex" "/articles/how-to-read-a-lawyer-ranking-demo/" 'content="noindex, follow"'
+  page_has "article links its ranking" "/articles/how-to-read-a-lawyer-ranking-demo/" 'href="/rankings/florida/miami/personal-injury/"'
+  page_has "city page shows editorial summary" "/cities/miami/" "sample city used to show how LexRanked hub pages"
+  page_has "city page FAQ with FAQPage JSON-LD" "/cities/miami/" '"@type":"FAQPage"'
   page_has "ranking shows editorial review" "/rankings/florida/miami/personal-injury/" "LexRanked Demo Editor"
   expect_status "ranking slug redirects to canonical path" 308 "$WEB/rankings/best-personal-injury-lawyers-in-miami-florida-demo/"
   expect_status "lawyer profile" 200 "$WEB/lawyers/avery-example-demo/"
@@ -264,6 +279,11 @@ if [[ -n "$FRONTEND" ]]; then
     NEXT_PID=""
   fi
 fi
+
+echo "==> Editorial content API (Phase 7)"
+expect "articles endpoint lists the demo guide" '[.[].slug] | index("how-to-read-a-lawyer-ranking-demo") != null' "$API/articles"
+expect "article detail links its ranking" '.relatedRanking.path == "/rankings/florida/miami/personal-injury/" and .wordCount >= 300 and .isDemo' "$API/articles/how-to-read-a-lawyer-ranking-demo"
+expect "city carries editorial content" '[.[] | select(.slug == "miami") | .content.faq | length] == [1]' "$API/cities"
 
 echo "==> Demo purge"
 wp lexranked purge-demo --yes >/dev/null

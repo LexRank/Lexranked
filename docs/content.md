@@ -1,6 +1,6 @@
 # Content
 
-> Status: ranking-page drafts with QA **implemented in Phase 6** ([ai.md](ai.md)); profile, hub and article drafts and `/articles/` come in Phase 7. Editors: see [editor-guide.md](editor-guide.md).
+> Status: **implemented** — editorial fields on rankings, hubs and profiles, articles at `/articles/`, and AI drafts with QA for all of them ([ai.md](ai.md)). Editors: see [editor-guide.md](editor-guide.md).
 
 ## Pipeline
 
@@ -30,6 +30,8 @@ because a keyword exists (`frontend/lib/content/eligibility.ts`):
 | Ranking | not thin (≥ `minEntities` scored entities, default 5) | exists and not demo |
 | State / city / practice-area hub | ≥ 3 published lawyers | ≥ 3 real (non-demo) lawyers |
 | Lawyer / firm profile | published | not demo |
+| Article (`/articles/[slug]`) | published, no password | not demo and ≥ 300 words |
+| Guides index (`/articles/`) | always | lists at least one indexable article |
 | Listings (`/lawyers/`, `/law-firms/`) | always | contain real profiles and the API is reachable |
 | Search, status | always | never |
 

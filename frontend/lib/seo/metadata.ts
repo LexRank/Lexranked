@@ -19,6 +19,11 @@ export interface PageSeo {
   type?: "website" | "profile" | "article";
   /** Use the title verbatim, without the "| LexRanked" suffix. */
   absoluteTitle?: boolean;
+  /** Social image (e.g. an article's featured image); defaults to the site image. */
+  image?: { url: string; width: number; height: number; alt: string } | null;
+  /** Article dates for OpenGraph. */
+  publishedTime?: string | null;
+  modifiedTime?: string | null;
 }
 
 const MAX_DESCRIPTION = 160;
@@ -42,7 +47,9 @@ export function buildMetadata(seo: PageSeo): Metadata {
 
   // Default social image (app/opengraph-image.tsx). Set explicitly because a
   // page-level openGraph object replaces the inherited file-based image.
-  const images = [{ url: "/opengraph-image", width: 1200, height: 630, alt: `${SITE_NAME} — Data-driven lawyer rankings` }];
+  const images = seo.image
+    ? [{ url: seo.image.url, width: seo.image.width, height: seo.image.height, alt: seo.image.alt || seo.title }]
+    : [{ url: "/opengraph-image", width: 1200, height: 630, alt: `${SITE_NAME} — Data-driven lawyer rankings` }];
 
   return {
     title: seo.absoluteTitle ? { absolute: seo.title } : seo.title,
@@ -57,6 +64,8 @@ export function buildMetadata(seo: PageSeo): Metadata {
       siteName: SITE_NAME,
       locale: "en_US",
       images,
+      ...(seo.type === "article" && seo.publishedTime ? { publishedTime: seo.publishedTime } : {}),
+      ...(seo.type === "article" && seo.modifiedTime ? { modifiedTime: seo.modifiedTime } : {}),
     },
     twitter: {
       card: "summary_large_image",

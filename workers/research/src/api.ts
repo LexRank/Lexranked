@@ -90,9 +90,12 @@ export interface CandidateNoteInput {
 }
 
 export interface ContentDraftInput {
-  content_type: 'ranking_content';
-  target_id: number;
+  content_type: 'ranking_content' | 'hub_content' | 'profile_summary' | 'article';
+  target_id?: number | null;
+  target_term?: number;
+  target_taxonomy?: 'lr_location' | 'lr_practice_area';
   content: {
+    title?: string;
     summary: string;
     sections: { heading: string; paragraphs: { text: string }[] }[];
     faq: { question: string; answer: string }[];

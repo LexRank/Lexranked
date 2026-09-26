@@ -8,6 +8,32 @@
 
 import type { Fact, RankingData } from './facts.js';
 
+/** What QA needs to know about the page besides the text and facts. */
+export interface QaContext {
+  /** Target phrase for the stuffing check (e.g. "personal injury miami"). */
+  keyword: string;
+  /** Text already on the page (duplicate check). */
+  existingText: string;
+  /** When the underlying data was calculated (freshness), if known. */
+  calculatedAt: string | null;
+  isDemo: boolean;
+  /** Articles may contain general guidance paragraphs without fact references. */
+  refsRequired: boolean;
+  /** Minimum words before "too_short" (0 disables). */
+  minWords: number;
+}
+
+export function rankingQaContext(r: RankingData): QaContext {
+  return {
+    keyword: [r.practiceArea?.name, r.location?.city].filter(Boolean).join(' '),
+    existingText: [r.summary ?? '', r.body.replace(/<[^>]+>/g, ' '), ...r.faq.map((f) => `${f.question} ${f.answer}`)].join(' '),
+    calculatedAt: r.calculatedAt,
+    isDemo: r.isDemo,
+    refsRequired: true,
+    minWords: 120,
+  };
+}
+
 export interface Unit {
   /** Where the text is, e.g. "summary", "sections[0].paragraphs[1]", "faq[2].answer". */
   where: string;
@@ -73,7 +99,8 @@ function factNumbers(text: string): string[] {
   return (text.match(/\d+(?:[.,]\d+)*/g) ?? []).flatMap((n) => [canonicalNumber(n), ...n.split(/[.,]/).map(canonicalNumber)]);
 }
 
-export function checkContent(units: Unit[], facts: Fact[], ranking: RankingData, now: Date = new Date()): Issue[] {
+export function checkContent(units: Unit[], facts: Fact[], page: QaContext | RankingData, now: Date = new Date()): Issue[] {
+  const ctx: QaContext = 'entries' in page ? rankingQaContext(page) : page;
   const issues: Issue[] = [];
   const byId = new Map(facts.map((f) => [f.id, f]));
   const entries = facts.filter((f) => f.kind === 'entry');
@@ -84,14 +111,21 @@ export function checkContent(units: Unit[], facts: Fact[], ranking: RankingData,
   for (const u of units) {
     const refs = u.factRefs.filter((id) => byId.has(id));
     if (u.text.trim() === '') continue;
-    if (refs.length === 0 && !u.where.endsWith('.question') && !u.where.endsWith('.heading')) {
-      add('missing_fact_refs', 'error', `${u.where} does not cite any supplied fact.`, u.text);
+    if (refs.length === 0 && !u.where.endsWith('.question') && !u.where.endsWith('.heading') && u.where !== 'title') {
+      if (ctx.refsRequired) {
+        add('missing_fact_refs', 'error', `${u.where} does not cite any supplied fact.`, u.text);
+      } else if (entries.some((f) => f.name && u.text.toLowerCase().includes(f.name.toLowerCase()))) {
+        add('uncited_entity', 'error', `${u.where} names a lawyer or firm without citing the fact it relies on.`, u.text);
+      }
     }
     if (u.factRefs.length !== refs.length) {
       add('unknown_fact_ref', 'error', `${u.where} cites facts that were not supplied.`, u.factRefs.join(', '));
     }
     // Numbers must come from the cited facts (or, for questions/headings, from any fact).
-    const pool = (refs.length > 0 && !u.where.endsWith('.question') && !u.where.endsWith('.heading') ? refs.map((id) => byId.get(id) as Fact) : facts).map((f) => `${f.label} ${f.value}`);
+    const headingLike = u.where.endsWith('.question') || u.where.endsWith('.heading') || u.where === 'title';
+    // Uncited guidance (articles) may not contain numbers at all.
+    const poolFacts = refs.length > 0 && !headingLike ? refs.map((id) => byId.get(id) as Fact) : headingLike || ctx.refsRequired ? facts : [];
+    const pool = poolFacts.map((f) => `${f.label} ${f.value}`);
     const allowed = new Set(pool.flatMap(factNumbers));
     for (const n of numbersIn(u.text)) {
       if (!allowed.has(n)) add('unsupported_number', 'error', `${u.where}: "${n}" is not in the cited facts.`, u.text);
@@ -127,26 +161,26 @@ export function checkContent(units: Unit[], facts: Fact[], ranking: RankingData,
     }
   }
   const draftText = units.map((u) => u.text).join(' ');
-  const existing = [ranking.summary ?? '', ranking.body.replace(/<[^>]+>/g, ' '), ...ranking.faq.map((f) => `${f.question} ${f.answer}`)].join(' ');
+  const existing = ctx.existingText;
   if (existing.trim() !== '' && similarity(draftText, existing) > 0.6) {
     add('duplicate_content', 'warning', 'The draft largely repeats the text already on the page.', '');
   }
 
   // Keyword stuffing: the target phrase should read naturally.
   const words = norm(draftText).split(' ').filter(Boolean);
-  const keyword = norm([ranking.practiceArea?.name, ranking.location?.city].filter(Boolean).join(' '));
+  const keyword = norm(ctx.keyword);
   if (keyword !== '' && words.length > 0) {
     const hits = norm(draftText).split(keyword).length - 1;
     if (hits > 6 || hits / Math.max(1, words.length / 100) > 3) {
       add('keyword_stuffing', 'warning', `"${keyword}" appears ${hits} times in ${words.length} words.`, '');
     }
   }
-  if (words.length < 120) add('too_short', 'warning', `Only ${words.length} words; the page may not add enough context.`, '');
+  if (ctx.minWords > 0 && words.length < ctx.minWords) add('too_short', 'warning', `Only ${words.length} words; the page may not add enough context.`, '');
 
   // Freshness and data quality.
-  if (ranking.calculatedAt && now.getTime() - Date.parse(ranking.calculatedAt) > 30 * 86_400_000) {
-    add('outdated_data', 'warning', `Ranking data was last calculated on ${ranking.calculatedAt.slice(0, 10)}; recalculate before publishing.`, '');
+  if (ctx.calculatedAt && now.getTime() - Date.parse(ctx.calculatedAt) > 30 * 86_400_000) {
+    add('outdated_data', 'warning', `Data was last calculated on ${ctx.calculatedAt.slice(0, 10)}; recalculate before publishing.`, '');
   }
-  if (ranking.isDemo) add('demo_data', 'warning', 'This ranking is demo data; never publish generated text for it on a live site.', '');
+  if (ctx.isDemo) add('demo_data', 'warning', 'This page uses demo data; never publish generated text for it on a live site.', '');
   return issues;
 }

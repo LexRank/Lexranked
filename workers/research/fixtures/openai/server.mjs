@@ -23,6 +23,34 @@ function answer(name, user) {
         faq: [{ question: 'Can a lawyer pay to rank higher?', answer: 'No. Payment never affects positions.', factRefs: [facts.find((f) => f.label === 'How positions are decided')?.id ?? ids[0]] }],
       };
     }
+    case 'hub_content': {
+      const facts = user.facts;
+      const place = facts[0];
+      const how = facts.find((f) => f.label === 'How profiles are ordered') ?? facts[0];
+      return {
+        summary: `This page covers lawyers in ${place.value}.`,
+        summaryFactRefs: [place.id],
+        sections: [{ heading: 'How profiles are ordered', paragraphs: [{ text: 'Profiles are ordered by the LexRank score; payment never affects positions.', factRefs: [how.id] }] }],
+        faq: [],
+      };
+    }
+    case 'profile_summary': {
+      const name = user.facts[0];
+      return { summary: `${name.value} has a LexRanked profile.`, summaryFactRefs: [name.id] };
+    }
+    case 'article_draft': {
+      const how = user.facts.find((f) => f.label === 'How positions are decided') ?? user.facts[0];
+      return {
+        title: 'How LexRanked positions work',
+        summary: 'A short guide to how positions are decided.',
+        summaryFactRefs: [how.id],
+        sections: [
+          { heading: 'How positions are decided', paragraphs: [{ text: 'Positions follow the LexRank score, and payment never affects positions.', factRefs: [how.id] }] },
+          { heading: 'What to check yourself', paragraphs: [{ text: 'Ask who will handle your case and how you will be kept informed.', factRefs: [] }] },
+        ],
+        faq: [],
+      };
+    }
     case 'content_qa':
       return { issues: [] };
     case 'match_review':

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { RankingCard } from "@/components/cards";
+import { ArticleCard, RankingCard } from "@/components/cards";
 import { DocumentIcon, ScaleIcon, ShieldCheckIcon, ClockIcon } from "@/components/icons";
 import { JsonLd } from "@/components/JsonLd";
 import { MethodologyPanel } from "@/components/Methodology";
@@ -13,7 +13,7 @@ import { formatCount } from "@/lib/format";
 import { METHODOLOGY_PRINCIPLES } from "@/lib/methodology";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/jsonld";
-import { getPracticeAreas, getStates } from "@/lib/wordpress/api";
+import { getArticles, getPracticeAreas, getStates } from "@/lib/wordpress/api";
 
 export const revalidate = 300;
 
@@ -28,11 +28,14 @@ export const metadata: Metadata = buildMetadata({
 const PRINCIPLE_ICONS = [ScaleIcon, DocumentIcon, ClockIcon, ShieldCheckIcon];
 
 export default async function HomePage() {
-  const [rankings, states, practiceAreas] = await Promise.all([
+  const [rankings, states, practiceAreas, articles] = await Promise.all([
     load(allRankings),
     load(async () => (await getStates()).data),
     load(async () => (await getPracticeAreas()).data),
+    load(async () => (await getArticles({ per_page: 6 })).data),
   ]);
+  // Thin posts (e.g. a CMS default post) are not promoted.
+  const guides = articles.ok ? articles.data.filter((a) => !a.isThin).slice(0, 3) : [];
 
   const published = rankings.ok ? rankings.data.filter((r) => !r.isThin) : [];
   const lawyersCovered = published.reduce((sum, r) => sum + r.entryCount, 0);
@@ -126,6 +129,27 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {guides.length > 0 && (
+        <section className="section">
+          <div className="container">
+            <div className="section__head">
+              <div>
+                <p className="eyebrow">Guides</p>
+                <h2>Before you hire a lawyer</h2>
+              </div>
+              <Link className="link-arrow" href="/articles/">
+                All guides
+              </Link>
+            </div>
+            <div className="grid grid--3">
+              {guides.map((a) => (
+                <ArticleCard key={a.id} article={a} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="section">
         <div className="container layout-sidebar">

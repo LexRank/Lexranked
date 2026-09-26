@@ -79,7 +79,7 @@ Adding cities, rankings, lawyers and articles: [`docs/editor-guide.md`](docs/edi
 4. ✅ **Ranking engine**: ScoreCalculator, RankingEngine, ScoreVersion, snapshots, history, breakdowns
 5. ✅ **Research engine**: leased/resumable jobs with retries, candidates + deterministic matching, source-backed claims, rule-based verification, editorial review, TypeScript worker
 6. ✅ **AI assistance**: quote-checked extraction & classification, advisory match review, ranking content drafts with deterministic + AI QA — strict schemas, never published automatically
-7. Content engine (drafts only)
+7. ✅ **Content engine**: guides at `/articles/`, editorial text on hub pages and profiles, AI drafts (ranking, hub, profile, article) with QA — drafts only
 8. Production hardening
 9. Commercial features (kept separate from organic ranking)
 

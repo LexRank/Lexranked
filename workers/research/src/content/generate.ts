@@ -88,8 +88,9 @@ export async function generateRankingContent(ai: AiClient, ranking: RankingData,
   return { content: res.data, model: res.model };
 }
 
-export function unitsOf(c: Generated): Unit[] {
+export function unitsOf(c: Generated & { title?: string }): Unit[] {
   const units: Unit[] = [{ where: 'summary', text: c.summary, factRefs: c.summaryFactRefs }];
+  if (c.title) units.unshift({ where: 'title', text: c.title, factRefs: [] });
   c.sections.forEach((s, i) => {
     units.push({ where: `sections[${i}].heading`, text: s.heading, factRefs: [] });
     s.paragraphs.forEach((p, j) => units.push({ where: `sections[${i}].paragraphs[${j}]`, text: p.text, factRefs: p.factRefs }));
@@ -99,4 +100,127 @@ export function unitsOf(c: Generated): Unit[] {
     units.push({ where: `faq[${i}].answer`, text: f.answer, factRefs: f.factRefs });
   });
   return units;
+}
+
+// ─── Phase 7: hubs, profiles, articles ────────────────────────────────────
+
+export const HUB_PROMPT_VERSION = 'hub-content/1';
+export const PROFILE_PROMPT_VERSION = 'profile-summary/1';
+export const ARTICLE_PROMPT_VERSION = 'article/1';
+
+const COMMON_RULES = [
+  'Use ONLY the numbered facts provided and cite the IDs you rely on in factRefs.',
+  'Never add names, numbers, dates, awards, reviews, fees, case outcomes or credentials that are not in the facts. Do not give legal advice.',
+  'Do not call anyone "the best", do not promise results, do not include links, phone numbers or calls to action.',
+  'US English, neutral and factual, written for someone choosing a lawyer.',
+];
+
+/** Hub pages (state, city, practice area): same shape as ranking content. */
+export async function generateHubContent(ai: AiClient, page: { title: string; place: string }, facts: Fact[]): Promise<{ content: Generated; model: string }> {
+  const system = [
+    'You write the editorial text for a LexRanked location or practice-area page that lists lawyer profiles and rankings.',
+    ...COMMON_RULES,
+    'Write: a 1–3 sentence answer-first summary; up to 3 short sections (what the page covers, how profiles are ordered, what to check when choosing); and 3–5 FAQs a reader would actually ask.',
+  ].join('\n');
+  const res = await ai.structured<Generated>({
+    name: 'hub_content',
+    schema: contentSchema(facts.map((f) => f.id)),
+    system,
+    user: JSON.stringify({ page, facts: facts.map(({ id, label, value }) => ({ id, label, value })) }),
+    maxOutputTokens: 3500,
+  });
+  return { content: res.data, model: res.model };
+}
+
+export interface ProfileSummary {
+  summary: string;
+  summaryFactRefs: string[];
+}
+
+export function profileSchema(factIds: string[]): JsonSchema {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required: ['summary', 'summaryFactRefs'],
+    properties: {
+      summary: { type: 'string', maxLength: 700 },
+      summaryFactRefs: { type: 'array', minItems: 1, maxItems: 10, items: { type: 'string', enum: factIds } },
+    },
+  };
+}
+
+export async function generateProfileSummary(ai: AiClient, facts: Fact[]): Promise<{ content: ProfileSummary; model: string }> {
+  const system = [
+    'You write a 2–4 sentence, answer-first summary for a LexRanked lawyer or law firm profile: who they are, where they practise, what they focus on and how LexRanked scores and verifies them.',
+    ...COMMON_RULES,
+  ].join('\n');
+  const res = await ai.structured<ProfileSummary>({
+    name: 'profile_summary',
+    schema: profileSchema(facts.map((f) => f.id)),
+    system,
+    user: JSON.stringify({ facts: facts.map(({ id, label, value }) => ({ id, label, value })) }),
+    maxOutputTokens: 800,
+  });
+  return { content: res.data, model: res.model };
+}
+
+export interface GeneratedArticle extends Generated {
+  title: string;
+}
+
+export function articleSchema(factIds: string[]): JsonSchema {
+  // Guidance paragraphs may cite nothing (general advice); QA then forbids names and numbers in them.
+  const refs: JsonSchema = { type: 'array', maxItems: 8, items: { type: 'string', enum: factIds } };
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required: ['title', 'summary', 'summaryFactRefs', 'sections', 'faq'],
+    properties: {
+      title: { type: 'string', maxLength: 110 },
+      summary: { type: 'string', maxLength: 400 },
+      summaryFactRefs: refs,
+      sections: {
+        type: 'array',
+        minItems: 2,
+        maxItems: 6,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['heading', 'paragraphs'],
+          properties: {
+            heading: { type: 'string', maxLength: 100 },
+            paragraphs: {
+              type: 'array',
+              minItems: 1,
+              maxItems: 4,
+              items: { type: 'object', additionalProperties: false, required: ['text', 'factRefs'], properties: { text: { type: 'string', maxLength: 900 }, factRefs: refs } },
+            },
+          },
+        },
+      },
+      faq: {
+        type: 'array',
+        maxItems: 5,
+        items: { type: 'object', additionalProperties: false, required: ['question', 'answer', 'factRefs'], properties: { question: { type: 'string', maxLength: 200 }, answer: { type: 'string', maxLength: 600 }, factRefs: refs } },
+      },
+    },
+  };
+}
+
+export async function generateArticle(ai: AiClient, topic: string, facts: Fact[]): Promise<{ content: GeneratedArticle; model: string }> {
+  const system = [
+    'You draft an editorial guide for LexRanked, a site that ranks US lawyers with a published, data-driven methodology.',
+    'The topic is an editor\'s brief, not a fact. Practical, general guidance (what to check, what to ask) needs no citation, but must not contain names, numbers, statistics, laws or claims about specific people or firms.',
+    'Anything about specific lawyers, firms, rankings, scores or the methodology must come from the numbered facts, cited in factRefs.',
+    ...COMMON_RULES.slice(1),
+    'Write a clear title, a 1–2 sentence summary, 3–5 sections and up to 4 FAQs.',
+  ].join('\n');
+  const res = await ai.structured<GeneratedArticle>({
+    name: 'article_draft',
+    schema: articleSchema(facts.map((f) => f.id)),
+    system,
+    user: JSON.stringify({ topic, facts: facts.map(({ id, label, value }) => ({ id, label, value })) }),
+    maxOutputTokens: 5000,
+  });
+  return { content: res.data, model: res.model };
 }

@@ -33,6 +33,8 @@ export class FakeWordPress {
   rankings: { id: number; title: string }[] = [];
   practiceAreas = [{ id: 1, slug: 'personal-injury', name: 'Personal Injury' }];
   drafts: Record<string, unknown>[] = [];
+  /** Extra public GET routes by pathname (e.g. "/states"). */
+  publicRoutes: Record<string, unknown> = {};
   reviewQueue: Record<string, unknown>[] = [];
   notes: Record<string, unknown>[] = [];
   /** Respond 503 to the next N requests (transient outage). */
@@ -73,6 +75,7 @@ export class FakeWordPress {
       job.token = 'tok-' + ++this.seq;
       return json({ job: this.view(job, true) });
     }
+    if (path in this.publicRoutes) return json(this.publicRoutes[path]);
     if (path === '/rankings') return json(this.rankings.map((r) => ({ id: r.id, title: r.title })));
     const rm = /^\/rankings\/(\d+)$/.exec(path);
     if (rm) {

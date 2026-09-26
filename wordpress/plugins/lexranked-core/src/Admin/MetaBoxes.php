@@ -41,7 +41,7 @@ final class MetaBoxes {
 	 */
 	public function register(): void {
 		add_action( 'add_meta_boxes', array( $this, 'add' ) );
-		foreach ( $this->services->post_types() as $type ) {
+		foreach ( array_merge( $this->services->post_types(), array( $this->services->article ) ) as $type ) {
 			add_action( 'save_post_' . $type->slug(), fn( int $post_id, \WP_Post $post ) => $this->save( $post_id, $post, $type ), 10, 2 );
 		}
 		add_action( 'admin_notices', array( $this, 'notices' ) );
@@ -52,7 +52,7 @@ final class MetaBoxes {
 	 * Add meta boxes.
 	 */
 	public function add(): void {
-		foreach ( $this->services->post_types() as $type ) {
+		foreach ( array_merge( $this->services->post_types(), array( $this->services->article ) ) as $type ) {
 			add_meta_box(
 				'lexranked-fields',
 				'Structured data',

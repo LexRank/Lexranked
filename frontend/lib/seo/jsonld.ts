@@ -1,5 +1,5 @@
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/config/site";
-import type { LawFirmDetail, LawyerDetail, LocationDto, RankingDetail } from "@/types/api";
+import type { ArticleDetail, LawFirmDetail, LawyerDetail, LocationDto, RankingDetail } from "@/types/api";
 import { absoluteUrl } from "./urls";
 
 /**
@@ -201,5 +201,28 @@ export function rankingPageJsonLd(input: {
     dateModified: input.dateModified ?? undefined,
     lastReviewed: input.reviewedAt ?? undefined,
     reviewedBy: input.reviewedBy ? { "@type": "Person", name: input.reviewedBy } : undefined,
+  });
+}
+
+/** Article (editorial guide): author, dates, review and publisher. */
+export function articleJsonLd(article: ArticleDetail): JsonLdObject {
+  return compact({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.excerpt,
+    url: absoluteUrl(article.path),
+    mainEntityOfPage: absoluteUrl(article.path),
+    inLanguage: "en-US",
+    datePublished: article.publishedAt ?? undefined,
+    dateModified: article.updatedAt ?? undefined,
+    author: { "@type": article.author.name === "LexRanked Editorial Team" ? "Organization" : "Person", name: article.author.name },
+    publisher: { "@id": `${siteUrl}/#organization` },
+    image: article.image ? [article.image.url] : undefined,
+    wordCount: article.wordCount,
+    lastReviewed: article.reviewedAt ?? undefined,
+    reviewedBy: article.reviewedBy ? { "@type": "Person", name: article.reviewedBy } : undefined,
+    articleSection: article.categories.map((c) => c.name),
+    isPartOf: { "@id": `${siteUrl}/#website` },
   });
 }

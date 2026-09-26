@@ -41,3 +41,11 @@ export function profileEligibility(entity: { isDemo: boolean }): Eligibility {
 export function listingEligibility(items: ReadonlyArray<{ isDemo: boolean }>): Eligibility {
   return { exists: true, indexable: items.some((i) => !i.isDemo) };
 }
+
+/** Minimum words for an indexable article (shorter guides are "thin"). */
+export const MIN_ARTICLE_WORDS = 300;
+
+/** Articles exist when published; thin or demo articles are never indexed. */
+export function articleEligibility(article: { isDemo: boolean; wordCount: number }): Eligibility {
+  return { exists: true, indexable: !article.isDemo && article.wordCount >= MIN_ARTICLE_WORDS };
+}

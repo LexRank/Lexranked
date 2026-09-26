@@ -106,4 +106,46 @@ final class ContentDraftInputTest extends TestCase {
 		$this->expectException( ValidationException::class );
 		ContentDraftInput::validate( $payload );
 	}
+
+	public function testProfileSummaryIsOnlyASummary(): void {
+		$payload                        = self::payload( array( 'content_type' => 'profile_summary' ) );
+		$payload['content']['sections'] = array();
+		$payload['content']['faq']      = array();
+		$this->assertSame( 'profile_summary', ContentDraftInput::validate( $payload )['content_type'] );
+		$this->expectException( ValidationException::class );
+		ContentDraftInput::validate( self::payload( array( 'content_type' => 'profile_summary' ) ) );
+	}
+
+	public function testHubContentNeedsATerm(): void {
+		$payload = self::payload(
+			array(
+				'content_type'    => 'hub_content',
+				'target_term'     => 7,
+				'target_taxonomy' => 'lr_location',
+			)
+		);
+		$this->assertSame( 7, ContentDraftInput::validate( $payload )['target_term'] );
+		$this->expectException( ValidationException::class );
+		ContentDraftInput::validate(
+			self::payload(
+				array(
+					'content_type'    => 'hub_content',
+					'target_taxonomy' => 'category',
+				)
+			)
+		);
+	}
+
+	public function testArticleNeedsATitleAndTwoSections(): void {
+		$payload                          = self::payload( array( 'content_type' => 'article' ) );
+		$payload['target_id']             = null;
+		$payload['content']['title']      = 'Choosing a lawyer';
+		$payload['content']['sections'][] = $payload['content']['sections'][0];
+		$draft                            = ContentDraftInput::validate( $payload );
+		$this->assertSame( 'Choosing a lawyer', $draft['title'] );
+		$this->assertNull( $draft['target_id'] );
+		unset( $payload['content']['title'] );
+		$this->expectException( ValidationException::class );
+		ContentDraftInput::validate( $payload );
+	}
 }

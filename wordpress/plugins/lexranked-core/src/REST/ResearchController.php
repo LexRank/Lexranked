@@ -198,32 +198,38 @@ final class ResearchController extends RestController {
 				'callback'            => array( $this, 'submit_content_draft' ),
 				'permission_callback' => $perm,
 				'args'                => array(
-					'content_type'   => array(
+					'content_type'    => array(
 						'type'     => 'string',
 						'required' => true,
 					),
-					'target_id'      => array(
-						'type'     => 'integer',
-						'required' => true,
-						'minimum'  => 1,
+					'target_id'       => array(
+						'type'    => array( 'integer', 'null' ),
+						'minimum' => 1,
 					),
-					'content'        => array(
+					'target_term'     => array(
+						'type'    => array( 'integer', 'null' ),
+						'minimum' => 1,
+					),
+					'target_taxonomy' => array(
+						'type' => array( 'string', 'null' ),
+					),
+					'content'         => array(
 						'type'     => 'object',
 						'required' => true,
 					),
-					'facts'          => array(
+					'facts'           => array(
 						'type'     => 'array',
 						'required' => true,
 					),
-					'qa'             => array(
+					'qa'              => array(
 						'type'     => 'object',
 						'required' => true,
 					),
-					'model'          => array(
+					'model'           => array(
 						'type'     => 'string',
 						'required' => true,
 					),
-					'prompt_version' => array(
+					'prompt_version'  => array(
 						'type'     => 'string',
 						'required' => true,
 					),
@@ -461,7 +467,7 @@ final class ResearchController extends RestController {
 		return $this->run(
 			function () use ( $request ): array {
 				$payload = array();
-				foreach ( array( 'content_type', 'target_id', 'content', 'facts', 'qa', 'model', 'prompt_version' ) as $key ) {
+				foreach ( array( 'content_type', 'target_id', 'target_term', 'target_taxonomy', 'content', 'facts', 'qa', 'model', 'prompt_version' ) as $key ) {
 					$payload[ $key ] = $request[ $key ];
 				}
 				return $this->services->ingest->content_draft( $this->job_id( $request ), $payload );
