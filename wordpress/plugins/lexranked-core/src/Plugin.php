@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core;
 
+use LexRanked\Core\Admin\ContentDraftAdmin;
 use LexRanked\Core\Admin\ListColumns;
 use LexRanked\Core\Admin\MetaBoxes;
 use LexRanked\Core\Admin\Menu;
@@ -37,7 +38,7 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.3.0';
+	public const API_VERSION = '1.4.0';
 
 	/**
 	 * Services, available after boot().
@@ -85,6 +86,7 @@ final class Plugin {
 			( new ListColumns( $services ) )->register();
 			( new RankingCalculation( $services ) )->register();
 			( new ResearchAdmin( $services ) )->register();
+			( new ContentDraftAdmin( $services ) )->register();
 		}
 
 		if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( '\WP_CLI' ) ) {

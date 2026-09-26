@@ -152,6 +152,86 @@ final class ResearchController extends RestController {
 		}
 		register_rest_route(
 			$ns,
+			$job . '/review-candidates',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'review_candidates' ),
+				'permission_callback' => $perm,
+				'args'                => array(
+					'after' => array(
+						'type'    => 'integer',
+						'minimum' => 0,
+						'default' => 0,
+					),
+					'limit' => array(
+						'type'    => 'integer',
+						'minimum' => 1,
+						'maximum' => 100,
+						'default' => 25,
+					),
+				),
+			)
+		);
+		register_rest_route(
+			$ns,
+			$job . '/candidate-notes',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'submit_candidate_notes' ),
+				'permission_callback' => $perm,
+				'args'                => array(
+					'items' => array(
+						'type'     => 'array',
+						'required' => true,
+						'items'    => array( 'type' => 'object' ),
+						'minItems' => 1,
+						'maxItems' => ResearchIngest::MAX_BATCH,
+					),
+				),
+			)
+		);
+		register_rest_route(
+			$ns,
+			$job . '/content-drafts',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'submit_content_draft' ),
+				'permission_callback' => $perm,
+				'args'                => array(
+					'content_type'   => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'target_id'      => array(
+						'type'     => 'integer',
+						'required' => true,
+						'minimum'  => 1,
+					),
+					'content'        => array(
+						'type'     => 'object',
+						'required' => true,
+					),
+					'facts'          => array(
+						'type'     => 'array',
+						'required' => true,
+					),
+					'qa'             => array(
+						'type'     => 'object',
+						'required' => true,
+					),
+					'model'          => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'prompt_version' => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+				),
+			)
+		);
+		register_rest_route(
+			$ns,
 			'/research/candidates',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -344,6 +424,48 @@ final class ResearchController extends RestController {
 	public function submit_verifications( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		return $this->run(
 			fn(): array => array( 'results' => $this->services->ingest->verifications( $this->job_id( $request ), (array) $request['items'] ) )
+		);
+	}
+
+	/**
+	 * GET /research/jobs/{id}/review-candidates
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function review_candidates( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		return $this->run(
+			function () use ( $request ): array {
+				$this->job_id( $request );
+				return $this->services->ingest->review_candidates( (int) $request['after'], (int) $request['limit'] );
+			}
+		);
+	}
+
+	/**
+	 * POST /research/jobs/{id}/candidate-notes
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function submit_candidate_notes( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		return $this->run(
+			fn(): array => array( 'results' => $this->services->ingest->ai_notes( $this->job_id( $request ), (array) $request['items'] ) )
+		);
+	}
+
+	/**
+	 * POST /research/jobs/{id}/content-drafts
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function submit_content_draft( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		return $this->run(
+			function () use ( $request ): array {
+				$payload = array();
+				foreach ( array( 'content_type', 'target_id', 'content', 'facts', 'qa', 'model', 'prompt_version' ) as $key ) {
+					$payload[ $key ] = $request[ $key ];
+				}
+				return $this->services->ingest->content_draft( $this->job_id( $request ), $payload );
+			}
 		);
 	}
 

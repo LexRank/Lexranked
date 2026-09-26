@@ -165,8 +165,21 @@ final class ResearchAdmin {
 		echo '<table class="widefat striped"><thead><tr><th>Candidate</th><th>Location</th><th>Source</th><th>Why</th><th>Decision</th></tr></thead><tbody>';
 		foreach ( $items as $c ) {
 			$suggested = '';
+			if ( is_array( $c['aiNote'] ) ) {
+				$verdicts   = array(
+					'same'      => 'probably the same',
+					'different' => 'probably different',
+					'unsure'    => 'unsure',
+				);
+				$suggested .= sprintf(
+					'<br><em>AI suggestion (advisory): %s, %d%% — %s</em>',
+					esc_html( $verdicts[ (string) $c['aiNote']['verdict'] ] ?? '' ),
+					(int) round( 100 * (float) $c['aiNote']['confidence'] ),
+					esc_html( (string) $c['aiNote']['reason'] )
+				);
+			}
 			if ( null !== $c['entityId'] ) {
-				$suggested = sprintf( '<br>Possible match: <a href="%s">%s (#%d)</a>', esc_url( (string) get_edit_post_link( $c['entityId'] ) ), esc_html( get_the_title( $c['entityId'] ) ), (int) $c['entityId'] );
+				$suggested .= sprintf( '<br>Possible match: <a href="%s">%s (#%d)</a>', esc_url( (string) get_edit_post_link( $c['entityId'] ) ), esc_html( get_the_title( $c['entityId'] ) ), (int) $c['entityId'] );
 			}
 			printf(
 				'<tr><td><strong>%s</strong><br>%s</td><td>%s</td><td><a href="%s" rel="noopener noreferrer" target="_blank">%s</a><br><small>%s</small></td><td>%s%s</td><td>',

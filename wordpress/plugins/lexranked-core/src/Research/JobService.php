@@ -34,7 +34,7 @@ final class JobService {
 
 	public const TOKEN_META     = '_lr_lock_token';
 	public const LOCK_NAME      = 'lexranked_research_claim';
-	public const WORKER_TYPES   = array( 'candidate_discovery', 'source_refresh' );
+	public const WORKER_TYPES   = array( 'candidate_discovery', 'source_refresh', 'ai_candidate_review', 'content_generation' );
 	public const INTERNAL_TYPES = array( 'verification', 'ranking_recalculation' );
 	public const INTERNAL_HOOK  = 'lexranked_research_internal';
 
@@ -147,6 +147,10 @@ final class JobService {
 	public function claim( string $worker, array $types ): ?array {
 		global $wpdb;
 		$types = array_values( array_intersect( ResearchJob::JOB_TYPES, $types ) );
+		if ( ! $this->services->settings->get( 'ai_enabled' ) ) {
+			// AI jobs wait (pending) until an administrator enables AI assistance.
+			$types = array_values( array_diff( $types, ResearchJob::AI_JOB_TYPES ) );
+		}
 		if ( array() === $types ) {
 			return null;
 		}

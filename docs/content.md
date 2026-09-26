@@ -1,6 +1,6 @@
 # Content
 
-> Status: **design**. Implemented in Phases 6–7.
+> Status: ranking-page drafts with QA **implemented in Phase 6** ([ai.md](ai.md)); profile, hub and article drafts and `/articles/` come in Phase 7. Editors: see [editor-guide.md](editor-guide.md).
 
 ## Pipeline
 

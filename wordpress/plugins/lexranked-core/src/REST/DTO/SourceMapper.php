@@ -60,6 +60,7 @@ final class SourceMapper {
 				'retrievedAt'        => $claim['retrieved_at'],
 				'confidence'         => $claim['confidence'],
 				'verificationStatus' => $claim['verification_status'],
+				'method'             => $claim['method'] ?? 'manual',
 			);
 		}
 		usort(

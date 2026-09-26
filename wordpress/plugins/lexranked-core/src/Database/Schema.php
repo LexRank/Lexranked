@@ -18,7 +18,7 @@ namespace LexRanked\Core\Database;
 final class Schema {
 
 	/** Bump when the DDL below changes; triggers dbDelta on next load. */
-	public const VERSION = '4';
+	public const VERSION = '5';
 
 	public const CLAIMS    = 'lr_claims';
 	public const AUDIT_LOG = 'lr_audit_log';
@@ -56,6 +56,7 @@ final class Schema {
   claim_hash char(40) DEFAULT NULL,
   job_id bigint(20) unsigned NOT NULL DEFAULT 0,
   review_status varchar(20) NOT NULL DEFAULT 'approved',
+  method varchar(20) NOT NULL DEFAULT 'manual',
   created_at datetime NOT NULL,
   PRIMARY KEY  (claim_id),
   UNIQUE KEY claim_hash (claim_hash),
@@ -111,6 +112,7 @@ final class Schema {
   match_confidence decimal(4,3) DEFAULT NULL,
   reason varchar(500) DEFAULT NULL,
   payload longtext NULL,
+  ai_note longtext NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   PRIMARY KEY  (candidate_id),

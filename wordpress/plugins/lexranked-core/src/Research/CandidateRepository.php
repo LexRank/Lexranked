@@ -196,6 +196,42 @@ final class CandidateRepository {
 	}
 
 	/**
+	 * Candidates awaiting a decision with an ID above $after (AI review pages).
+	 *
+	 * @param int $after Last candidate ID seen.
+	 * @param int $limit Page size.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function needs_review_after( int $after, int $limit ): array {
+		global $wpdb;
+		$table = $this->table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom table; values prepared.
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE status = %s AND candidate_id > %d ORDER BY candidate_id ASC LIMIT %d", self::STATUS_NEEDS_REVIEW, $after, $limit ), ARRAY_A );
+		return array_map( array( self::class, 'hydrate' ), is_array( $rows ) ? $rows : array() );
+	}
+
+	/**
+	 * Store an advisory AI note (never changes the status).
+	 *
+	 * @param int                  $candidate_id Candidate ID.
+	 * @param array<string, mixed> $note         Note.
+	 */
+	public function set_ai_note( int $candidate_id, array $note ): void {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
+		$wpdb->update(
+			$this->table(),
+			array(
+				'ai_note'    => (string) json_encode( $note, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ), // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- WordPress-independent by design.
+				'updated_at' => gmdate( 'Y-m-d H:i:s' ),
+			),
+			array( 'candidate_id' => $candidate_id ),
+			array( '%s', '%s' ),
+			array( '%d' )
+		);
+	}
+
+	/**
 	 * Typed row.
 	 *
 	 * @param array<string, mixed> $row DB row.
@@ -219,6 +255,7 @@ final class CandidateRepository {
 			'entityId'        => null === $row['entity_id'] ? null : (int) $row['entity_id'],
 			'matchConfidence' => null === $row['match_confidence'] ? null : (float) $row['match_confidence'],
 			'reason'          => null === $row['reason'] ? null : (string) $row['reason'],
+			'aiNote'          => empty( $row['ai_note'] ) ? null : json_decode( (string) $row['ai_note'], true ),
 			'createdAt'       => str_replace( ' ', 'T', (string) $row['created_at'] ) . 'Z',
 			'updatedAt'       => str_replace( ' ', 'T', (string) $row['updated_at'] ) . 'Z',
 		);

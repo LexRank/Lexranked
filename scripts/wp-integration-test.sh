@@ -33,6 +33,7 @@ COMPOSE=(docker compose --env-file /dev/null -f docker-compose.yml)
 cleanup() {
   if [[ -n "${NEXT_PID:-}" && "$KEEP" != "--keep" ]]; then kill "$NEXT_PID" >/dev/null 2>&1 || true; fi
   if [[ -n "${SITE_PID:-}" ]]; then kill "$SITE_PID" >/dev/null 2>&1 || true; fi
+  if [[ -n "${AI_PID:-}" ]]; then kill "$AI_PID" >/dev/null 2>&1 || true; fi
   if [[ "$KEEP" != "--keep" ]]; then
     "${COMPOSE[@]}" down -v --remove-orphans >/dev/null 2>&1 || true
   fi
@@ -174,6 +175,32 @@ kill "$SITE_PID" >/dev/null 2>&1 || true
 SITE_PID=""
 wp lexranked research-job verification >/dev/null
 check "internal jobs run in WordPress" 'test("Processed 1 internal")' "\"$(wp lexranked research-run)\""
+
+echo "==> AI assistance (worker against a FAKE local OpenAI endpoint)"
+AI_PORT="${AI_PORT:-8097}"
+node workers/research/fixtures/openai/server.mjs "$AI_PORT" &
+AI_PID=$!
+for _ in $(seq 1 20); do curl -s -o /dev/null "http://127.0.0.1:${AI_PORT}/" && break; sleep 0.5; done
+AI_JOB="$(wp lexranked research-job content_generation --porcelain | tail -1)"
+run_ai_worker() {
+  env LEXRANKED_API_URL="$API" LEXRANKED_WORKER_USER=researcher LEXRANKED_WORKER_APP_PASSWORD="$WORKER_PW" \
+    OPENAI_API_KEY=sk-fake-it-only OPENAI_MODEL=it-model OPENAI_BASE_URL="http://127.0.0.1:${AI_PORT}/v1" \
+    LEXRANKED_WORKER_JOB_TYPES=content_generation,ai_candidate_review LEXRANKED_WORKER_ID=it-ai-worker \
+    node workers/research/dist/cli.js --once >>"$DATA_DIR/worker.log" 2>&1
+}
+run_ai_worker || true
+check "AI jobs wait while AI assistance is disabled" '.status == "pending"' "$(wp lexranked research-status "$AI_JOB" --format=json)"
+wp option update lexranked_settings '{"search_rate_per_minute":5,"ai_enabled":true}' --format=json >/dev/null
+run_ai_worker && pass "AI worker run exits cleanly" || fail "AI worker run failed (see $DATA_DIR/worker.log)"
+check "content job completed" '.status == "completed" and .stats.drafts_ready + .stats.drafts_need_review >= 1' "$(wp lexranked research-status "$AI_JOB" --format=json)"
+DRAFT_ID="$(wp post list --post_type=lr_content_draft --post_status=any --field=ID --posts_per_page=1 | tail -1)"
+check "generated content is stored as a draft, never published" '. == "draft"' "\"$(wp post get "$DRAFT_ID" --field=post_status)\""
+check "draft carries its facts and QA status" 'test("ready_for_review|needs_review")' "\"$(wp post meta get "$DRAFT_ID" _lr_qa_status)\""
+check "draft body is built from escaped plain text" 'test("<h2>How positions are decided</h2>")' "$(wp post get "$DRAFT_ID" --field=post_content | jq -Rs .)"
+check "ranking content unchanged until an editor applies the draft" '(.summary | test("LexRank methodology") | not)' "$(curl -sS "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo")"
+if grep -q "sk-fake-it-only" "$DATA_DIR/worker.log"; then fail "worker logged the OpenAI key"; else pass "OpenAI key never logged"; fi
+kill "$AI_PID" >/dev/null 2>&1 || true
+AI_PID=""
 
 if [[ -n "$FRONTEND" ]]; then
   echo "==> Frontend end-to-end (Next.js against this WordPress)"

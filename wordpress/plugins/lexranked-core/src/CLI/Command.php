@@ -452,6 +452,21 @@ final class Command {
 	 */
 	private function purge(): int {
 		$count = 0;
+		// Content drafts written for demo rankings go with them.
+		foreach ( get_posts(
+			array(
+				'post_type'      => $this->services->content_draft->slug(),
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		) as $draft_id ) {
+			$target = (int) get_post_meta( (int) $draft_id, (string) $this->services->content_draft->field( 'target_id' )?->meta_key(), true );
+			if ( in_array( $target, $this->demo_ids( $this->services->ranking ), true ) ) {
+				wp_delete_post( (int) $draft_id, true );
+				++$count;
+			}
+		}
 		foreach ( $this->services->post_types() as $type ) {
 			foreach ( $this->demo_ids( $type ) as $id ) {
 				$this->services->claims->delete_for_entity( $id );

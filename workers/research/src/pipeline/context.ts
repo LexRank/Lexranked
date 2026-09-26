@@ -5,6 +5,7 @@
  * the batch that was in flight when a worker died creates no duplicates.
  */
 
+import type { AiClient } from '../ai/openai.js';
 import type { ClaimedJob, LogEntry, ResearchApi } from '../api.js';
 import type { WorkerConfig } from '../config.js';
 import type { SafeFetcher } from '../fetcher.js';
@@ -16,6 +17,8 @@ export interface JobContext {
   job: ClaimedJob;
   config: WorkerConfig;
   fetcher: SafeFetcher;
+  /** Null when AI is not configured for this worker. */
+  ai: AiClient | null;
   signal: AbortSignal;
   log(level: LogEntry['level'], stage: string, message: string, context?: Record<string, unknown>): void;
   /** Persist progress (cursor + counters) and flush buffered job logs. */

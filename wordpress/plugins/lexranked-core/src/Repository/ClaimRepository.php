@@ -45,6 +45,13 @@ final class ClaimRepository {
 	public const REVIEW_STATUSES = array( self::REVIEW_APPROVED, self::REVIEW_PENDING, self::REVIEW_REJECTED );
 
 	/**
+	 * How a claim was obtained: typed by an editor, read by a person into a
+	 * seed dataset, parsed from schema.org structured data, or extracted by an
+	 * AI model from a source document (quote-checked, low confidence).
+	 */
+	public const METHODS = array( 'manual', 'seed', 'structured_data', 'ai' );
+
+	/**
 	 * Validate and insert a claim (editor/seed path: approved immediately).
 	 *
 	 * @param array<string, mixed> $claim Raw claim.
@@ -64,10 +71,11 @@ final class ClaimRepository {
 	 * @param array<string, mixed> $claim         Raw claim.
 	 * @param int                  $job_id        Research job that produced it (0 = editor/seed).
 	 * @param string               $review_status One of REVIEW_STATUSES.
+	 * @param string               $method        One of METHODS.
 	 * @return array{claim_id: int, duplicate: bool, row: array<string, mixed>}
 	 * @throws \RuntimeException When the insert fails.
 	 */
-	public function insert_unique( array $claim, int $job_id = 0, string $review_status = self::REVIEW_APPROVED ): array {
+	public function insert_unique( array $claim, int $job_id = 0, string $review_status = self::REVIEW_APPROVED, string $method = 'manual' ): array {
 		global $wpdb;
 		$row   = $this->validator->validate( $claim );
 		$hash  = self::hash( $row );
@@ -90,9 +98,10 @@ final class ClaimRepository {
 		$row['claim_hash']    = $hash;
 		$row['job_id']        = $job_id;
 		$row['review_status'] = in_array( $review_status, self::REVIEW_STATUSES, true ) ? $review_status : self::REVIEW_PENDING;
+		$row['method']        = in_array( $method, self::METHODS, true ) ? $method : 'manual';
 		$row['created_at']    = gmdate( 'Y-m-d H:i:s' );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table.
-		$ok = $wpdb->insert( $table, $row, array( '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%f', '%s', '%s', '%d', '%s', '%s' ) );
+		$ok = $wpdb->insert( $table, $row, array( '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%f', '%s', '%s', '%d', '%s', '%s', '%s' ) );
 		if ( false === $ok ) {
 			throw new \RuntimeException( 'Could not store claim.' );
 		}
@@ -263,6 +272,7 @@ final class ClaimRepository {
 			'verification_status' => (string) $row['verification_status'],
 			'job_id'              => (int) ( $row['job_id'] ?? 0 ),
 			'review_status'       => (string) ( $row['review_status'] ?? self::REVIEW_APPROVED ),
+			'method'              => (string) ( $row['method'] ?? 'manual' ),
 		);
 	}
 }

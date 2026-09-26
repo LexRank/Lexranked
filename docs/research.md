@@ -1,8 +1,8 @@
 # Research system
 
 > Status: **implemented in Phase 5** (jobs, candidates, sources, claims,
-> verification, retries, logging, TypeScript worker). AI-assisted
-> extraction arrives in Phase 6 and will plug into the same validated intake.
+> verification, retries, logging, TypeScript worker); AI assistance added in
+> Phase 6 through the same validated intake — see [ai.md](ai.md).
 
 ## Principles
 
@@ -67,6 +67,12 @@ Seed dataset (curated CSV) ──► Candidates ──► Deterministic matching
 | `source_refresh` | worker | re-reads the websites of entities in the job's scope (Location / Practice Area terms on the job) | `entity_type` (`lawyer` \| `law_firm`, optional) |
 | `verification` | WordPress (cron) | marks published verification records past `expires_at` as `expired` | — |
 | `ranking_recalculation` | WordPress (cron) | scores all entities and recalculates published rankings | — |
+| `ai_candidate_review` | worker + AI | advisory AI verdict on candidates in review ([ai.md](ai.md)) | — |
+| `content_generation` | worker + AI | ranking summary/sections/FAQ drafts with QA ([ai.md](ai.md)) | `rankings` (IDs, optional), `ai_qa` (default `true`) |
+
+`source_refresh` and `candidate_discovery` also accept `ai_extraction: true`
+(quote-checked AI extraction for pages without structured data). AI job
+types wait until **AI assistance** is enabled in Settings.
 
 Create jobs in **LexRanked → Research Jobs** (set parameters as JSON and the
 scope with the taxonomy boxes) or with WP-CLI:
@@ -237,9 +243,6 @@ internal services.
 
 ## AI usage (Phase 6)
 
-Classification, extraction from source documents and duplicate detection —
-always with strict JSON Schemas, validated output, malformed output
-rejected. AI output enters through the same intake as above (claims with a
-source, pending verification, drafts only); the model may only extract
-values present in a supplied source document and never decides matches or
-positions.
+See [ai.md](ai.md): quote-checked extraction and practice-area
+classification, advisory match review, ranking content drafts with QA — all
+with strict JSON Schemas, validated output and no publication.

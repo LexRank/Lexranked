@@ -102,6 +102,7 @@ score_version, verification_status, last_verified_at, created_at, updated_at`.
 | claim_hash | sha1(entity, field, value, source) — unique; same fact from the same source is one claim |
 | job_id | research job that produced it (0 = editor / seed) |
 | review_status | `approved` (public) \| `pending_review` (research evidence about a published entity, hidden) \| `rejected` |
+| method | `manual` \| `seed` \| `structured_data` \| `ai` (schema v5) |
 
 `ClaimValidator` rejects any claim without a source (URL or registered
 source), with an unconfigured source type, a confidence outside 0–1, or a
@@ -153,8 +154,17 @@ cancel any job. Administrator-only (custom capability type `lr_research_job`).
 `candidate_id, dedupe_key (unique), job_id, entity_type, name,
 normalized_name, city, state, practice_area, website, source_url, status
 (new|matched|created|needs_review|rejected), entity_id, match_confidence,
-reason, payload, created_at, updated_at`. Internal research data — never in
-the public API.
+reason, payload, ai_note (advisory AI verdict, schema v5), created_at,
+updated_at`. Internal research data — never in the public API.
+
+## AI content draft (`lr_content_draft`)
+
+Post (always `draft`) with `content_type` (`ranking_content`), `target_id`
+(ranking), `qa_status` (`needs_review` \| `ready_for_review` \| `applied`),
+`summary`, body (post content, built from escaped plain text), `faq`,
+`qa_report` (JSON issues), `facts` (JSON, the numbered facts the model was
+given), `model`, `prompt_version`, `job_id`, `applied_at`. Never public;
+applied to its ranking only by an editor. See [ai.md](ai.md).
 
 ## Research log (`lr_research_log`)
 

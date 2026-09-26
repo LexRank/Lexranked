@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core;
 
+use LexRanked\Core\PostTypes\ContentDraft;
 use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\PostTypes\PostType;
@@ -84,6 +85,13 @@ final class Services {
 	 * @var ResearchJob
 	 */
 	public readonly ResearchJob $research_job;
+
+	/**
+	 * AI content drafts.
+	 *
+	 * @var ContentDraft
+	 */
+	public readonly ContentDraft $content_draft;
 
 	/**
 	 * Entities.
@@ -182,6 +190,7 @@ final class Services {
 		$this->source        = new Source( $this->settings->source_tiers() );
 		$this->verification  = new VerificationRecord();
 		$this->research_job  = new ResearchJob();
+		$this->content_draft = new ContentDraft();
 		$this->entities      = new EntityRepository();
 		$this->verifications = new VerificationRepository( $this->entities, $this->verification );
 		$this->claims        = new ClaimRepository(
@@ -210,7 +219,7 @@ final class Services {
 	 * @return array<int, PostType>
 	 */
 	public function post_types(): array {
-		return array( $this->lawyer, $this->law_firm, $this->ranking, $this->source, $this->verification, $this->research_job );
+		return array( $this->lawyer, $this->law_firm, $this->ranking, $this->source, $this->verification, $this->research_job, $this->content_draft );
 	}
 
 	/**

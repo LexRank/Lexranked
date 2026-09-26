@@ -97,6 +97,8 @@ export interface EvidenceDto {
   retrievedAt: string;
   confidence: number;
   verificationStatus: string;
+  /** How the fact was obtained (API 1.4): manual, seed, structured_data or ai (quote-checked). */
+  method?: "manual" | "seed" | "structured_data" | "ai";
 }
 
 interface EntityBase {

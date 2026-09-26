@@ -29,6 +29,12 @@ export class FakeWordPress {
   verifications = new Map<string, number>();
   logs: { jobId: number; level: string; message: string }[] = [];
   requests: string[] = [];
+  /** Public data for content generation. */
+  rankings: { id: number; title: string }[] = [];
+  practiceAreas = [{ id: 1, slug: 'personal-injury', name: 'Personal Injury' }];
+  drafts: Record<string, unknown>[] = [];
+  reviewQueue: Record<string, unknown>[] = [];
+  notes: Record<string, unknown>[] = [];
   /** Respond 503 to the next N requests (transient outage). */
   failNext = 0;
   private seq = 1000;
@@ -67,7 +73,15 @@ export class FakeWordPress {
       job.token = 'tok-' + ++this.seq;
       return json({ job: this.view(job, true) });
     }
-    const m = /^\/research\/jobs\/(\d+)\/([a-z]+)/.exec(path);
+    if (path === '/rankings') return json(this.rankings.map((r) => ({ id: r.id, title: r.title })));
+    const rm = /^\/rankings\/(\d+)$/.exec(path);
+    if (rm) {
+      const r = this.rankings.find((x) => x.id === Number(rm[1]));
+      return r ? json(r) : json({ code: 'lexranked_not_found' }, 404);
+    }
+    if (path === '/practice-areas') return json(this.practiceAreas);
+
+    const m = /^\/research\/jobs\/(\d+)\/([a-z-]+)/.exec(path);
     const job = m ? this.jobs.find((j) => j.id === Number(m[1])) : undefined;
     if (!m || !job) return json({ code: 'lexranked_not_found' }, 404);
     if (job.status === 'cancelled') return json({ code: 'lexranked_job_cancelled', message: 'cancelled' }, 409);
@@ -142,6 +156,22 @@ export class FakeWordPress {
         });
       case 'targets':
         return json([]);
+      case 'review-candidates': {
+        const after = Number(url.searchParams.get('after') ?? 0);
+        const limit = Number(url.searchParams.get('limit') ?? 25);
+        return json(this.reviewQueue.filter((c) => (c.id as number) > after).slice(0, limit));
+      }
+      case 'candidate-notes':
+        this.notes.push(...items);
+        return json({ results: items.map((it, index) => ({ index, candidateId: it.candidate_id, stored: true })) });
+      case 'content-drafts': {
+        const hasError = (body.qa?.issues ?? []).some((i: { severity: string }) => i.severity === 'error');
+        const existing = this.drafts.findIndex((d) => d.target_id === body.target_id && d.job === job.id);
+        const draft = { ...body, job: job.id, qaStatus: hasError ? 'needs_review' : body.qa.status };
+        if (existing >= 0) this.drafts[existing] = draft;
+        else this.drafts.push(draft);
+        return json({ draftId: 5000 + this.drafts.length, qaStatus: draft.qaStatus, updated: existing >= 0 });
+      }
     }
     return json({ code: 'rest_no_route' }, 404);
   }) as typeof fetch;

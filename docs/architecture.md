@@ -210,3 +210,17 @@ source; the worker does not crawl directories. Web facts come only from
 schema.org JSON-LD a site publishes about the same entity (name-matched),
 fetched politely (robots.txt, rate limits, SSRF guard). Free-text or
 AI-based extraction (Phase 6) must go through the same intake.
+
+### ADR-025 — AI runs in the worker, behind WordPress validation
+The OpenAI key lives only in the worker environment. Model output is
+strict-schema JSON, validated again in code, and submitted through the same
+research intake as any other evidence (claims, notes, drafts). WordPress
+gates all of it on the *AI assistance* setting and re-validates. The
+model never decides a match, a verification or a ranking position.
+
+### ADR-026 — Grounding by quotation and numbered facts
+Extraction must quote the source text; values not found verbatim are
+discarded. Content drafts may only use a deterministic, numbered fact list
+and must cite fact IDs (schema enum), so deterministic QA can check every
+number, name and position. The AI reviewer can add issues but never clear
+them.

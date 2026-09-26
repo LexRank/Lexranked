@@ -11,9 +11,10 @@ namespace LexRanked\Core\Research;
 
 use LexRanked\Core\Domain\UsStates;
 use LexRanked\Core\Domain\VerificationStatus;
+use LexRanked\Core\PostTypes\ContentDraft;
 use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
-use LexRanked\Core\PostTypes\PostType;
+use LexRanked\Core\PostTypes\Ranking;
 use LexRanked\Core\PostTypes\Source;
 use LexRanked\Core\PostTypes\VerificationRecord;
 use LexRanked\Core\Repository\ClaimRepository;
@@ -47,6 +48,14 @@ final class ResearchIngest {
 	public const WRITABLE_STATUSES = array( 'draft', 'pending' );
 
 	public const MAX_BATCH = 100;
+
+	/** Methods a worker may declare for a claim. */
+	public const WORKER_METHODS = array( 'seed', 'structured_data', 'ai' );
+
+	/** AI-extracted facts never outrank human-curated or structured data on confidence. */
+	public const AI_MAX_CONFIDENCE = 0.6;
+
+	public const META_DRAFT_KEY = '_lr_draft_key';
 
 	/**
 	 * Constructor.
@@ -384,13 +393,29 @@ final class ResearchIngest {
 			}
 			$entities[ $entity_id ] = $post;
 
-			$item['entity_type'] = $type;
+			$method = (string) ( $item['method'] ?? 'structured_data' );
+			if ( ! in_array( $method, self::WORKER_METHODS, true ) ) {
+				$results[] = self::error( $i, 'method', 'must be seed, structured_data or ai' );
+				continue;
+			}
+			if ( 'ai' === $method ) {
+				if ( ! $this->services->settings->get( 'ai_enabled' ) ) {
+					$results[] = self::error( $i, 'method', 'ai is not accepted: AI assistance is disabled in Settings' );
+					continue;
+				}
+				if ( isset( $item['confidence'] ) && is_numeric( $item['confidence'] ) ) {
+					$item['confidence'] = min( (float) $item['confidence'], self::AI_MAX_CONFIDENCE );
+				}
+			}
+			unset( $item['method'] );
+
 			// Derived server-side, never trusted from the worker.
+			$item['entity_type'] = $type;
 			// Research never self-certifies a claim; verification records do that under VerificationRules.
 			$item['verification_status'] = VerificationStatus::Pending->value;
 			$writable                    = in_array( $post->post_status, self::WRITABLE_STATUSES, true );
 			try {
-				$stored = $this->services->claims->insert_unique( $item, $job_id, $writable ? ClaimRepository::REVIEW_APPROVED : ClaimRepository::REVIEW_PENDING );
+				$stored = $this->services->claims->insert_unique( $item, $job_id, $writable ? ClaimRepository::REVIEW_APPROVED : ClaimRepository::REVIEW_PENDING, $method );
 			} catch ( ValidationException $e ) {
 				$results[] = self::error( $i, $e->field_key, $e->reason );
 				continue;
@@ -705,6 +730,197 @@ final class ResearchIngest {
 			);
 		}
 		return $out;
+	}
+
+	// ─── AI assistance (Phase 6) ────────────────────────────────────────────
+
+	/**
+	 * Candidates in review with their suggested profile, for AI match review.
+	 *
+	 * @param int $after Last candidate ID seen.
+	 * @param int $limit Page size.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function review_candidates( int $after, int $limit ): array {
+		$out = array();
+		foreach ( $this->candidates->needs_review_after( $after, $limit ) as $c ) {
+			$suggested = null;
+			$post      = null === $c['entityId'] ? null : get_post( (int) $c['entityId'] );
+			if ( $post instanceof \WP_Post && null !== self::entity_type( $post ) && 'trash' !== $post->post_status ) {
+				$type   = 'law_firm' === self::entity_type( $post ) ? $this->services->law_firm : $this->services->lawyer;
+				$record = $this->services->entities->record( $post, $type );
+				$city   = null;
+				$state  = null;
+				foreach ( $record['locations'] as $term ) {
+					if ( null !== $term['state_code'] ) {
+						$state = $term['state_code'];
+					} elseif ( $term['parent'] > 0 ) {
+						$city = $term['name'];
+					}
+				}
+				$suggested = array(
+					'id'            => (int) $post->ID,
+					'name'          => $record['title'],
+					'status'        => (string) $post->post_status,
+					'city'          => $city,
+					'state'         => $state,
+					'website'       => $record['fields']['website'] ?? null,
+					'practiceAreas' => array_column( $record['practice_areas'], 'name' ),
+				);
+			}//end if
+			$out[] = array(
+				'id'           => $c['id'],
+				'entityType'   => $c['entityType'],
+				'name'         => $c['name'],
+				'city'         => $c['city'],
+				'state'        => $c['state'],
+				'practiceArea' => $c['practiceArea'],
+				'website'      => $c['website'],
+				'sourceUrl'    => $c['sourceUrl'],
+				'reason'       => $c['reason'],
+				'suggested'    => $suggested,
+			);
+		}//end foreach
+		return $out;
+	}
+
+	/**
+	 * Store advisory AI verdicts on candidates in review. Never resolves them.
+	 *
+	 * @param int                             $job_id Job ID.
+	 * @param array<int, array<string,mixed>> $items  {candidate_id, verdict, confidence, reason, model}.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function ai_notes( int $job_id, array $items ): array {
+		$out     = array();
+		$enabled = (bool) $this->services->settings->get( 'ai_enabled' );
+		foreach ( array_values( $items ) as $i => $item ) {
+			if ( ! $enabled ) {
+				$out[] = self::error( $i, 'ai', 'assistance is disabled in Settings' );
+				continue;
+			}
+			$item      = is_array( $item ) ? $item : array();
+			$candidate = $this->candidates->find( (int) ( $item['candidate_id'] ?? 0 ) );
+			if ( null === $candidate || CandidateRepository::STATUS_NEEDS_REVIEW !== $candidate['status'] ) {
+				$out[] = self::error( $i, 'candidate_id', 'must reference a candidate awaiting review' );
+				continue;
+			}
+			$verdict    = (string) ( $item['verdict'] ?? '' );
+			$confidence = $item['confidence'] ?? null;
+			$reason     = trim( (string) preg_replace( '/\s+/u', ' ', wp_strip_all_tags( (string) ( $item['reason'] ?? '' ) ) ) );
+			if ( ! in_array( $verdict, array( 'same', 'different', 'unsure' ), true ) ) {
+				$out[] = self::error( $i, 'verdict', 'must be same, different or unsure' );
+				continue;
+			}
+			if ( ! is_numeric( $confidence ) || (float) $confidence < 0 || (float) $confidence > 1 || '' === $reason ) {
+				$out[] = self::error( $i, 'confidence', 'must be 0–1 and come with a reason' );
+				continue;
+			}
+			$this->candidates->set_ai_note(
+				$candidate['id'],
+				array(
+					'verdict'    => $verdict,
+					'confidence' => round( (float) $confidence, 2 ),
+					'reason'     => mb_substr( $reason, 0, 500 ),
+					'model'      => mb_substr( (string) ( $item['model'] ?? '' ), 0, 100 ),
+					'jobId'      => $job_id,
+					'at'         => gmdate( 'Y-m-d\TH:i:s\Z' ),
+				)
+			);
+			$out[] = array(
+				'index'       => $i,
+				'candidateId' => $candidate['id'],
+				'stored'      => true,
+			);
+		}//end foreach
+		return $out;
+	}
+
+	/**
+	 * Store (or replace, per job and target) a machine-drafted content draft.
+	 *
+	 * @param int                  $job_id  Job ID.
+	 * @param array<string, mixed> $payload Raw payload (see ContentDraftInput).
+	 * @return array<string, mixed>
+	 * @throws JobException When invalid or not allowed.
+	 */
+	public function content_draft( int $job_id, array $payload ): array {
+		if ( ! $this->services->settings->get( 'ai_enabled' ) ) {
+			throw new JobException( 'lexranked_ai_disabled', 'AI assistance is disabled in Settings.', 403 );
+		}
+		try {
+			$draft = ContentDraftInput::validate( $payload );
+		} catch ( ValidationException $e ) {
+			throw new JobException( 'lexranked_invalid_param', $e->field_key . ' ' . $e->reason . '.', 400 );
+		}
+		$target = get_post( $draft['target_id'] );
+		if ( ! $target instanceof \WP_Post || Ranking::SLUG !== $target->post_type || 'publish' !== $target->post_status ) {
+			throw new JobException( 'lexranked_invalid_target', 'target_id must reference a published ranking.', 400 );
+		}
+
+		$key      = sha1( $job_id . '|' . $draft['content_type'] . '|' . $draft['target_id'] );
+		$existing = get_posts(
+			array(
+				'post_type'        => ContentDraft::SLUG,
+				'post_status'      => array( 'draft', 'pending' ),
+				'posts_per_page'   => 1,
+				'fields'           => 'ids',
+				'no_found_rows'    => true,
+				'suppress_filters' => false,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Exact match on one key.
+				'meta_query'       => array(
+					array(
+						'key'   => self::META_DRAFT_KEY,
+						'value' => $key,
+					),
+				),
+			)
+		);
+		$postarr = array(
+			'post_type'                  => ContentDraft::SLUG,
+			'post_status'                => 'draft',
+			// Never published by the generator.
+							'post_title' => sprintf( 'AI draft: %s (%s)', get_the_title( $target ), gmdate( 'Y-m-d' ) ),
+			'post_content'               => ContentDraftInput::to_html( $draft['sections'] ),
+		);
+		if ( array() !== $existing ) {
+			$postarr['ID'] = (int) $existing[0];
+		}
+		$id = array() === $existing ? wp_insert_post( wp_slash( $postarr ), true ) : wp_update_post( wp_slash( $postarr ), true );
+		if ( is_wp_error( $id ) ) {
+			throw new JobException( 'lexranked_store_failed', 'Could not store the content draft.', 500 );
+		}
+		$id = (int) $id;
+		$this->services->entities->save_fields(
+			$id,
+			$this->services->content_draft,
+			array(
+				'content_type'   => $draft['content_type'],
+				'target_id'      => $draft['target_id'],
+				'qa_status'      => $draft['qa_status'],
+				'summary'        => $draft['summary'],
+				'faq'            => ContentDraftInput::faq_for_field( $draft['faq'] ),
+				'qa_report'      => (string) wp_json_encode( $draft['issues'] ),
+				'facts'          => (string) wp_json_encode( $draft['facts'] ),
+				'model'          => $draft['model'],
+				'prompt_version' => $draft['prompt_version'],
+				'job_id'         => $job_id,
+			),
+			true
+		);
+		update_post_meta( $id, self::META_DRAFT_KEY, $key );
+		$this->log->add(
+			$job_id,
+			ContentDraft::QA_READY === $draft['qa_status'] ? 'info' : 'warning',
+			'content',
+			sprintf( 'Content draft #%d for ranking #%d: %s (%d QA issue(s)).', $id, $draft['target_id'], $draft['qa_status'], count( $draft['issues'] ) )
+		);
+		AuditLog::log( 'content_draft.stored', ContentDraft::SLUG, $id, array( 'job_id' => $job_id ) );
+		return array(
+			'draftId'  => $id,
+			'qaStatus' => $draft['qa_status'],
+			'updated'  => array() !== $existing,
+		);
 	}
 
 	// ─── Helpers ────────────────────────────────────────────────────────────

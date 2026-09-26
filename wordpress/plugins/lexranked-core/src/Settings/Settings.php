@@ -67,6 +67,7 @@ final class Settings {
 			'research_max_retries'   => 3,
 			'research_backoff_base'  => 300,
 			'research_lease_minutes' => 10,
+			'ai_enabled'             => false,
 		);
 	}
 
@@ -90,7 +91,7 @@ final class Settings {
 			}
 		}
 
-		foreach ( array( 'headless_redirect', 'trust_proxy_header' ) as $key ) {
+		foreach ( array( 'headless_redirect', 'trust_proxy_header', 'ai_enabled' ) as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = in_array( $input[ $key ], array( true, 1, '1', 'on', 'true' ), true );
 			}

@@ -25,6 +25,7 @@ export function rowClaims(row: SeedRow, entityId: number, sourceId: number | und
     source_type: row.source_type,
     retrieved_at: row.retrieved_at,
     confidence: row.confidence,
+    method: 'seed' as const,
     ...(sourceId !== undefined ? { source_id: sourceId } : {}),
   };
   const fields: [string, unknown][] = [

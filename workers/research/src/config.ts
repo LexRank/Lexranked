@@ -20,9 +20,18 @@ export interface WorkerConfig {
   batchSize: number;
   /** Test hook: exit abruptly after this many processed rows (simulates a crash). */
   crashAfterRows: number | null;
+  /** AI (Phase 6). Null when OPENAI_API_KEY / OPENAI_MODEL are not set. */
+  ai: {
+    apiKey: string;
+    model: string;
+    baseUrl: string;
+    maxCallsPerJob: number;
+    timeoutMs: number;
+  } | null;
 }
 
-export const WORKER_JOB_TYPES = ['candidate_discovery', 'source_refresh'] as const;
+export const WORKER_JOB_TYPES = ['candidate_discovery', 'source_refresh', 'ai_candidate_review', 'content_generation'] as const;
+export const AI_JOB_TYPES = ['ai_candidate_review', 'content_generation'] as const;
 
 export class ConfigError extends Error {}
 
@@ -52,13 +61,37 @@ export function loadConfig(env: Env = process.env): WorkerConfig {
     throw new ConfigError('LEXRANKED_API_URL must use https (credentials are sent with every request)');
   }
 
-  const types = (env.LEXRANKED_WORKER_JOB_TYPES ?? WORKER_JOB_TYPES.join(','))
+  const apiKey = env.OPENAI_API_KEY ?? '';
+  const model = env.OPENAI_MODEL ?? '';
+  if ((apiKey === '') !== (model === '')) {
+    throw new ConfigError('Set both OPENAI_API_KEY and OPENAI_MODEL to enable AI, or neither');
+  }
+  const baseUrl = (env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/+$/, '');
+  if (!/^https:\/\//i.test(baseUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(baseUrl)) {
+    throw new ConfigError('OPENAI_BASE_URL must use https');
+  }
+  const ai =
+    apiKey === ''
+      ? null
+      : {
+          apiKey,
+          model,
+          baseUrl,
+          maxCallsPerJob: int(env, 'OPENAI_MAX_CALLS_PER_JOB', 200, 1, 10_000),
+          timeoutMs: int(env, 'OPENAI_TIMEOUT_MS', 60_000, 1_000, 600_000),
+        };
+  const defaultTypes = WORKER_JOB_TYPES.filter((t) => ai !== null || !(AI_JOB_TYPES as readonly string[]).includes(t));
+
+  const types = (env.LEXRANKED_WORKER_JOB_TYPES ?? defaultTypes.join(','))
     .split(',')
     .map((t) => t.trim())
     .filter(Boolean);
   for (const t of types) {
     if (!(WORKER_JOB_TYPES as readonly string[]).includes(t)) {
       throw new ConfigError(`Unsupported job type "${t}"`);
+    }
+    if (ai === null && (AI_JOB_TYPES as readonly string[]).includes(t)) {
+      throw new ConfigError(`Job type "${t}" needs OPENAI_API_KEY and OPENAI_MODEL`);
     }
   }
 
@@ -84,5 +117,6 @@ export function loadConfig(env: Env = process.env): WorkerConfig {
     allowPrivateNetwork: env.LEXRANKED_ALLOW_PRIVATE_NETWORK === '1',
     batchSize: int(env, 'LEXRANKED_BATCH_SIZE', 10, 1, 50),
     crashAfterRows: crash === undefined || crash === '' ? null : int(env, 'LEXRANKED_WORKER_CRASH_AFTER_ROWS', 0, 1, 1_000_000),
+    ai,
   };
 }

@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.3.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.4.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) also accepts
@@ -136,9 +136,11 @@ lastVerifiedAt, isStale, staleAt}`, `sources[]` (evidence), `createdAt`.
 ```json
 { "field": "bar_status", "value": "active",
   "source": { "id": 4, "name": "Example State Bar Registry (Demo)", "url": "https://example.com/demo/bar-registry", "type": "official_registry", "tier": 1 },
-  "retrievedAt": "2026-09-24T07:46:24Z", "confidence": 0.99, "verificationStatus": "verified" }
+  "retrievedAt": "2026-09-24T07:46:24Z", "confidence": 0.99, "verificationStatus": "verified", "method": "seed" }
 ```
 Sorted by field, then source tier (most authoritative first), then newest.
+`method` (API 1.4): `manual`, `seed`, `structured_data` or `ai` (quote-checked
+extraction; see [ai.md](ai.md)). Only editor-approved evidence is public.
 
 ### Law firm (detail)
 Summary fields + `lawyerCount`, `contact {website, phone, email}`, `address
@@ -175,8 +177,11 @@ See [research.md](research.md) for the semantics.
 | `GET /research/jobs/{id}/targets` 🔒 | `after` (entity ID), `limit` ≤ 100 | `[{id, entityType, status, name, website}]` in the job's scope |
 | `POST /research/jobs/{id}/sources` 🔒 | `items[{url, source_type, title?}]` | `[{index, sourceId, created, tier}]` |
 | `POST /research/jobs/{id}/candidates` 🔒 | `items[{entity_type, name, source_url, source_type, city?, state?, practice_area?, website?, payload?}]` | `[{index, candidateId, created, status, entityId, entityType, reason}]` — `entityId` only for `matched`/`created` |
-| `POST /research/jobs/{id}/claims` 🔒 | `items[{entity_id, field_name, value, source_url and/or source_id, source_type, retrieved_at, confidence}]` | `{results[{index, claimId, duplicate}], applied{entityId: fields[]}, review[entityIds]}` |
+| `POST /research/jobs/{id}/claims` 🔒 | `items[{entity_id, field_name, value, source_url and/or source_id, source_type, retrieved_at, confidence, method?: seed\|structured_data\|ai}]` (`ai` needs AI enabled; confidence capped at 0.6) | `{results[{index, claimId, duplicate}], applied{entityId: fields[]}, review[entityIds]}` |
 | `POST /research/jobs/{id}/verifications` 🔒 | `items[{entity_id, verification_type, status, source_url, source_type, source_id?, notes?}]` | `[{index, verificationId, status, downgraded, duplicate}]` |
+| `GET /research/jobs/{id}/review-candidates` 🔒 | `after`, `limit` | candidates in review + suggested profile (API 1.4) |
+| `POST /research/jobs/{id}/candidate-notes` 🔒 | `items[{candidate_id, verdict: same\|different\|unsure, confidence, reason, model}]` | advisory AI notes; `[{index, candidateId, stored}]` (API 1.4, needs AI enabled) |
+| `POST /research/jobs/{id}/content-drafts` 🔒 | `{content_type: "ranking_content", target_id, content{summary, sections[{heading, paragraphs[{text}]}], faq[{question, answer}]}, facts[{id,label,value}], qa{status, issues[]}, model, prompt_version}` | `{draftId, qaStatus, updated}`; stored as a WordPress draft; QA status recomputed (API 1.4, needs AI enabled) |
 | `GET /research/candidates` | `status?`, `page`, `per_page` | Candidate list (+ `X-WP-Total`) |
 | `POST /research/candidates/{id}/resolve` | `{action: match\|create\|reject\|needs_review, entity_id?, reason?}` | Candidate result |
 

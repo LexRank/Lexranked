@@ -69,6 +69,7 @@ scripts/build-plugin-zip.sh      # installable plugin ZIP → dist/
 ```
 
 Connecting your own WordPress: [`docs/connecting-wordpress.md`](docs/connecting-wordpress.md).
+Adding cities, rankings, lawyers and articles: [`docs/editor-guide.md`](docs/editor-guide.md). AI: [`docs/ai.md`](docs/ai.md).
 
 ## Roadmap
 
@@ -77,7 +78,7 @@ Connecting your own WordPress: [`docs/connecting-wordpress.md`](docs/connecting-
 3. ✅ Frontend: public pages, design system, SEO/GEO content, structured data, sitemap
 4. ✅ **Ranking engine**: ScoreCalculator, RankingEngine, ScoreVersion, snapshots, history, breakdowns
 5. ✅ **Research engine**: leased/resumable jobs with retries, candidates + deterministic matching, source-backed claims, rule-based verification, editorial review, TypeScript worker
-6. OpenAI integration: structured extraction, strict schemas
+6. ✅ **AI assistance**: quote-checked extraction & classification, advisory match review, ranking content drafts with deterministic + AI QA — strict schemas, never published automatically
 7. Content engine (drafts only)
 8. Production hardening
 9. Commercial features (kept separate from organic ranking)

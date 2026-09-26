@@ -25,7 +25,10 @@ final class ResearchJob extends PostType {
 
 	public const SLUG = 'lr_research_job';
 
-	public const JOB_TYPES = array( 'candidate_discovery', 'source_refresh', 'verification', 'ranking_recalculation' );
+	public const JOB_TYPES = array( 'candidate_discovery', 'source_refresh', 'verification', 'ranking_recalculation', 'ai_candidate_review', 'content_generation' );
+
+	/** Job types that need AI assistance to be enabled in Settings. */
+	public const AI_JOB_TYPES = array( 'ai_candidate_review', 'content_generation' );
 
 	/**
 	 * {@inheritDoc}

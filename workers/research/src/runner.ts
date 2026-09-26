@@ -15,6 +15,9 @@ import type { WorkerConfig } from './config.js';
 import type { SafeFetcher } from './fetcher.js';
 import type { Logger } from './logger.js';
 import { AbortedError, type JobContext, type PipelineResult } from './pipeline/context.js';
+import type { AiClient } from './ai/openai.js';
+import { runAiReview } from './pipeline/aiReview.js';
+import { runContent } from './pipeline/content.js';
 import { runDiscovery } from './pipeline/discovery.js';
 import { runRefresh } from './pipeline/refresh.js';
 import { ProviderError } from './providers/csvSeed.js';
@@ -29,6 +32,8 @@ export interface RunnerDeps {
   config: WorkerConfig;
   fetcher: SafeFetcher;
   logger: Logger;
+  /** AI client, when configured. */
+  ai?: AiClient | null;
   /** Abort signal for graceful shutdown. */
   shutdown: AbortSignal;
   /** Invoked when config.crashAfterRows is reached (default: hard exit). */
@@ -38,6 +43,8 @@ export interface RunnerDeps {
 const PIPELINES: Record<string, (ctx: JobContext) => Promise<PipelineResult>> = {
   candidate_discovery: runDiscovery,
   source_refresh: runRefresh,
+  ai_candidate_review: runAiReview,
+  content_generation: runContent,
 };
 
 export async function runOnce(deps: RunnerDeps): Promise<Outcome> {
@@ -46,6 +53,7 @@ export async function runOnce(deps: RunnerDeps): Promise<Outcome> {
   const job = claimed.job;
   if (!job) return 'idle';
 
+  deps.ai?.resetBudget();
   logger.log('info', 'Claimed research job', { job_id: job.id, job_type: job.jobType, cursor: job.cursor, retry: job.retryCount });
   const pipeline = PIPELINES[job.jobType];
   const controller = new AbortController();
@@ -71,6 +79,7 @@ export async function runOnce(deps: RunnerDeps): Promise<Outcome> {
     job,
     config,
     fetcher: deps.fetcher,
+    ai: deps.ai ?? null,
     signal: controller.signal,
     log(level, stage, message, context) {
       logger.log(level, message, { job_id: job.id, stage, ...context });

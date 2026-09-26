@@ -1,3 +1,5 @@
+import type { ReviewCandidate } from './ai/matchReview.js';
+
 /**
  * Client for the private LexRanked research API (WordPress, lexranked/v1).
  *
@@ -79,6 +81,28 @@ export interface CandidateInput {
   payload?: Record<string, unknown>;
 }
 
+export interface CandidateNoteInput {
+  candidate_id: number;
+  verdict: 'same' | 'different' | 'unsure';
+  confidence: number;
+  reason: string;
+  model: string;
+}
+
+export interface ContentDraftInput {
+  content_type: 'ranking_content';
+  target_id: number;
+  content: {
+    summary: string;
+    sections: { heading: string; paragraphs: { text: string }[] }[];
+    faq: { question: string; answer: string }[];
+  };
+  facts: { id: string; label: string; value: string }[];
+  qa: { status: 'ready_for_review' | 'needs_review'; issues: { code: string; severity: 'error' | 'warning'; message: string; excerpt: string }[] };
+  model: string;
+  prompt_version: string;
+}
+
 export interface ClaimInput {
   entity_id: number;
   field_name: string;
@@ -88,6 +112,8 @@ export interface ClaimInput {
   source_id?: number;
   retrieved_at: string;
   confidence: number;
+  /** How the fact was obtained (WordPress caps AI confidence and gates it on the AI setting). */
+  method?: 'seed' | 'structured_data' | 'ai';
 }
 
 export interface VerificationInput {
@@ -183,6 +209,23 @@ export class ResearchApi {
 
   async verifications(job: ClaimedJob, items: VerificationInput[]): Promise<VerificationResult[]> {
     return this.batched(job, 'verifications', items);
+  }
+
+  reviewCandidates(job: ClaimedJob, after: number, limit: number): Promise<ReviewCandidate[]> {
+    return this.request('GET', `/research/jobs/${job.id}/review-candidates?after=${after}&limit=${limit}`, { lease: job.token });
+  }
+
+  async candidateNotes(job: ClaimedJob, items: CandidateNoteInput[]): Promise<({ index: number; candidateId: number; stored: boolean } | ItemError)[]> {
+    return this.batched(job, 'candidate-notes', items);
+  }
+
+  contentDraft(job: ClaimedJob, draft: ContentDraftInput): Promise<{ draftId: number; qaStatus: string; updated: boolean }> {
+    return this.request('POST', `/research/jobs/${job.id}/content-drafts`, { body: draft, lease: job.token });
+  }
+
+  /** Public (published) data, read with the worker's credentials. */
+  getPublic<T>(path: string): Promise<T> {
+    return this.request('GET', path);
   }
 
   private async batched<T extends { index: number }>(job: ClaimedJob, path: string, items: unknown[]): Promise<T[]> {

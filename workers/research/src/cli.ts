@@ -12,6 +12,7 @@ import { ResearchApi } from './api.js';
 import { ConfigError, loadConfig } from './config.js';
 import { SafeFetcher } from './fetcher.js';
 import { JsonLogger } from './logger.js';
+import { OpenAIClient } from './ai/openai.js';
 import { runOnce, type Outcome } from './runner.js';
 
 async function main(argv: string[]): Promise<number> {
@@ -35,6 +36,9 @@ async function main(argv: string[]): Promise<number> {
     perHostIntervalMs: config.perHostIntervalMs,
     allowPrivateNetwork: config.allowPrivateNetwork,
   });
+  const ai = config.ai
+    ? new OpenAIClient({ apiKey: config.ai.apiKey, model: config.ai.model, baseUrl: config.ai.baseUrl, maxCalls: config.ai.maxCallsPerJob, timeoutMs: config.ai.timeoutMs })
+    : null;
   const shutdown = new AbortController();
   for (const sig of ['SIGINT', 'SIGTERM'] as const) {
     process.once(sig, () => {
@@ -44,12 +48,12 @@ async function main(argv: string[]): Promise<number> {
   }
 
   const once = argv.includes('--once');
-  logger.log('info', 'Research worker started', { worker: config.workerId, types: config.jobTypes, mode: once ? 'once' : 'loop' });
+  logger.log('info', 'Research worker started', { worker: config.workerId, types: config.jobTypes, mode: once ? 'once' : 'loop', ai: config.ai ? config.ai.model : 'off' });
 
   let last: Outcome = 'idle';
   while (!shutdown.signal.aborted) {
     try {
-      last = await runOnce({ api, config, fetcher, logger, shutdown: shutdown.signal });
+      last = await runOnce({ api, config, fetcher, logger, ai, shutdown: shutdown.signal });
     } catch (err) {
       // Claim itself failed (API unreachable after retries): wait and try again.
       logger.log('error', 'Could not claim a job', { error: (err as Error).message });
