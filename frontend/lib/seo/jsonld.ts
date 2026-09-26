@@ -165,3 +165,41 @@ export function collectionPageJsonLd(name: string, path: string, description: st
     isPartOf: { "@id": `${siteUrl}/#website` },
   };
 }
+
+/** FAQPage for editorial FAQs (plain-text answers only). */
+export function faqJsonLd(items: Array<{ question: string; answer: string }>): JsonLdObject | null {
+  if (items.length === 0) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+}
+
+/** WebPage wrapper for rankings: freshness and editorial review signals. */
+export function rankingPageJsonLd(input: {
+  name: string;
+  path: string;
+  description: string;
+  dateModified: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+}): JsonLdObject {
+  return compact({
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: input.name,
+    url: absoluteUrl(input.path),
+    description: input.description,
+    inLanguage: "en-US",
+    isPartOf: { "@id": `${siteUrl}/#website` },
+    publisher: { "@id": `${siteUrl}/#organization` },
+    dateModified: input.dateModified ?? undefined,
+    lastReviewed: input.reviewedAt ?? undefined,
+    reviewedBy: input.reviewedBy ? { "@type": "Person", name: input.reviewedBy } : undefined,
+  });
+}

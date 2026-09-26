@@ -34,6 +34,48 @@ final class DemoData {
 	);
 	public const SCORE_VERSION = 'demo';
 
+	public const RANKING_SUMMARY = 'Demo content: this sample ranking compares eight fictional personal injury lawyers in Miami using mock data, to show how LexRanked pages present rankings, sources and verification.';
+
+	/**
+	 * Demo editorial body shown below the ranking. Generic guidance only — no
+	 * jurisdiction-specific legal facts are asserted.
+	 */
+	public static function ranking_body(): string {
+		return implode(
+			"\n\n",
+			array(
+				'<h2>How to use this ranking (demo content)</h2>',
+				'<p>A ranking is a starting point for building a shortlist. Use it to compare verified credentials, client ratings and experience side by side, then speak with more than one lawyer before you decide.</p>',
+				'<h2>What to ask a personal injury lawyer (demo content)</h2>',
+				'<ul><li>How many cases like mine have you handled, and how were they resolved?</li><li>Who will work on my case day to day?</li><li>How are fees calculated, and which costs am I responsible for?</li><li>How will you keep me informed about progress?</li></ul>',
+				'<h2>How scores are calculated</h2>',
+				'<p>Scores are calculated with the published LexRank methodology from stored, sourced data. Payment never changes a score or a position.</p>',
+			)
+		);
+	}
+
+	/**
+	 * Demo FAQ items.
+	 *
+	 * @return array<int, array{question: string, answer: string}>
+	 */
+	public static function ranking_faq(): array {
+		return array(
+			array(
+				'question' => 'How is this ranking calculated?',
+				'answer'   => 'Each lawyer receives a LexRank score from seven weighted factors, including reputation, review strength, experience and verified credentials. Entries are ordered by that score.',
+			),
+			array(
+				'question' => 'Can lawyers pay to improve their position?',
+				'answer'   => 'No. Commercial status is stored separately from the organic score and never affects a score or position. Paid placements are always labelled.',
+			),
+			array(
+				'question' => 'Is this real data?',
+				'answer'   => 'No. This is demo content with fictional lawyers, created to test the LexRanked platform. Demo pages are hidden from search engines.',
+			),
+		);
+	}
+
 	/**
 	 * Demo sources.
 	 *

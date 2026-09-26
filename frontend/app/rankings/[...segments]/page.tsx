@@ -9,10 +9,12 @@ import { PageHeader } from "@/components/PageHeader";
 import { DemoNotice } from "@/components/ui";
 import { rankingEligibility } from "@/lib/content/eligibility";
 import { resolveRanking } from "@/lib/content/rankings";
+import { rankingAnswer, rankingFacts } from "@/lib/content/rankingFacts";
+import { AboutRanking, EditorialBody, FaqSection, OnThisPage, RankingOverview } from "@/components/ranking/RankingContent";
 import { allRankings } from "@/lib/data/loaders";
 import { formatDate, isoDate, pluralize } from "@/lib/format";
 import { METHODOLOGY_VERSION } from "@/lib/methodology";
-import { collectionPageJsonLd, rankingJsonLd, type Crumb } from "@/lib/seo/jsonld";
+import { rankingJsonLd, rankingPageJsonLd, type Crumb } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getRanking } from "@/lib/wordpress/api";
 
@@ -46,10 +48,10 @@ export async function generateMetadata(props: PageProps<"/rankings/[...segments]
   const result = await loadRanking(segments);
   if (result.kind !== "found") return { robots: { index: false } };
   const r = result.ranking;
-  const top = r.entries.slice(0, 3).map((e) => e.entity.name).join(", ");
+  const answer = rankingAnswer(r);
   return buildMetadata({
     title: r.title,
-    description: `${r.title}: ${pluralize(r.entries.length, r.entityType === "law_firm" ? "firm" : "lawyer")} ranked by the ${METHODOLOGY_VERSION} methodology${top ? `, led by ${top}` : ""}. Scores, verification status and sources.`,
+    description: answer || `${r.title}: ${pluralize(r.entries.length, r.entityType === "law_firm" ? "firm" : "lawyer")} ranked by the ${METHODOLOGY_VERSION} methodology.`,
     path: r.path ?? `/rankings/${segments.join("/")}/`,
     noindex: !rankingEligibility(r).indexable,
   });
@@ -70,10 +72,32 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
     .filter((r) => r.id !== ranking.id && !r.isThin && (r.location?.stateSlug === ranking.location?.stateSlug || r.practiceArea?.slug === ranking.practiceArea?.slug))
     .slice(0, 4);
   const noun = ranking.entityType === "law_firm" ? "firm" : "lawyer";
+  const facts = rankingFacts(ranking);
+  const answer = rankingAnswer(ranking, facts);
+  const toc = [
+    { href: "#ranking", label: "The ranking" },
+    ...(ranking.body.trim() ? [{ href: "#guide", label: "Guide" }] : []),
+    { href: "#methodology", label: "Why this ranking?" },
+    ...(ranking.faq.length > 0 ? [{ href: "#faq", label: "FAQ" }] : []),
+    { href: "#about", label: "About this ranking" },
+    ...(related.length > 0 ? [{ href: "#related", label: "Related rankings" }] : []),
+  ];
 
   return (
     <>
-      <JsonLd data={[rankingJsonLd(ranking, path), collectionPageJsonLd(ranking.title, path, `Ranking of ${noun}s by LexRank score.`)]} />
+      <JsonLd
+        data={[
+          rankingJsonLd(ranking, path),
+          rankingPageJsonLd({
+            name: ranking.title,
+            path,
+            description: answer,
+            dateModified: ranking.updatedAt,
+            reviewedBy: ranking.editorial.reviewedBy,
+            reviewedAt: ranking.editorial.reviewedAt,
+          }),
+        ]}
+      />
       <PageHeader crumbs={crumbsFor(ranking.title, path, ranking.location)} eyebrow={ranking.practiceArea?.name ?? "Ranking"} title={ranking.title}>
         <div className="page-header__meta">
           {updated && (
@@ -87,24 +111,39 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
           <span>
             <strong>{ranking.entries.length}</strong> {ranking.entries.length === 1 ? noun : `${noun}s`} ranked
           </span>
+          {ranking.editorial.reviewedBy && (
+            <span>
+              Reviewed by <strong>{ranking.editorial.reviewedBy}</strong>
+            </span>
+          )}
         </div>
       </PageHeader>
 
       <div className="container section layout-sidebar">
         <div className="stack">
           {ranking.isDemo && <DemoNotice />}
-          {ranking.intro && <div className="prose" dangerouslySetInnerHTML={{ __html: ranking.intro }} />}
-          <p className="muted" style={{ fontSize: "0.92rem" }}>
-            Positions are ordered by organic LexRank score. Paid placements, where they exist, are always labelled and never affect a
-            score or position.
-          </p>
-          <ol className="ranking-list" aria-label={ranking.title}>
-            {ranking.entries.map((entry) => (
-              <RankingEntry key={entry.entity.id} entry={entry} />
-            ))}
-          </ol>
+          <RankingOverview answer={answer} summary={ranking.summary} facts={facts} noun={`${noun}s`} />
 
-          <section className="card" aria-labelledby="why-this-ranking">
+          <section id="ranking" aria-labelledby="ranking-heading" className="stack" style={{ gap: "1rem" }}>
+            <div>
+              <h2 id="ranking-heading" style={{ fontSize: "1.5rem", marginBottom: "0.25rem" }}>
+                The ranking
+              </h2>
+              <p className="muted" style={{ fontSize: "0.9rem", margin: 0 }}>
+                Ordered by organic LexRank score. Paid placements, where they exist, are always labelled and never affect a score or
+                position.
+              </p>
+            </div>
+            <ol className="ranking-list" aria-label={ranking.title}>
+              {ranking.entries.map((entry) => (
+                <RankingEntry key={entry.entity.id} entry={entry} />
+              ))}
+            </ol>
+          </section>
+
+          <EditorialBody html={ranking.body} />
+
+          <section id="methodology" className="card" aria-labelledby="why-this-ranking">
             <h2 id="why-this-ranking" style={{ fontSize: "1.5rem" }}>
               Why this ranking?
             </h2>
@@ -118,19 +157,8 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
             </Link>
           </section>
 
-          {related.length > 0 && (
-            <section>
-              <h2>Related rankings</h2>
-              <div className="grid grid--2">
-                {related.map((r) => (
-                  <RankingCard key={r.id} ranking={r} />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-        <aside className="stack">
-          <MethodologyPanel compact />
+          <FaqSection items={ranking.faq} />
+          <AboutRanking ranking={ranking} facts={facts} />
           <div className="card">
             <p className="panel-title">Explore</p>
             <ul className="chips">
@@ -156,6 +184,24 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
                 </li>
               )}
             </ul>
+          </div>
+
+
+          {related.length > 0 && (
+            <section id="related">
+              <h2>Related rankings</h2>
+              <div className="grid grid--2">
+                {related.map((r) => (
+                  <RankingCard key={r.id} ranking={r} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+        <aside>
+          <div className="stack aside-sticky">
+            <OnThisPage links={toc} />
+            <MethodologyPanel compact />
           </div>
         </aside>
       </div>

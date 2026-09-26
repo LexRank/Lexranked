@@ -162,8 +162,20 @@ export interface RankingSummary {
   methodologyUrl: string;
 }
 
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
 export interface RankingDetail extends RankingSummary {
+  /** Short editorial summary shown above the ranking (plain text). */
+  summary: string | null;
+  /** Editorial body HTML shown below the ranking (sanitized by the CMS). */
+  body: string;
+  /** @deprecated Alias of `body` (API 1.1). */
   intro: string;
+  faq: FaqItem[];
+  editorial: { reviewedBy: string | null; reviewedAt: string | null };
   entries: RankingEntry[];
 }
 

@@ -83,6 +83,10 @@ final class Ranking extends PostType {
 			new Field( 'score_version', Field::TYPE_STRING, 'Score version', max: 20, help: 'Only entities scored with this version are ranked, e.g. v1.0' ),
 			new Field( 'min_entities', Field::TYPE_INT, 'Minimum entities to publish', min: 1, max: 100, help: 'Below this the ranking is treated as thin: no entries and noindex. Default 5.' ),
 			new Field( 'max_entities', Field::TYPE_INT, 'Maximum entries shown', min: 1, max: 100, help: 'Default 25.' ),
+			new Field( 'summary', Field::TYPE_TEXT, 'Summary (above the ranking)', help: 'Short editorial introduction shown above the ranking, 1–3 sentences. Plain text. Only facts backed by stored data. The main text below the ranking goes in the editor above.' ),
+			new Field( 'faq', Field::TYPE_OBJECT_LIST, 'FAQ (below the ranking)', options: array( 'question', 'answer' ), help: 'One per line: Question | Answer. Answers must be factual and must not contain "|".' ),
+			new Field( 'reviewed_by', Field::TYPE_STRING, 'Editorially reviewed by', max: 100, help: 'Public name of the editor who reviewed this page.' ),
+			new Field( 'reviewed_at', Field::TYPE_DATE, 'Reviewed on' ),
 			self::demo_field(),
 		);
 	}

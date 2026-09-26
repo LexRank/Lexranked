@@ -102,5 +102,14 @@ export function rankingDetail(overrides: Partial<RankingDetail> = {}): RankingDe
     scoreVersion: "v1.0",
     entity: lawyerSummary(i),
   }));
-  return { ...rankingSummary(1), intro: "", entries, ...overrides };
+  return {
+    ...rankingSummary(1),
+    summary: null,
+    body: "",
+    intro: "",
+    faq: [],
+    editorial: { reviewedBy: null, reviewedAt: null },
+    entries,
+    ...overrides,
+  };
 }

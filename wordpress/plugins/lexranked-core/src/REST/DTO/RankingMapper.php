@@ -57,7 +57,7 @@ final class RankingMapper {
 	 * @param array<string, mixed>             $record    Ranking record.
 	 * @param array<int, array<string, mixed>> $entries   Ordered entries (from order()).
 	 * @param int                              $min_default Default minimum entity count.
-	 * @param string                           $intro_html  Sanitized intro HTML.
+	 * @param string                           $intro_html  Sanitized body HTML (shown below the ranking).
 	 * @param bool                             $with_entries Include entries (detail) or only counts (list).
 	 * @return array<string, mixed>
 	 */
@@ -87,10 +87,37 @@ final class RankingMapper {
 			'methodologyUrl' => '/methodology/',
 		);
 		if ( $with_entries ) {
+			$dto['summary'] = $f['summary'] ?? null;
+			$dto['body']    = $intro_html;
 			$dto['intro']   = $intro_html;
-			$dto['entries'] = $is_thin ? array() : array_slice( $entries, 0, $max );
+			// Deprecated alias of `body` (API 1.1); kept for compatibility.
+			$dto['faq']       = self::faq( $f['faq'] ?? array() );
+			$dto['editorial'] = array(
+				'reviewedBy' => $f['reviewed_by'] ?? null,
+				'reviewedAt' => $f['reviewed_at'] ?? null,
+			);
+			$dto['entries']   = $is_thin ? array() : array_slice( $entries, 0, $max );
 		}
 		return $dto;
+	}
+
+	/**
+	 * FAQ items with both a question and an answer.
+	 *
+	 * @param array<int, array<string, string|null>> $items Stored FAQ items.
+	 * @return array<int, array{question: string, answer: string}>
+	 */
+	public static function faq( array $items ): array {
+		$out = array();
+		foreach ( $items as $item ) {
+			if ( ! empty( $item['question'] ) && ! empty( $item['answer'] ) ) {
+				$out[] = array(
+					'question' => (string) $item['question'],
+					'answer'   => (string) $item['answer'],
+				);
+			}
+		}
+		return $out;
 	}
 
 	/**

@@ -209,6 +209,47 @@ final class MapperTest extends TestCase {
 		$this->assertFalse( RankingMapper::ranking( self::ranking_record( true ), $entries, 5 )['indexable'] );
 	}
 
+	public function testRankingCarriesEditorialContentAndOnlyCompleteFaqItems(): void {
+		$record                          = self::ranking_record();
+		$record['fields']['summary']     = 'Short answer-first summary.';
+		$record['fields']['faq']         = array(
+			array(
+				'question' => 'Q1?',
+				'answer'   => 'A1.',
+			),
+			array(
+				'question' => 'Q2 without answer?',
+				'answer'   => null,
+			),
+		);
+		$record['fields']['reviewed_by'] = 'Editor';
+		$record['fields']['reviewed_at'] = '2026-09-20';
+
+		$dto = RankingMapper::ranking( $record, array(), 5, '<p>Body</p>' );
+		$this->assertSame( 'Short answer-first summary.', $dto['summary'] );
+		$this->assertSame( '<p>Body</p>', $dto['body'] );
+		$this->assertSame( $dto['body'], $dto['intro'] );
+		$this->assertSame(
+			array(
+				array(
+					'question' => 'Q1?',
+					'answer'   => 'A1.',
+				),
+			),
+			$dto['faq']
+		);
+		$this->assertSame(
+			array(
+				'reviewedBy' => 'Editor',
+				'reviewedAt' => '2026-09-20',
+			),
+			$dto['editorial']
+		);
+
+		$list = RankingMapper::ranking( $record, array(), 5, '<p>Body</p>', false );
+		$this->assertArrayNotHasKey( 'faq', $list, 'List items stay light' );
+	}
+
 	public function testEvidenceIsSortedByFieldThenSourceTier(): void {
 		$claim  = static fn( string $field, string $type, string $at ): array => array(
 			'field_name'          => $field,

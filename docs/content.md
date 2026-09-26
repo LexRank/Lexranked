@@ -40,3 +40,29 @@ progress" without linking to them.
 ## MVP scope
 
 United States → Florida → Miami → Personal Injury, 20–50 profiles.
+
+## Ranking page layout (SEO + GEO)
+
+The ranking stays near the top of the page. The editorial text goes above and
+below it:
+
+| Position | Block | Source |
+|----------|-------|--------|
+| Above | **Answer-first summary**: top 3, count, methodology, verified count, average rating | Generated deterministically from ranking data (`lib/content/rankingFacts.ts`); it cannot state unsupported facts |
+| Above | Editorial summary, 1–3 sentences | Ranking field `summary` (plain text) |
+| Above | "At a glance" facts: ranked, verified, average rating, reviews | Data |
+| — | **The ranking** | Engine / API |
+| Below | Guide (H2 sections) | Ranking post content (WordPress editor) |
+| Below | Why this ranking? | Methodology |
+| Below | FAQ (`FAQPage` JSON-LD) | Ranking field `faq` (`Question \| Answer` per line) |
+| Below | About this ranking: updated date, methodology, editorial review, independence | Data + `reviewed_by` / `reviewed_at` |
+
+GEO signals:
+- a quotable factual summary with named entities, dates and numbers;
+- `dateModified`, `lastReviewed` and `reviewedBy` in `WebPage` JSON-LD;
+- an ordered `ItemList`;
+- the FAQ;
+- consistent entity URLs.
+
+Editorial text must follow the content rules above. AI drafts (Phase 6/7)
+land as WordPress drafts and are never auto-published.

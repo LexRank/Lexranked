@@ -3,9 +3,11 @@ import { buildMetadata, clampDescription } from "@/lib/seo/metadata";
 import {
   breadcrumbJsonLd,
   compact,
+  faqJsonLd,
   lawFirmJsonLd,
   lawyerJsonLd,
   rankingJsonLd,
+  rankingPageJsonLd,
   serializeJsonLd,
   websiteJsonLd,
 } from "@/lib/seo/jsonld";
@@ -109,6 +111,20 @@ describe("JSON-LD", () => {
     const ld = rankingJsonLd(rankingDetail(), "/rankings/florida/miami/personal-injury/");
     expect(ld.numberOfItems).toBe(3);
     expect((ld.itemListElement as Array<{ position: number }>).map((i) => i.position)).toEqual([1, 2, 3]);
+  });
+
+  it("builds FAQPage only when there are questions", () => {
+    expect(faqJsonLd([])).toBeNull();
+    expect(faqJsonLd([{ question: "Q?", answer: "A." }])).toMatchObject({
+      "@type": "FAQPage",
+      mainEntity: [{ "@type": "Question", name: "Q?", acceptedAnswer: { "@type": "Answer", text: "A." } }],
+    });
+  });
+
+  it("adds freshness and review signals to ranking pages", () => {
+    const ld = rankingPageJsonLd({ name: "R", path: "/rankings/x/", description: "d", dateModified: "2026-09-26T00:00:00Z", reviewedBy: "Jane Editor", reviewedAt: "2026-09-20" });
+    expect(ld).toMatchObject({ "@type": "WebPage", dateModified: "2026-09-26T00:00:00Z", lastReviewed: "2026-09-20", reviewedBy: { "@type": "Person", name: "Jane Editor" } });
+    expect(rankingPageJsonLd({ name: "R", path: "/r/", description: "d", dateModified: null, reviewedBy: null, reviewedAt: null })).not.toHaveProperty("reviewedBy");
   });
 
   it("declares the site search action", () => {

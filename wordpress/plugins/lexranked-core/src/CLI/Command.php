@@ -207,12 +207,16 @@ final class Command {
 		$ranking = $this->create(
 			$s->ranking,
 			'Best Personal Injury Lawyers in Miami, Florida (Demo)',
-			'Demo ranking generated from mock data to test the LexRanked pipeline. Scores are placeholders, not LexRank results.',
+			DemoData::ranking_body(),
 			array(
 				'entity_type'   => 'lawyer',
 				'score_version' => DemoData::SCORE_VERSION,
 				'min_entities'  => 5,
 				'max_entities'  => 25,
+				'summary'       => DemoData::RANKING_SUMMARY,
+				'faq'           => DemoData::ranking_faq(),
+				'reviewed_by'   => 'LexRanked Demo Editor',
+				'reviewed_at'   => gmdate( 'Y-m-d' ),
 			)
 		);
 		wp_set_object_terms( $ranking, array( $city ), Location::SLUG );

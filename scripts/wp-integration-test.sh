@@ -145,6 +145,11 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "ranking has ItemList JSON-LD" "/rankings/florida/miami/personal-injury/" '"@type":"ItemList"'
   page_has "demo ranking is noindex" "/rankings/florida/miami/personal-injury/" 'content="noindex, follow"'
   page_has "ranking explains methodology" "/rankings/florida/miami/personal-injury/" "Why this ranking?"
+  page_has "ranking has answer-first summary from data" "/rankings/florida/miami/personal-injury/" "the top-ranked personal injury lawyers in Miami, Florida are Avery Example (Demo)"
+  page_has "ranking shows editorial summary" "/rankings/florida/miami/personal-injury/" "Demo content: this sample ranking compares"
+  page_has "ranking shows editorial body below the list" "/rankings/florida/miami/personal-injury/" "What to ask a personal injury lawyer"
+  page_has "ranking FAQ with FAQPage JSON-LD" "/rankings/florida/miami/personal-injury/" '"@type":"FAQPage"'
+  page_has "ranking shows editorial review" "/rankings/florida/miami/personal-injury/" "LexRanked Demo Editor"
   expect_status "ranking slug redirects to canonical path" 308 "$WEB/rankings/best-personal-injury-lawyers-in-miami-florida-demo/"
   expect_status "lawyer profile" 200 "$WEB/lawyers/avery-example-demo/"
   page_has "profile shows score" "/lawyers/avery-example-demo/" "94.21"

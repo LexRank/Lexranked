@@ -18,6 +18,7 @@ namespace LexRanked\Core\Schema;
 final class FieldSanitizer {
 
 	private const MAX_STRING = 255;
+	private const MAX_ITEM   = 1000;
 	private const MAX_TEXT   = 20000;
 	private const MAX_ITEMS  = 50;
 
@@ -147,7 +148,7 @@ final class FieldSanitizer {
 		$has_value = false;
 		foreach ( $keys as $key ) {
 			$value        = isset( $raw[ $key ] ) && is_scalar( $raw[ $key ] ) ? self::clean_string( (string) $raw[ $key ] ) : '';
-			$item[ $key ] = '' === $value ? null : mb_substr( $value, 0, self::MAX_STRING );
+			$item[ $key ] = '' === $value ? null : mb_substr( $value, 0, self::MAX_ITEM );
 			$has_value    = $has_value || '' !== $value;
 		}
 		return $has_value ? $item : null;
