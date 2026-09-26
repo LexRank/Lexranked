@@ -3,8 +3,10 @@
 # (Docker). Spins up an isolated stack, installs WordPress, activates the
 # plugin, seeds demo data and asserts on the REST API. Used by CI.
 #
-# Usage: scripts/wp-integration-test.sh [--keep]
-#   --keep  leave the stack running afterwards (http://localhost:$IT_PORT)
+# Usage: scripts/wp-integration-test.sh [--keep] [--frontend]
+#   --keep      leave the stack running afterwards (http://localhost:$IT_PORT)
+#   --frontend  also build the Next.js frontend against this WordPress and
+#               assert on the rendered public pages (end-to-end)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,12 +16,22 @@ export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-lexranked-it}"
 export LOCAL_WP_PORT="${IT_PORT:-8089}"
 export LOCAL_DB_PASSWORD="${LOCAL_DB_PASSWORD:-it-only-password}"
 export LOCAL_DB_ROOT_PASSWORD="${LOCAL_DB_ROOT_PASSWORD:-it-only-root-password}"
-KEEP="${1:-}"
+KEEP=""
+FRONTEND=""
+for arg in "$@"; do
+  case "$arg" in
+    --keep) KEEP="--keep" ;;
+    --frontend) FRONTEND="1" ;;
+    *) echo "Unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
+FRONTEND_PORT="${FRONTEND_PORT:-3199}"
 BASE="http://127.0.0.1:${LOCAL_WP_PORT}"
 API="$BASE/wp-json/lexranked/v1"
 COMPOSE=(docker compose --env-file /dev/null -f docker-compose.yml)
 
 cleanup() {
+  if [[ -n "${NEXT_PID:-}" ]]; then kill "$NEXT_PID" >/dev/null 2>&1 || true; fi
   if [[ "$KEEP" != "--keep" ]]; then
     "${COMPOSE[@]}" down -v --remove-orphans >/dev/null 2>&1 || true
   fi
@@ -102,6 +114,59 @@ for _ in $(seq 1 7); do codes+="$(curl -s -o /dev/null -w '%{http_code}' "$API/s
 if [[ "$codes" == *"429"* ]]; then pass "anonymous search is rate limited ($codes)"; else fail "no 429 in: $codes"; fi
 code="$(curl -s -o /dev/null -w '%{http_code}' -u "apiuser:$APP_PW" "$API/search?q=blake")"
 if [[ "$code" == "200" ]]; then pass "api user bypasses rate limit"; else fail "api user got HTTP $code"; fi
+
+if [[ -n "$FRONTEND" ]]; then
+  echo "==> Frontend end-to-end (Next.js against this WordPress)"
+  wp option delete lexranked_settings >/dev/null 2>&1 || true
+  WEB="http://127.0.0.1:${FRONTEND_PORT}"
+  (
+    cd frontend
+    [[ -d node_modules ]] || npm ci --no-audit --no-fund >/dev/null
+    WORDPRESS_API_URL="$BASE/wp-json" WORDPRESS_USERNAME=apiuser WORDPRESS_APP_PASSWORD="$APP_PW" \
+      NEXT_PUBLIC_SITE_URL=https://lexranked.com npm run build >/dev/null
+  )
+  (
+    cd frontend
+    WORDPRESS_API_URL="$BASE/wp-json" WORDPRESS_USERNAME=apiuser WORDPRESS_APP_PASSWORD="$APP_PW" \
+      exec npx next start -p "$FRONTEND_PORT" >/dev/null 2>&1
+  ) &
+  NEXT_PID=$!
+  for _ in $(seq 1 60); do curl -s -o /dev/null "$WEB/" && break; sleep 1; done
+
+  # page_has <description> <path> <fixed string>
+  page_has() {
+    local body; body="$(curl -sS "$WEB$2" || true)"
+    if grep -qF -- "$3" <<<"$body"; then pass "$1"; else fail "$1 (missing: $3)"; fi
+  }
+  expect_status "home" 200 "$WEB/"
+  page_has "home finder lists the Miami ranking" "/" "Miami, FL"
+  expect_status "ranking page (canonical location path)" 200 "$WEB/rankings/florida/miami/personal-injury/"
+  page_has "ranking shows #1 entry" "/rankings/florida/miami/personal-injury/" "Avery Example (Demo)"
+  page_has "ranking has ItemList JSON-LD" "/rankings/florida/miami/personal-injury/" '"@type":"ItemList"'
+  page_has "demo ranking is noindex" "/rankings/florida/miami/personal-injury/" 'content="noindex, follow"'
+  page_has "ranking explains methodology" "/rankings/florida/miami/personal-injury/" "Why this ranking?"
+  expect_status "ranking slug redirects to canonical path" 308 "$WEB/rankings/best-personal-injury-lawyers-in-miami-florida-demo/"
+  expect_status "lawyer profile" 200 "$WEB/lawyers/avery-example-demo/"
+  page_has "profile shows score" "/lawyers/avery-example-demo/" "94.21"
+  page_has "profile shows sources" "/lawyers/avery-example-demo/" "Example State Bar Registry (Demo)"
+  page_has "profile shows data freshness" "/lawyers/avery-example-demo/" "Data verified"
+  page_has "profile canonical" "/lawyers/avery-example-demo/" '<link rel="canonical" href="https://lexranked.com/lawyers/avery-example-demo/"/>'
+  page_has "profile Person JSON-LD" "/lawyers/avery-example-demo/" '"@type":"Person"'
+  page_has "profile links to related lawyers" "/lawyers/avery-example-demo/" "/lawyers/blake-sample-demo/"
+  expect_status "law firm profile" 200 "$WEB/law-firms/harbor-example-injury-law-demo/"
+  for path in /lawyers/ /law-firms/ /rankings/ /states/ /states/florida/ /cities/ /cities/miami/ /practice-areas/ /practice-areas/personal-injury/ /methodology/ /verified/ "/search/?q=avery" /status/; do
+    expect_status "page $path" 200 "$WEB$path"
+  done
+  expect_status "unknown ranking is 404" 404 "$WEB/rankings/texas/"
+  expect_status "unknown lawyer is 404" 404 "$WEB/lawyers/does-not-exist/"
+  page_has "status page reports connection" "/status/" "Connected to the LexRanked API."
+  sitemap="$(curl -sS "$WEB/sitemap.xml")"
+  if grep -q "/methodology/" <<<"$sitemap" && ! grep -q "demo" <<<"$sitemap"; then pass "sitemap has static pages and excludes demo pages"; else fail "sitemap content"; fi
+  html="$(curl -sS "$WEB/lawyers/avery-example-demo/")"
+  if grep -q "$APP_PW" <<<"$html" || grep -rqF "$APP_PW" frontend/.next/static; then fail "credentials leaked into HTML or client bundle"; else pass "no credentials in HTML or client bundle"; fi
+  kill "$NEXT_PID" >/dev/null 2>&1 || true
+  NEXT_PID=""
+fi
 
 echo "==> Demo purge"
 wp lexranked purge-demo --yes >/dev/null

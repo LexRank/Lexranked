@@ -56,13 +56,20 @@ jobs:
       - run: composer test
 
   wordpress-integration:
-    name: WordPress integration (real WP + MariaDB)
+    name: End-to-end (WordPress + Next.js)
     runs-on: ubuntu-latest
-    needs: wordpress-plugin
+    needs: [wordpress-plugin, frontend]
     steps:
       - uses: actions/checkout@v4
-      - name: Run end-to-end API assertions against the packaged plugin
-        run: scripts/wp-integration-test.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - name: API + rendered-page assertions against the packaged plugin
+        run: scripts/wp-integration-test.sh --frontend
       - name: Upload installable plugin ZIP
         uses: actions/upload-artifact@v4
         with:

@@ -138,3 +138,38 @@ The Next.js server uses an Application Password of a `lexranked_api` user
 (no editing capabilities). It only ever requests `context=view` data, so
 responses are safe to cache in the Next data cache. Credentials are read in
 `server-only` modules and never reach client bundles.
+
+### ADR-016 — Page existence and indexability rules live in one module
+`frontend/lib/content/eligibility.ts` decides which pages exist and which
+are indexable:
+- Rankings exist unless thin.
+- State, city and practice-area hubs exist with ≥ 3 published lawyers.
+- Pages built from demo data are always `noindex`.
+
+The pages, the robots meta tags and the sitemap all use these rules, so they
+cannot disagree.
+
+### ADR-017 — Canonical ranking URLs are location paths
+`/rankings/{state}/{city?}/{practice-area?}/` is canonical and comes from the
+API's ranking `path`. A bare `/rankings/{slug}/` permanently redirects to it.
+Lawyer and firm profiles accessed by numeric ID also redirect to the slug URL.
+
+### ADR-018 — ISR with graceful degradation
+Public pages revalidate every 5 minutes. Dynamic segments use an empty
+`generateStaticParams`, so each page is rendered on its first request and
+then cached. Listing pages turn API failures into a visible "temporarily
+unavailable" state and are served `noindex`; they do not crash. The build
+therefore succeeds without WordPress, as in CI.
+
+### ADR-019 — Structured data without review markup
+Pages emit the following JSON-LD:
+- Organization and WebSite (with a search action) on the home page;
+- Person on lawyer profiles;
+- LegalService on firm profiles;
+- ItemList on rankings;
+- CollectionPage on hubs;
+- BreadcrumbList everywhere.
+
+Pages do **not** emit `AggregateRating`. The ratings come from third-party
+platforms, and search-engine guidelines allow review markup only for reviews
+the site collects itself.

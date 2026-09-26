@@ -56,6 +56,7 @@ cd wordpress/plugins/lexranked-core && composer install && composer lint && comp
 ```bash
 scripts/check.sh                 # lint, typecheck, tests, build — same as CI
 scripts/wp-integration-test.sh   # real WordPress in Docker + API assertions
+scripts/wp-integration-test.sh --frontend   # …plus Next.js built against it (end-to-end)
 scripts/build-plugin-zip.sh      # installable plugin ZIP → dist/
 ```
 
@@ -64,8 +65,8 @@ Connecting your own WordPress: [`docs/connecting-wordpress.md`](docs/connecting-
 ## Roadmap
 
 1. ✅ Repository and architecture
-2. ✅ **WordPress core**: entities, REST API, admin UI, validation (+ frontend API client and `/status/`)
-3. Frontend: pages, SEO, structured data, sitemap
+2. ✅ WordPress core: entities, REST API, admin UI, validation (+ frontend API client and `/status/`)
+3. ✅ **Frontend**: public pages, design system, SEO, structured data, sitemap
 4. Ranking engine: ScoreCalculator, RankingEngine, ScoreVersion, RankingSnapshot
 5. Research engine: resumable jobs, evidence, verification
 6. OpenAI integration: structured extraction, strict schemas

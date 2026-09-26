@@ -20,12 +20,22 @@ Factual consistency, source availability, unsupported claims, duplicate
 content, keyword stuffing, unnatural language, missing context, incorrect
 ranking positions, outdated information.
 
-## Page-creation rule
+## Page-creation rule (implemented in Phase 3)
 
-A page exists because it contains useful, differentiated information — not
-because a keyword exists. Ranking/location pages are generated only above a
-minimum-data threshold (configurable; e.g. ≥ 5 verified, scored entities),
-and thin pages are excluded from the sitemap and marked `noindex`.
+A page exists because it contains useful, differentiated information, not
+because a keyword exists (`frontend/lib/content/eligibility.ts`):
+
+| Page | Exists when | Indexable when |
+|------|-------------|----------------|
+| Ranking | not thin (≥ `minEntities` scored entities, default 5) | exists and not demo |
+| State / city / practice-area hub | ≥ 3 published lawyers | ≥ 3 real (non-demo) lawyers |
+| Lawyer / firm profile | published | not demo |
+| Listings (`/lawyers/`, `/law-firms/`) | always | contain real profiles and the API is reachable |
+| Search, status | always | never |
+
+The sitemap (`app/sitemap.ts`) lists indexable pages only. Pages that do not
+exist return 404. Hub indexes show below-threshold locations as "Research in
+progress" without linking to them.
 
 ## MVP scope
 

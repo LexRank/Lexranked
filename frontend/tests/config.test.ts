@@ -22,6 +22,9 @@ describe("absoluteUrl", () => {
     expect(absoluteUrl("/", base)).toBe("https://lexranked.com/");
     expect(absoluteUrl("lawyers/john-smith", base)).toBe("https://lexranked.com/lawyers/john-smith/");
     expect(absoluteUrl("//rankings//florida/", base)).toBe("https://lexranked.com/rankings/florida/");
+    expect(absoluteUrl("/lawyers/?page=2", base)).toBe("https://lexranked.com/lawyers/?page=2");
+    expect(absoluteUrl("/lawyers?page=2", base)).toBe("https://lexranked.com/lawyers/?page=2");
+    expect(absoluteUrl("/sitemap.xml", base)).toBe("https://lexranked.com/sitemap.xml");
   });
 });
 

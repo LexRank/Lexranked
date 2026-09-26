@@ -13,7 +13,8 @@ export default async function StatusPage() {
   const allOk = report.configured && report.checks.every((c) => c.ok);
 
   return (
-    <section className="container page">
+    <section className="container section">
+      <p className="eyebrow">Diagnostics</p>
       <h1>System status</h1>
       <p className={allOk ? "status status--ok" : "status status--error"} role="status">
         {allOk ? "Connected to the LexRanked API." : "The LexRanked API is not fully reachable."}
@@ -30,7 +31,7 @@ export default async function StatusPage() {
       {report.configured && (
         <>
           <h2>Checks</h2>
-          <table className="table">
+          <div className="table-wrap"><table className="table">
             <thead>
               <tr>
                 <th scope="col">Check</th>
@@ -47,12 +48,12 @@ export default async function StatusPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </>
       )}
 
       {report.demoDataPresent && (
-        <p className="notice">
+        <p className="notice notice--demo">
           Demo data detected. Records marked as demo are mock data for testing and are never indexed.
         </p>
       )}

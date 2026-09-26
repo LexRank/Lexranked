@@ -53,7 +53,15 @@ export const getLawFirms = (query: ListQuery = {}, opts?: Opts): Promise<ApiResp
 
 export const getLawFirm = (slug: string, opts?: Opts) => getOrNull<LawFirmDetail>(`law-firms/${encodeURIComponent(slug)}`, opts);
 
-export const getRankings = (query: { location?: string; practice_area?: string; indexable?: boolean; per_page?: number } = {}, opts?: Opts) =>
+export interface RankingQuery {
+  location?: string;
+  practice_area?: string;
+  indexable?: boolean;
+  page?: number;
+  per_page?: number;
+}
+
+export const getRankings = (query: RankingQuery = {}, opts?: Opts) =>
   apiRequest<RankingSummary[]>("rankings", { query: { ...query }, ...opts });
 
 export const getRanking = (slug: string, opts?: Opts) => getOrNull<RankingDetail>(`rankings/${encodeURIComponent(slug)}`, opts);
@@ -66,3 +74,15 @@ export const getPracticeAreas = (opts?: Opts) => apiRequest<PracticeAreaDto[]>("
 
 export const getSources = (query: { entity_id?: number; per_page?: number } = {}, opts?: Opts) =>
   apiRequest<SourceDto[]>("sources", { query: { ...query }, ...opts });
+
+export interface SearchResult {
+  type: "lawyer" | "law_firm";
+  id: number;
+  slug: string;
+  name: string;
+  path: string;
+  location: import("@/types/api").LocationDto | null;
+}
+
+export const searchEntities = (q: string, opts?: Opts) =>
+  apiRequest<SearchResult[]>("search", { query: { q, per_page: 20 }, revalidate: 60, ...opts });
