@@ -18,11 +18,13 @@ namespace LexRanked\Core\Database;
 final class Schema {
 
 	/** Bump when the DDL below changes; triggers dbDelta on next load. */
-	public const VERSION = '3';
+	public const VERSION = '4';
 
 	public const CLAIMS    = 'lr_claims';
 	public const AUDIT_LOG = 'lr_audit_log';
 	public const SNAPSHOTS = 'lr_ranking_snapshots';
+	public const CANDIDATE = 'lr_candidates';
+	public const JOB_LOG   = 'lr_research_log';
 
 	/**
 	 * CREATE TABLE statements.
@@ -35,6 +37,8 @@ final class Schema {
 		$claims = $prefix . self::CLAIMS;
 		$audit  = $prefix . self::AUDIT_LOG;
 		$snaps  = $prefix . self::SNAPSHOTS;
+		$cands  = $prefix . self::CANDIDATE;
+		$logs   = $prefix . self::JOB_LOG;
 
 		return array(
 			$claims => "CREATE TABLE {$claims} (
@@ -49,8 +53,13 @@ final class Schema {
   retrieved_at datetime NOT NULL,
   confidence decimal(4,3) NOT NULL DEFAULT 0.000,
   verification_status varchar(20) NOT NULL DEFAULT 'pending',
+  claim_hash char(40) DEFAULT NULL,
+  job_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  review_status varchar(20) NOT NULL DEFAULT 'approved',
   created_at datetime NOT NULL,
   PRIMARY KEY  (claim_id),
+  UNIQUE KEY claim_hash (claim_hash),
+  KEY review_status (review_status),
   KEY entity (entity_type,entity_id),
   KEY entity_field (entity_id,field_name),
   KEY source_id (source_id)
@@ -84,6 +93,41 @@ final class Schema {
   KEY ranking_run (ranking_id,run_id),
   KEY entity (entity_id,ranking_id),
   KEY calculated_at (calculated_at)
+) {$charset_collate};",
+			$cands  => "CREATE TABLE {$cands} (
+  candidate_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  dedupe_key char(40) NOT NULL,
+  job_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  entity_type varchar(20) NOT NULL,
+  name varchar(255) NOT NULL,
+  normalized_name varchar(255) NOT NULL,
+  city varchar(100) DEFAULT NULL,
+  state varchar(100) DEFAULT NULL,
+  practice_area varchar(100) DEFAULT NULL,
+  website varchar(2048) DEFAULT NULL,
+  source_url varchar(2048) NOT NULL DEFAULT '',
+  status varchar(20) NOT NULL DEFAULT 'new',
+  entity_id bigint(20) unsigned DEFAULT NULL,
+  match_confidence decimal(4,3) DEFAULT NULL,
+  reason varchar(500) DEFAULT NULL,
+  payload longtext NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY  (candidate_id),
+  UNIQUE KEY dedupe_key (dedupe_key),
+  KEY status (status),
+  KEY job_id (job_id)
+) {$charset_collate};",
+			$logs   => "CREATE TABLE {$logs} (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  job_id bigint(20) unsigned NOT NULL,
+  level varchar(10) NOT NULL,
+  stage varchar(40) NOT NULL DEFAULT '',
+  message varchar(500) NOT NULL,
+  context longtext NULL,
+  created_at datetime NOT NULL,
+  PRIMARY KEY  (id),
+  KEY job (job_id,id)
 ) {$charset_collate};",
 		);
 	}

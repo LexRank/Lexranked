@@ -19,7 +19,7 @@ rankings > subjective rankings. **Payment never changes an organic ranking.**
 |------|------|
 | `frontend/` | Next.js 16 (App Router, TypeScript) public site |
 | `wordpress/plugins/lexranked-core/` | All LexRanked business logic + REST API (`/wp-json/lexranked/v1/`) |
-| `workers/` | Background research / scoring / content / QA (later phases) |
+| `workers/research/` | TypeScript research worker (Phase 5); `workers/*` others in later phases |
 | `database/` | Reference schema and migrations |
 | `docs/` | Architecture, data model, methodology, API, research, content, deployment |
 | `scripts/check.sh` | Runs every CI check locally |
@@ -49,13 +49,21 @@ cd frontend && npm install && npm run dev
 
 # Plugin tooling
 cd wordpress/plugins/lexranked-core && composer install && composer lint && composer test
+
+# Research worker (see docs/research.md): create a worker user + a job, then run it
+docker compose run --rm wpcli wp user create research-worker research@example.com --role=lexranked_worker
+docker compose run --rm wpcli wp user application-password create research-worker local --porcelain
+docker compose run --rm wpcli wp lexranked research-job candidate_discovery --params='{"dataset":"fictional-demo"}'
+cd workers/research && npm ci && npm run build && \
+  LEXRANKED_API_URL=http://localhost:8080/wp-json/lexranked/v1 LEXRANKED_WORKER_USER=research-worker \
+  LEXRANKED_WORKER_APP_PASSWORD='…' LEXRANKED_DATA_DIR=fixtures/datasets node dist/cli.js --once
 ```
 
 ## Checks
 
 ```bash
 scripts/check.sh                 # lint, typecheck, tests, build — same as CI
-scripts/wp-integration-test.sh   # real WordPress in Docker + API assertions
+scripts/wp-integration-test.sh   # real WordPress in Docker + API + research worker (crash/resume) assertions
 scripts/wp-integration-test.sh --frontend   # …plus Next.js built against it (end-to-end)
 scripts/build-plugin-zip.sh      # installable plugin ZIP → dist/
 ```
@@ -68,7 +76,7 @@ Connecting your own WordPress: [`docs/connecting-wordpress.md`](docs/connecting-
 2. ✅ WordPress core: entities, REST API, admin UI, validation (+ frontend API client and `/status/`)
 3. ✅ Frontend: public pages, design system, SEO/GEO content, structured data, sitemap
 4. ✅ **Ranking engine**: ScoreCalculator, RankingEngine, ScoreVersion, snapshots, history, breakdowns
-5. Research engine: resumable jobs, evidence, verification
+5. ✅ **Research engine**: leased/resumable jobs with retries, candidates + deterministic matching, source-backed claims, rule-based verification, editorial review, TypeScript worker
 6. OpenAI integration: structured extraction, strict schemas
 7. Content engine (drafts only)
 8. Production hardening

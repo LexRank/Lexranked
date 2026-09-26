@@ -42,6 +42,10 @@ final class Installer {
 			dbDelta( $sql );
 		}
 		Capabilities::install();
+		// Schema v4: hash pre-existing claims and index entities for candidate matching.
+		$services = \LexRanked\Core\Plugin::services();
+		$services->claims->backfill_hashes();
+		$services->entity_index->reindex_all();
 		update_option( self::VERSION_OPTION, Schema::VERSION, false );
 	}
 }

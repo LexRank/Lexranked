@@ -12,6 +12,13 @@ npm run typecheck
 npm test
 npm run build
 
+echo "==> Research worker"
+cd "$ROOT/workers/research"
+npm ci
+npm run typecheck
+npm test
+npm run build
+
 echo "==> WordPress plugin"
 cd "$ROOT/wordpress/plugins/lexranked-core"
 composer install --no-interaction --no-progress

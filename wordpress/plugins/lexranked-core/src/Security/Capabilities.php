@@ -13,12 +13,18 @@ namespace LexRanked\Core\Security;
  * - Editors manage lawyers, firms, rankings, sources and verification (post caps).
  * - Research jobs and settings are administrator-only.
  * - The `lexranked_api` role is a least-privilege account for the Next.js
- *   frontend / workers: it can read the API without rate limiting and nothing else.
+ *   frontend: it can read the API without rate limiting and nothing else.
+ * - The `lexranked_worker` role is for research workers: it may use the
+ *   research endpoints (claim jobs, submit candidates/claims) and nothing in
+ *   wp-admin. Everything it submits is validated server-side and only lands
+ *   in drafts or the editorial review queue.
  */
 final class Capabilities {
 
 	public const API_ROLE     = 'lexranked_api';
 	public const API_READ     = 'lexranked_api_read';
+	public const WORKER_ROLE  = 'lexranked_worker';
+	public const RESEARCH     = 'lexranked_research';
 	public const MANAGE       = 'manage_options';
 	public const RESEARCH_CAP = array(
 		'edit_lr_research_jobs',
@@ -47,9 +53,20 @@ final class Capabilities {
 				)
 			);
 		}
+		if ( null === get_role( self::WORKER_ROLE ) ) {
+			add_role(
+				self::WORKER_ROLE,
+				'LexRanked Research Worker',
+				array(
+					'read'         => true,
+					self::API_READ => true,
+					self::RESEARCH => true,
+				)
+			);
+		}
 		$admin = get_role( 'administrator' );
 		if ( null !== $admin ) {
-			foreach ( array_merge( self::RESEARCH_CAP, array( self::API_READ ) ) as $cap ) {
+			foreach ( array_merge( self::RESEARCH_CAP, array( self::API_READ, self::RESEARCH ) ) as $cap ) {
 				$admin->add_cap( $cap );
 			}
 		}

@@ -12,6 +12,8 @@ namespace LexRanked\Core\CLI;
 use LexRanked\Core\Database\Installer;
 use LexRanked\Core\Plugin;
 use LexRanked\Core\PostTypes\PostType;
+use LexRanked\Core\Research\JobException;
+use LexRanked\Core\Research\JobPolicy;
 use LexRanked\Core\Services;
 use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
@@ -293,6 +295,136 @@ final class Command {
 			\WP_CLI::error( sprintf( '%d of %d snapshot rows did not reproduce.', $failed, $checked ) );
 		}
 		\WP_CLI::success( sprintf( 'All %d snapshot rows reproduce exactly from stored inputs.', $checked ) );
+	}
+
+	/**
+	 * Create a research job.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <type>
+	 * : candidate_discovery | source_refresh | verification | ranking_recalculation
+	 *
+	 * [--params=<json>]
+	 * : Parameters as a JSON object, e.g. '{"provider":"csv","dataset":"florida-pi"}'.
+	 *
+	 * [--title=<title>]
+	 * : Title.
+	 *
+	 * [--location=<slug>]
+	 * : Location term slug that scopes the job.
+	 *
+	 * [--practice-area=<slug>]
+	 * : Practice-area term slug that scopes the job.
+	 *
+	 * [--porcelain]
+	 * : Print only the job ID.
+	 *
+	 * @subcommand research-job
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function research_job( array $args, array $assoc_args ): void {
+		$params = JobPolicy::params( $assoc_args['params'] ?? '' );
+		if ( null === $params ) {
+			\WP_CLI::error( '--params must be a JSON object.' );
+		}
+		$scope = array();
+		foreach ( array(
+			'location'      => Location::SLUG,
+			'practice-area' => PracticeArea::SLUG,
+		) as $flag => $taxonomy ) {
+			$scope[ $flag ] = array();
+			if ( isset( $assoc_args[ $flag ] ) ) {
+				$term = get_term_by( 'slug', (string) $assoc_args[ $flag ], $taxonomy );
+				if ( ! $term instanceof \WP_Term ) {
+					\WP_CLI::error( sprintf( 'Unknown %s "%s".', $flag, (string) $assoc_args[ $flag ] ) );
+				}
+				$scope[ $flag ] = array( (int) $term->term_id );
+			}
+		}
+		try {
+			$id = $this->services->jobs->create( (string) ( $args[0] ?? '' ), (array) $params, (string) ( $assoc_args['title'] ?? '' ), $scope['location'], $scope['practice-area'] );
+		} catch ( \InvalidArgumentException $e ) {
+			\WP_CLI::error( $e->getMessage() );
+		}
+		if ( isset( $assoc_args['porcelain'] ) ) {
+			\WP_CLI::line( (string) $id );
+			return;
+		}
+		\WP_CLI::success( sprintf( 'Research job %d created (pending).', $id ) );
+	}
+
+	/**
+	 * Show a research job (status, progress, log).
+	 *
+	 * ## OPTIONS
+	 *
+	 * <id>
+	 * : Job ID.
+	 *
+	 * [--format=<format>]
+	 * : table or json.
+	 * ---
+	 * default: table
+	 * ---
+	 *
+	 * @subcommand research-status
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function research_status( array $args, array $assoc_args ): void {
+		$id = (int) ( $args[0] ?? 0 );
+		try {
+			$job = $this->services->jobs->view( $id );
+		} catch ( JobException $e ) {
+			\WP_CLI::error( $e->getMessage() );
+		}
+		$job['candidateCounts'] = $this->services->candidates->counts( $id );
+		$job['log']             = $this->services->research_log->for_job( $id, 200 );
+		if ( 'json' === ( $assoc_args['format'] ?? 'table' ) ) {
+			\WP_CLI::line( (string) wp_json_encode( $job, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
+			return;
+		}
+		foreach ( array( 'jobType', 'status', 'processedCount', 'cursor', 'retryCount', 'nextRetryAt', 'lockedUntil', 'worker', 'error' ) as $key ) {
+			\WP_CLI::line( sprintf( '%-15s %s', $key, is_scalar( $job[ $key ] ) ? (string) $job[ $key ] : '—' ) );
+		}
+		\WP_CLI::line( sprintf( '%-15s %s', 'stats', (string) wp_json_encode( $job['stats'] ) ) );
+		\WP_CLI::line( sprintf( '%-15s %s', 'candidates', (string) wp_json_encode( array_filter( $job['candidateCounts'] ) ) ) );
+		foreach ( $job['log'] as $entry ) {
+			\WP_CLI::line( sprintf( '  %s %-7s %-10s %s', $entry['createdAt'], $entry['level'], $entry['stage'], $entry['message'] ) );
+		}
+	}
+
+	/**
+	 * Run due internal research jobs (verification expiry, ranking recalculation) now.
+	 *
+	 * @subcommand research-run
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function research_run( array $args, array $assoc_args ): void {
+		unset( $args, $assoc_args );
+		$done = $this->services->jobs->run_internal( 20 );
+		\WP_CLI::success( sprintf( 'Processed %d internal research job(s).', $done ) );
+	}
+
+	/**
+	 * Rebuild the candidate-matching index and hash legacy claims.
+	 *
+	 * @subcommand research-reindex
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function research_reindex( array $args, array $assoc_args ): void {
+		unset( $args, $assoc_args );
+		$claims   = $this->services->claims->backfill_hashes();
+		$entities = $this->services->entity_index->reindex_all();
+		\WP_CLI::success( sprintf( 'Indexed %d entities; hashed %d legacy claims.', $entities, $claims ) );
 	}
 
 	/**

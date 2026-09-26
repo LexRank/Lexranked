@@ -206,6 +206,9 @@ final class Menu {
 			'min_ranking_entities'   => 'Minimum entities for a ranking page',
 			'rate_limit_per_minute'  => 'API rate limit (requests/minute/IP)',
 			'search_rate_per_minute' => 'Search rate limit (requests/minute/IP)',
+			'research_max_retries'   => 'Research job retries (after the first attempt)',
+			'research_backoff_base'  => 'Research retry backoff base (seconds, doubles per retry)',
+			'research_lease_minutes' => 'Research job lease (minutes without heartbeat before a job is resumed)',
 		) as $key => $label ) {
 			printf(
 				'<tr><th scope="row"><label for="lr-%1$s">%2$s</label></th><td><input type="number" id="lr-%1$s" class="small-text" name="%3$s[%1$s]" value="%4$d"></td></tr>',

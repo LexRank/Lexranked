@@ -15,8 +15,10 @@ use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
 
 /**
- * Research job record. Execution arrives in Phase 5; the record, status
- * lifecycle and resumability fields (cursor, processed_count) exist now.
+ * Research job record. Workers claim jobs through the research API with a
+ * time-limited lease, report progress (cursor, processed_count, stats) and
+ * complete or fail them; failed jobs are retried with exponential backoff and
+ * a crashed worker's job is resumed from its cursor. See Research\JobService.
  * Administrators only (custom capability type).
  */
 final class ResearchJob extends PostType {
@@ -80,6 +82,11 @@ final class ResearchJob extends PostType {
 			new Field( 'processed_count', Field::TYPE_INT, 'Processed records', read_only: true, is_public: false, min: 0 ),
 			new Field( 'cursor', Field::TYPE_STRING, 'Resume cursor', read_only: true, is_public: false, max: 255 ),
 			new Field( 'error_message', Field::TYPE_TEXT, 'Last error', read_only: true, is_public: false ),
+			new Field( 'params', Field::TYPE_TEXT, 'Parameters (JSON)', is_public: false, help: 'e.g. {"provider":"csv","dataset":"florida-pi"}. Scope the job with the Location / Practice Area boxes.' ),
+			new Field( 'stats', Field::TYPE_TEXT, 'Run statistics (JSON)', read_only: true, is_public: false ),
+			new Field( 'next_retry_at', Field::TYPE_DATETIME, 'Next retry at (UTC)', read_only: true, is_public: false ),
+			new Field( 'locked_until', Field::TYPE_DATETIME, 'Lease expires (UTC)', read_only: true, is_public: false ),
+			new Field( 'worker', Field::TYPE_STRING, 'Worker', read_only: true, is_public: false, max: 100 ),
 		);
 	}
 }

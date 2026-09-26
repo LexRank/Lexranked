@@ -1,9 +1,10 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.2.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.3.0`
 (`X-LexRanked-API` response header).
 
-All endpoints are `GET`. Responses are stable DTOs built by pure mappers in
+Public endpoints are `GET`; the private research API (below) also accepts
+`POST` from research workers. Responses are stable DTOs built by pure mappers in
 `src/REST/DTO/` — raw WordPress objects are never returned, and the custom
 post types are **not** exposed through `/wp/v2` (ADR-010).
 
@@ -150,3 +151,37 @@ entryCount, minEntities, isThin, indexable, isDemo, updatedAt,
 methodologyUrl, intro, entries[{ position, score, scoreVersion, entity }]`.
 
 TypeScript definitions: `frontend/types/api.ts`.
+
+## Research API (private)
+
+Since API 1.3.0. Requires the `lexranked_research` capability (role
+**LexRanked Research Worker**, or administrators); anonymous → 401, the
+`lexranked_api` role → 403. Never cached (`private, no-store`). Endpoints
+that act on a job's data require the lease token from `claim` in the
+`X-LexRanked-Lease` header; without a valid lease → `409
+lexranked_lease_lost`, cancelled job → `409 lexranked_job_cancelled`.
+Batch endpoints accept 1–100 `items` and answer per item (`{index, error:
+{field, message}}` for rejected items) — one bad item never fails a batch.
+See [research.md](research.md) for the semantics.
+
+| Method & path | Body / params | Returns |
+|---|---|---|
+| `POST /research/jobs/claim` | `{worker, types[]}` | `{job: Job + token}` or `{job: null}`; `503 lexranked_claim_busy` when another claim holds the lock |
+| `GET /research/jobs/{id}` | — | Job + `logCounts`, `candidateCounts` |
+| `GET /research/jobs/{id}/log` | `after` (log ID) | `[{id, level, stage, message, context, createdAt}]` |
+| `POST /research/jobs/{id}/heartbeat` 🔒 | `{cursor?, processed_count?, stats?, logs?[]}` | Job (lease extended) |
+| `POST /research/jobs/{id}/complete` 🔒 | same as heartbeat | Job (`completed`; ranking recalculation scheduled) |
+| `POST /research/jobs/{id}/fail` 🔒 | `{error, retryable=true, …progress}` | Job (`failed`, `nextRetryAt` or final) |
+| `GET /research/jobs/{id}/targets` 🔒 | `after` (entity ID), `limit` ≤ 100 | `[{id, entityType, status, name, website}]` in the job's scope |
+| `POST /research/jobs/{id}/sources` 🔒 | `items[{url, source_type, title?}]` | `[{index, sourceId, created, tier}]` |
+| `POST /research/jobs/{id}/candidates` 🔒 | `items[{entity_type, name, source_url, source_type, city?, state?, practice_area?, website?, payload?}]` | `[{index, candidateId, created, status, entityId, entityType, reason}]` — `entityId` only for `matched`/`created` |
+| `POST /research/jobs/{id}/claims` 🔒 | `items[{entity_id, field_name, value, source_url and/or source_id, source_type, retrieved_at, confidence}]` | `{results[{index, claimId, duplicate}], applied{entityId: fields[]}, review[entityIds]}` |
+| `POST /research/jobs/{id}/verifications` 🔒 | `items[{entity_id, verification_type, status, source_url, source_type, source_id?, notes?}]` | `[{index, verificationId, status, downgraded, duplicate}]` |
+| `GET /research/candidates` | `status?`, `page`, `per_page` | Candidate list (+ `X-WP-Total`) |
+| `POST /research/candidates/{id}/resolve` | `{action: match\|create\|reject\|needs_review, entity_id?, reason?}` | Candidate result |
+
+🔒 = requires `X-LexRanked-Lease`.
+
+Job DTO: `{id, title, jobType, status, params, scope{locations[], practiceAreas[]},
+cursor, processedCount, retryCount, stats, startedAt, completedAt, lockedUntil,
+nextRetryAt, worker, error}`. The lease token is returned only by `claim`.

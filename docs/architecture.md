@@ -180,3 +180,33 @@ The API never scores on the fly, which keeps reads fast and makes every
 number the public sees traceable to a stored, reproducible calculation.
 Snapshots store the inputs, so later data changes never rewrite history.
 Recalculation happens daily, shortly after edits (debounced) and on demand.
+
+### ADR-021 — Workers propose, WordPress disposes
+Research workers are untrusted clients with a narrow role
+(`lexranked_worker`). They submit candidates, sources, claims and
+verification requests through the private research API; the plugin
+validates, deduplicates and applies them by fixed rules (matching,
+fact resolution, tier caps on verification). Workers never write to the
+database, never publish, and never see private fields.
+
+### ADR-022 — Durable job queue on WordPress posts with leases
+Jobs are `lr_research_job` posts; a claim takes a MySQL advisory lock and
+hands out a time-limited lease token that every write must present. A dead
+worker's lease expires and the job resumes from its cursor; failures retry
+with exponential backoff. This avoids adding Redis/SQS while the volume is
+small; the API contract (claim/heartbeat/complete/fail) lets the queue move
+to a dedicated system later without changing workers.
+
+### ADR-023 — Research never publishes; evidence about public profiles is reviewed
+New entities are drafts; research evidence about a published entity is
+stored with `review_status = pending_review` and is invisible to the public
+API and the ranking engine until an editor approves it on **Research
+review**. Automated verification records are `pending` posts. Publication is
+always a human action.
+
+### ADR-024 — Structured data only, from curated seeds
+Candidate discovery starts from human-curated datasets that name their
+source; the worker does not crawl directories. Web facts come only from
+schema.org JSON-LD a site publishes about the same entity (name-matched),
+fetched politely (robots.txt, rate limits, SSRF guard). Free-text or
+AI-based extraction (Phase 6) must go through the same intake.

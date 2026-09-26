@@ -1,0 +1,7 @@
+entity_type,name,city,state,practice_area,website,source_url,source_type,retrieved_at,phone,bar_state,bar_number,bar_status
+lawyer,"Jordan Q. Sample, Esq.",Miami,FL,personal-injury,,https://bar.fixture.test/profile/1001,bar_association,2026-09-01,+1 305 555 0101,FL,1001,active
+lawyer,Casey Fixture,Miami,FL,personal-injury,,https://bar.fixture.test/profile/1002,bar_association,2026-09-01,,FL,1002,active
+lawyer,Riley Placeholder,Tampa,FL,personal-injury,,https://bar.fixture.test/profile/1003,bar_association,2026-09-01,,FL,1003,inactive
+law_firm,"Sample & Fixture, P.A.",Miami,FL,personal-injury,http://SITE_HOST/sample-fixture,https://directory.fixture.test/firms/sample-fixture,professional_directory,2026-09-02,,,,
+lawyer,Morgan Testcase,Orlando,FL,personal-injury,,https://directory.fixture.test/lawyers/morgan,professional_directory,2026-09-02,,,,
+lawyer,Incomplete,,,,,https://bar.fixture.test/profile/1006,bar_association,2026-09-01,,,,

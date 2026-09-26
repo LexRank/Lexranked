@@ -1,6 +1,6 @@
 -- Reference DDL for LexRanked custom tables (MySQL/MariaDB, prefix wp_).
 -- Source of truth: wordpress/plugins/lexranked-core/src/Database/Schema.php (applied with dbDelta).
--- Schema version: 3
+-- Schema version: 4
 
 CREATE TABLE wp_lr_claims (
   claim_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -14,8 +14,13 @@ CREATE TABLE wp_lr_claims (
   retrieved_at datetime NOT NULL,
   confidence decimal(4,3) NOT NULL DEFAULT 0.000,
   verification_status varchar(20) NOT NULL DEFAULT 'pending',
+  claim_hash char(40) DEFAULT NULL,
+  job_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  review_status varchar(20) NOT NULL DEFAULT 'approved',
   created_at datetime NOT NULL,
   PRIMARY KEY  (claim_id),
+  UNIQUE KEY claim_hash (claim_hash),
+  KEY review_status (review_status),
   KEY entity (entity_type,entity_id),
   KEY entity_field (entity_id,field_name),
   KEY source_id (source_id)
@@ -53,3 +58,39 @@ CREATE TABLE wp_lr_ranking_snapshots (
   KEY calculated_at (calculated_at)
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE wp_lr_candidates (
+  candidate_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  dedupe_key char(40) NOT NULL,
+  job_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  entity_type varchar(20) NOT NULL,
+  name varchar(255) NOT NULL,
+  normalized_name varchar(255) NOT NULL,
+  city varchar(100) DEFAULT NULL,
+  state varchar(100) DEFAULT NULL,
+  practice_area varchar(100) DEFAULT NULL,
+  website varchar(2048) DEFAULT NULL,
+  source_url varchar(2048) NOT NULL DEFAULT '',
+  status varchar(20) NOT NULL DEFAULT 'new',
+  entity_id bigint(20) unsigned DEFAULT NULL,
+  match_confidence decimal(4,3) DEFAULT NULL,
+  reason varchar(500) DEFAULT NULL,
+  payload longtext NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY  (candidate_id),
+  UNIQUE KEY dedupe_key (dedupe_key),
+  KEY status (status),
+  KEY job_id (job_id)
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE wp_lr_research_log (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  job_id bigint(20) unsigned NOT NULL,
+  level varchar(10) NOT NULL,
+  stage varchar(40) NOT NULL DEFAULT '',
+  message varchar(500) NOT NULL,
+  context longtext NULL,
+  created_at datetime NOT NULL,
+  PRIMARY KEY  (id),
+  KEY job (job_id,id)
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

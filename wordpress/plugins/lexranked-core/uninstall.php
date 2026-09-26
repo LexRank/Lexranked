@@ -19,3 +19,4 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_option( 'lexranked_settings' );
 delete_option( 'lexranked_db_version' );
 remove_role( 'lexranked_api' );
+remove_role( 'lexranked_worker' );

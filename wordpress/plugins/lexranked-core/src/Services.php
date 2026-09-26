@@ -19,6 +19,11 @@ use LexRanked\Core\PostTypes\VerificationRecord;
 use LexRanked\Core\Ranking\RankingRunner;
 use LexRanked\Core\Ranking\ScoreVersions;
 use LexRanked\Core\REST\EntityPresenter;
+use LexRanked\Core\Research\CandidateRepository;
+use LexRanked\Core\Research\EntityIndex;
+use LexRanked\Core\Research\JobService;
+use LexRanked\Core\Research\ResearchIngest;
+use LexRanked\Core\Research\ResearchLog;
 use LexRanked\Core\Repository\ClaimRepository;
 use LexRanked\Core\Repository\EntityRepository;
 use LexRanked\Core\Repository\SnapshotRepository;
@@ -130,6 +135,41 @@ final class Services {
 	public readonly RankingRunner $runner;
 
 	/**
+	 * Research job log.
+	 *
+	 * @var ResearchLog
+	 */
+	public readonly ResearchLog $research_log;
+
+	/**
+	 * Research candidates.
+	 *
+	 * @var CandidateRepository
+	 */
+	public readonly CandidateRepository $candidates;
+
+	/**
+	 * Candidate-matching index.
+	 *
+	 * @var EntityIndex
+	 */
+	public readonly EntityIndex $entity_index;
+
+	/**
+	 * Research job queue.
+	 *
+	 * @var JobService
+	 */
+	public readonly JobService $jobs;
+
+	/**
+	 * Research intake.
+	 *
+	 * @var ResearchIngest
+	 */
+	public readonly ResearchIngest $ingest;
+
+	/**
 	 * Build the graph.
 	 *
 	 * @param Settings|null $settings Settings (injectable for tests).
@@ -157,6 +197,11 @@ final class Services {
 		$this->versions      = new ScoreVersions();
 		$this->presenter     = new EntityPresenter( $this );
 		$this->runner        = new RankingRunner( $this, $this->snapshots, $this->versions );
+		$this->research_log  = new ResearchLog();
+		$this->candidates    = new CandidateRepository();
+		$this->entity_index  = new EntityIndex( $this->entities, $this->lawyer, $this->law_firm );
+		$this->jobs          = new JobService( $this, $this->research_log );
+		$this->ingest        = new ResearchIngest( $this, $this->candidates, $this->entity_index, $this->research_log );
 	}
 
 	/**

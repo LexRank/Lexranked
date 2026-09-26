@@ -32,6 +32,7 @@ COMPOSE=(docker compose --env-file /dev/null -f docker-compose.yml)
 
 cleanup() {
   if [[ -n "${NEXT_PID:-}" && "$KEEP" != "--keep" ]]; then kill "$NEXT_PID" >/dev/null 2>&1 || true; fi
+  if [[ -n "${SITE_PID:-}" ]]; then kill "$SITE_PID" >/dev/null 2>&1 || true; fi
   if [[ "$KEEP" != "--keep" ]]; then
     "${COMPOSE[@]}" down -v --remove-orphans >/dev/null 2>&1 || true
   fi
@@ -123,6 +124,56 @@ for _ in $(seq 1 7); do codes+="$(curl -s -o /dev/null -w '%{http_code}' "$API/s
 if [[ "$codes" == *"429"* ]]; then pass "anonymous search is rate limited ($codes)"; else fail "no 429 in: $codes"; fi
 code="$(curl -s -o /dev/null -w '%{http_code}' -u "apiuser:$APP_PW" "$API/search?q=blake")"
 if [[ "$code" == "200" ]]; then pass "api user bypasses rate limit"; else fail "api user got HTTP $code"; fi
+
+echo "==> Research engine (TypeScript worker against this WordPress)"
+(
+  cd workers/research
+  [[ -d node_modules ]] || npm ci --no-audit --no-fund >/dev/null
+  npm run build >/dev/null
+)
+wp user create researcher research@example.com --role=lexranked_worker >/dev/null
+WORKER_PW="$(wp user application-password create researcher it --porcelain | tail -1)"
+expect_status "research API is not public" 401 "$API/research/candidates"
+expect_status "research API needs the research capability" 403 "$API/research/candidates" -u "apiuser:$APP_PW"
+SITE_PORT="${SITE_PORT:-8098}"
+node workers/research/fixtures/site/server.mjs "$SITE_PORT" &
+SITE_PID=$!
+DATA_DIR="$(mktemp -d)"
+sed "s/SITE_HOST/127.0.0.1:${SITE_PORT}/" workers/research/fixtures/datasets/fictional-demo.csv >"$DATA_DIR/fictional-demo.csv"
+for _ in $(seq 1 20); do curl -s -o /dev/null "http://127.0.0.1:${SITE_PORT}/robots.txt" && break; sleep 0.5; done
+JOB="$(wp lexranked research-job candidate_discovery --params='{"dataset":"fictional-demo"}' --porcelain | tail -1)"
+run_worker() {
+  env LEXRANKED_API_URL="$API" LEXRANKED_WORKER_USER=researcher LEXRANKED_WORKER_APP_PASSWORD="$WORKER_PW" \
+    LEXRANKED_DATA_DIR="$DATA_DIR" LEXRANKED_ALLOW_PRIVATE_NETWORK=1 LEXRANKED_PER_HOST_INTERVAL_MS=0 \
+    LEXRANKED_BATCH_SIZE=2 LEXRANKED_WORKER_ID=it-worker "$@" node workers/research/dist/cli.js --once >>"$DATA_DIR/worker.log" 2>&1
+}
+job_json() { wp lexranked research-status "$JOB" --format=json; }
+check() { if [[ "$(jq -r "$2" <<<"$3" 2>/dev/null)" == "true" ]]; then pass "$1"; else fail "$1"; echo "    got: ${3:0:400}"; fi; }
+
+# First attempt "crashes" (hard exit) after 4 rows: the lease stays, the cursor is saved.
+run_worker LEXRANKED_WORKER_CRASH_AFTER_ROWS=4 || true
+check "crashed worker left the job running at its checkpoint" '.status == "running" and .cursor == "row:4"' "$(job_json)"
+if grep -q "$WORKER_PW" "$DATA_DIR/worker.log"; then fail "worker logged its password"; else pass "worker logs contain no credentials"; fi
+# The lease expires (simulated) and a new worker resumes from the cursor.
+wp post meta update "$JOB" _lr_locked_until 2000-01-01T00:00:00Z >/dev/null
+run_worker && pass "second worker run exits cleanly" || fail "second worker run failed (see $DATA_DIR/worker.log)"
+status="$(job_json)"
+check "job completed after resuming" '.status == "completed" and .cursor == "row:6" and .processedCount == 6 and .retryCount == 1' "$status"
+check "resume is logged" '[.log[].message] | any(startswith("Resuming at row 5"))' "$status"
+check "job stats recorded" '.stats.candidates_created == 5 and .stats.rows_invalid == 1 and .stats.pages_fetched == 1' "$status"
+cands="$(curl -sS -u "researcher:$WORKER_PW" "$API/research/candidates?per_page=100")"
+check "each candidate stored once despite the crash" 'length == 5 and ([.[].status] | unique == ["created"])' "$cands"
+FIRM_ID="$(jq -r '.[] | select(.entityType == "law_firm") | .entityId' <<<"$cands")"
+check "new firm is a draft" '. == "draft"' "\"$(wp post get "$FIRM_ID" --field=post_status)\""
+check "website structured data applied to the draft" '. == "+1 305 555 0142"' "\"$(wp post meta get "$FIRM_ID" _lr_phone)\""
+check "drafts stay out of the public API" '[.[].name] | all(. != "Sample & Fixture, P.A.")' "$(curl -sS "$API/law-firms?per_page=100")"
+dupes="$(wp db query "SELECT COUNT(*) - COUNT(DISTINCT claim_hash) FROM wp_lr_claims WHERE job_id = $JOB" --skip-column-names)"
+check "no duplicate claims after resume" '. == 0' "${dupes//[^0-9]/}"
+check "verification requests await an editor" '. == 6' "$(wp post list --post_type=lr_verification --post_status=pending --format=count)"
+kill "$SITE_PID" >/dev/null 2>&1 || true
+SITE_PID=""
+wp lexranked research-job verification >/dev/null
+check "internal jobs run in WordPress" 'test("Processed 1 internal")' "\"$(wp lexranked research-run)\""
 
 if [[ -n "$FRONTEND" ]]; then
   echo "==> Frontend end-to-end (Next.js against this WordPress)"

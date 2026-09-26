@@ -48,7 +48,24 @@ Run all of it locally with `scripts/check.sh`.
 - No public theme: install a minimal theme and redirect front-end requests
   to `lexranked.com`; send `X-Robots-Tag: noindex` on the WP host.
 - Create a dedicated user with the **LexRanked API** role and an
-  Application Password for the frontend/workers.
+  Application Password for the frontend.
+- WP-cron must run (real cron hitting `wp-cron.php`, or `wp cron event run
+  --due-now` every few minutes): it recalculates rankings and runs internal
+  research jobs (verification expiry, ranking recalculation).
+
+## Research worker
+
+- Any Node ≥ 22 host with outbound HTTPS (a small VM, container or
+  scheduled job); it needs no inbound ports and no database access.
+- Create a separate user with the **LexRanked Research Worker** role and its
+  own Application Password; set `LEXRANKED_API_URL`,
+  `LEXRANKED_WORKER_USER`, `LEXRANKED_WORKER_APP_PASSWORD`,
+  `LEXRANKED_DATA_DIR` (see `docs/research.md`).
+- Run `node dist/cli.js --loop` under a supervisor (systemd, container
+  restart policy) or `--once` from cron. Crashes are safe: the job resumes
+  after its lease expires.
+- Run it on a network segment without access to internal services (the
+  SSRF guard blocks private addresses, but defense in depth matters).
 
 ## Cloudflare
 

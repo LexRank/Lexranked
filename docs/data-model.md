@@ -99,15 +99,19 @@ score_version, verification_status, last_verified_at, created_at, updated_at`.
 | retrieved_at | datetime |
 | confidence | decimal(4,3) 0–1 |
 | verification_status | `pending` \| `verified` \| `failed` \| `expired` |
+| claim_hash | sha1(entity, field, value, source) — unique; same fact from the same source is one claim |
+| job_id | research job that produced it (0 = editor / seed) |
+| review_status | `approved` (public) \| `pending_review` (research evidence about a published entity, hidden) \| `rejected` |
 
 `ClaimValidator` rejects any claim without a source (URL or registered
 source), with an unconfigured source type, a confidence outside 0–1, or a
 field that is not traceable (system and commercial fields such as `score`
 or `commercial_status` can never be "evidenced").
 
-Field-value resolution (Phase 5) picks the claim with the best (source tier,
-verification status, recency, confidence). Ties never resolve by guessing;
-conflicting high-tier claims are flagged for review.
+Field-value resolution (`FactResolver`) picks the claim with the best
+(source tier, verification status, recency, confidence, ID). Ties never
+resolve by guessing; conflicting claims at the best tier/status are flagged
+for review. Only `approved` claims are public or used by the ranking engine.
 
 ## Source tiers (configurable)
 
@@ -136,13 +140,26 @@ else `unverified`.
 
 ## Research job
 
-`job_id, job_type, location, practice_area, status (pending|running|completed|failed|cancelled),
-cursor, processed_count, started_at, completed_at, retry_count, error_message, created_at`.
+`job_id, job_type, location, practice_area (scope terms), status
+(pending|running|completed|failed|cancelled), params (JSON), cursor,
+processed_count, stats (JSON), started_at, completed_at, retry_count,
+next_retry_at, locked_until, worker, error_message, created_at`; the lease
+token is private post meta. See [research.md](research.md) for leases,
+retries and resumption. Admins may move failed → pending (manual retry) or
+cancel any job. Administrator-only (custom capability type `lr_research_job`).
 
-Lifecycle is enforced (`ResearchJobStatus::can_transition_to`): pending →
-running | cancelled; running → completed | failed | cancelled; failed →
-pending (retry, `retry_count`+1, resumes from `cursor`) | cancelled.
-Administrator-only (custom capability type `lr_research_job`).
+## Research candidate (`lr_candidates`)
+
+`candidate_id, dedupe_key (unique), job_id, entity_type, name,
+normalized_name, city, state, practice_area, website, source_url, status
+(new|matched|created|needs_review|rejected), entity_id, match_confidence,
+reason, payload, created_at, updated_at`. Internal research data — never in
+the public API.
+
+## Research log (`lr_research_log`)
+
+`id, job_id, level (debug|info|warning|error), stage, message (≤500),
+context (JSON, secrets redacted), created_at`.
 
 ## Ranking snapshot
 

@@ -11,6 +11,7 @@ namespace LexRanked\Core\Settings;
 
 use LexRanked\Core\Domain\VerificationType;
 use LexRanked\Core\Ranking\ScoreVersions;
+use LexRanked\Core\Research\Backoff;
 use LexRanked\Core\Sources\SourceTiers;
 use LexRanked\Core\Verification\Freshness;
 use LexRanked\Core\Verification\VerificationPolicy;
@@ -63,6 +64,9 @@ final class Settings {
 			'search_rate_per_minute' => 30,
 			'trust_proxy_header'     => false,
 			'score_version'          => ScoreVersions::DEFAULT_VERSION,
+			'research_max_retries'   => 3,
+			'research_backoff_base'  => 300,
+			'research_lease_minutes' => 10,
 		);
 	}
 
@@ -129,6 +133,9 @@ final class Settings {
 			'min_ranking_entities'   => array( 1, 100 ),
 			'rate_limit_per_minute'  => array( 10, 10000 ),
 			'search_rate_per_minute' => array( 5, 1000 ),
+			'research_max_retries'   => array( 0, 10 ),
+			'research_backoff_base'  => array( 30, 86400 ),
+			'research_lease_minutes' => array( 1, 120 ),
 		);
 		foreach ( $ints as $key => [ $min, $max ] ) {
 			if ( isset( $input[ $key ] ) && is_numeric( $input[ $key ] ) ) {
@@ -181,6 +188,13 @@ final class Settings {
 	 */
 	public function verification_policy( string $entity_type ): VerificationPolicy {
 		return new VerificationPolicy( $this->get( 'required_verifications' )[ $entity_type ] ?? array() );
+	}
+
+	/**
+	 * Retry policy for research jobs.
+	 */
+	public function research_backoff(): Backoff {
+		return new Backoff( (int) $this->get( 'research_backoff_base' ), 21600, (int) $this->get( 'research_max_retries' ) );
 	}
 
 	/**

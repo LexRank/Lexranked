@@ -13,10 +13,12 @@ use LexRanked\Core\Admin\ListColumns;
 use LexRanked\Core\Admin\MetaBoxes;
 use LexRanked\Core\Admin\Menu;
 use LexRanked\Core\Admin\RankingCalculation;
+use LexRanked\Core\Admin\ResearchAdmin;
 use LexRanked\Core\CLI\Command;
 use LexRanked\Core\Database\Installer;
 use LexRanked\Core\REST\EntitiesController;
 use LexRanked\Core\REST\RankingsController;
+use LexRanked\Core\REST\ResearchController;
 use LexRanked\Core\REST\SearchController;
 use LexRanked\Core\REST\SourcesController;
 use LexRanked\Core\REST\StatusController;
@@ -35,7 +37,7 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.2.0';
+	public const API_VERSION = '1.3.0';
 
 	/**
 	 * Services, available after boot().
@@ -60,6 +62,8 @@ final class Plugin {
 
 		( new ApiGuard( $services->settings ) )->register();
 		$services->runner->register();
+		$services->jobs->register();
+		$services->entity_index->register();
 		( new Headless( $services->settings ) )->register();
 
 		$controllers = array(
@@ -69,6 +73,7 @@ final class Plugin {
 			new TaxonomiesController(),
 			new SourcesController( $services ),
 			new SearchController( $services ),
+			new ResearchController( $services ),
 		);
 		foreach ( $controllers as $controller ) {
 			add_action( 'rest_api_init', array( $controller, 'register_routes' ) );
@@ -79,6 +84,7 @@ final class Plugin {
 			( new MetaBoxes( $services ) )->register();
 			( new ListColumns( $services ) )->register();
 			( new RankingCalculation( $services ) )->register();
+			( new ResearchAdmin( $services ) )->register();
 		}
 
 		if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( '\WP_CLI' ) ) {
@@ -140,6 +146,8 @@ final class Plugin {
 	public static function deactivate(): void {
 		wp_clear_scheduled_hook( \LexRanked\Core\Ranking\RankingRunner::CRON_HOOK );
 		wp_clear_scheduled_hook( \LexRanked\Core\Ranking\RankingRunner::CRON_HOOK . '_soon' );
+		wp_clear_scheduled_hook( \LexRanked\Core\Research\JobService::INTERNAL_HOOK );
+		wp_clear_scheduled_hook( \LexRanked\Core\Research\JobService::INTERNAL_HOOK . '_soon' );
 		flush_rewrite_rules();
 	}
 
