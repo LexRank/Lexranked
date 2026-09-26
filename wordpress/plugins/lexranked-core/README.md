@@ -30,6 +30,7 @@ src/
   CLI/               wp lexranked status | seed-demo | purge-demo
   Ranking/           ScoreVersion(s), ScoreCalculator, BayesianReviewScorer, RankingEngine, InputBuilder, RankingRunner
   Research/          Research execution (Phase 5)
+  Commercial/        Profile claims, placements (premium/featured/sponsored), status derivation (Phase 9; never read by Ranking/)
 tests/Unit/          PHPUnit (no WordPress runtime)
 ```
 
@@ -37,7 +38,7 @@ tests/Unit/          PHPUnit (no WordPress runtime)
 
 See [docs/api.md](../../../docs/api.md): `status`, `lawyers`, `law-firms`,
 `rankings`, `states`, `cities`, `practice-areas`, `sources`,
-`verifications`, `search`.
+`verifications`, `search`, `placements`, `claims` (POST, frontend server only).
 
 ## Roles and capabilities
 

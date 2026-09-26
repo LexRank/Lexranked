@@ -18,13 +18,15 @@ namespace LexRanked\Core\Database;
 final class Schema {
 
 	/** Bump when the DDL below changes; triggers dbDelta on next load. */
-	public const VERSION = '5';
+	public const VERSION = '6';
 
-	public const CLAIMS    = 'lr_claims';
-	public const AUDIT_LOG = 'lr_audit_log';
-	public const SNAPSHOTS = 'lr_ranking_snapshots';
-	public const CANDIDATE = 'lr_candidates';
-	public const JOB_LOG   = 'lr_research_log';
+	public const CLAIMS         = 'lr_claims';
+	public const AUDIT_LOG      = 'lr_audit_log';
+	public const SNAPSHOTS      = 'lr_ranking_snapshots';
+	public const CANDIDATE      = 'lr_candidates';
+	public const JOB_LOG        = 'lr_research_log';
+	public const PROFILE_CLAIMS = 'lr_profile_claims';
+	public const PLACEMENTS     = 'lr_placements';
 
 	/**
 	 * CREATE TABLE statements.
@@ -39,6 +41,8 @@ final class Schema {
 		$snaps  = $prefix . self::SNAPSHOTS;
 		$cands  = $prefix . self::CANDIDATE;
 		$logs   = $prefix . self::JOB_LOG;
+		$pclaim = $prefix . self::PROFILE_CLAIMS;
+		$place  = $prefix . self::PLACEMENTS;
 
 		return array(
 			$claims => "CREATE TABLE {$claims} (
@@ -130,6 +134,57 @@ final class Schema {
   created_at datetime NOT NULL,
   PRIMARY KEY  (id),
   KEY job (job_id,id)
+) {$charset_collate};",
+			$pclaim => "CREATE TABLE {$pclaim} (
+  claim_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  entity_id bigint(20) unsigned NOT NULL,
+  entity_type varchar(20) NOT NULL,
+  status varchar(20) NOT NULL,
+  claimant_name varchar(200) NOT NULL DEFAULT '',
+  claimant_email varchar(254) NOT NULL DEFAULT '',
+  claimant_phone varchar(40) NOT NULL DEFAULT '',
+  claimant_role varchar(32) NOT NULL DEFAULT '',
+  bar_state char(2) NOT NULL DEFAULT '',
+  bar_number varchar(40) NOT NULL DEFAULT '',
+  message text NULL,
+  email_token_hash char(64) DEFAULT NULL,
+  email_token_expires datetime DEFAULT NULL,
+  email_verified_at datetime DEFAULT NULL,
+  identity_method varchar(32) NOT NULL DEFAULT '',
+  review_note varchar(1000) NOT NULL DEFAULT '',
+  reviewed_by bigint(20) unsigned NOT NULL DEFAULT 0,
+  reviewed_at datetime DEFAULT NULL,
+  personal_data_purged tinyint(1) NOT NULL DEFAULT 0,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY  (claim_id),
+  UNIQUE KEY email_token_hash (email_token_hash),
+  KEY entity (entity_id,status),
+  KEY status (status,updated_at),
+  KEY claimant_email (claimant_email(100),created_at)
+) {$charset_collate};",
+			$place  => "CREATE TABLE {$place} (
+  placement_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  entity_id bigint(20) unsigned NOT NULL,
+  entity_type varchar(20) NOT NULL,
+  product varchar(20) NOT NULL,
+  ranking_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  location_term_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  practice_area_term_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  starts_at datetime NOT NULL,
+  ends_at datetime NOT NULL,
+  status varchar(20) NOT NULL DEFAULT 'active',
+  premium_message text NULL,
+  cta_url varchar(2048) NOT NULL DEFAULT '',
+  order_ref varchar(100) NOT NULL DEFAULT '',
+  notes text NULL,
+  created_by bigint(20) unsigned NOT NULL DEFAULT 0,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY  (placement_id),
+  KEY entity (entity_id,product),
+  KEY product_window (product,status,starts_at,ends_at),
+  KEY ranking_id (ranking_id)
 ) {$charset_collate};",
 		);
 	}

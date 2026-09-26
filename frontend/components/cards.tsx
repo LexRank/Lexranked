@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ArticleSummary, LawFirmSummary, LawyerSummary, RankingEntry as RankingEntryDto, RankingSummary } from "@/types/api";
 import { formatDate, formatLocation, pluralize } from "@/lib/format";
 import { rankingScopeLabel } from "@/lib/content/rankings";
-import { CommercialBadge, DemoBadge, Monogram, ScoreRing, StarRating, VerificationBadge } from "./ui";
+import { DemoBadge, Monogram, ScoreRing, StarRating, VerificationBadge } from "./ui";
 
 export function LawyerCard({ lawyer }: { lawyer: LawyerSummary }) {
   const where = formatLocation(lawyer.location);
@@ -26,7 +26,6 @@ export function LawyerCard({ lawyer }: { lawyer: LawyerSummary }) {
         </p>
         <div className="entry__facts" style={{ marginBottom: "0.5rem" }}>
           <VerificationBadge status={lawyer.verification.status} />
-          <CommercialBadge commercial={lawyer.commercial} />
           {lawyer.isDemo && <DemoBadge />}
         </div>
         <StarRating rating={lawyer.rating} count={lawyer.reviewCount} />
@@ -52,7 +51,6 @@ export function FirmCard({ firm }: { firm: LawFirmSummary }) {
         </p>
         <div className="entry__facts" style={{ marginBottom: "0.5rem" }}>
           <VerificationBadge status={firm.verification.status} />
-          <CommercialBadge commercial={firm.commercial} />
           {firm.isDemo && <DemoBadge />}
         </div>
         <StarRating rating={firm.rating} count={firm.reviewCount} />
@@ -157,7 +155,6 @@ export function RankingEntry({ entry }: { entry: RankingEntryDto }) {
           <div className="entry__facts">
             <StarRating rating={e.rating} count={e.reviewCount} />
             <VerificationBadge status={e.verification.status} />
-            <CommercialBadge commercial={e.commercial} />
             {e.isDemo && <DemoBadge />}
           </div>
         </div>

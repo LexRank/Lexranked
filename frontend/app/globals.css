@@ -1775,3 +1775,151 @@ main {
   background: var(--brass-100);
   color: var(--brass-600);
 }
+
+/* ---------- Commercial (Phase 9): always visibly separate from organic content ---------- */
+
+.badge--claimed {
+  background: var(--navy-100);
+  color: var(--navy-800);
+}
+
+.placements {
+  border: 1px dashed var(--brass-300);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--brass-100) 55%, var(--surface));
+  padding: 1.25rem;
+}
+
+.placements__head h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.25rem;
+}
+
+.placements__head p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+
+.placements__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+.placement-card {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.placement-card h3 {
+  font-size: 1.05rem;
+  margin: 0 0 0.2rem;
+}
+
+.placement-card h3 a {
+  color: var(--navy-900);
+  text-decoration: none;
+}
+
+.placement-card__label {
+  margin: 0 0 0.4rem;
+}
+
+.premium-panel {
+  border-color: var(--brass-300);
+  background: color-mix(in srgb, var(--brass-100) 40%, var(--surface));
+}
+
+.claim-form .field textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  font: inherit;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.claim-form .field textarea:focus {
+  outline: none;
+  border-color: var(--brass-500);
+  box-shadow: var(--focus);
+}
+
+.claim-form__roles {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.claim-form legend {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-bottom: 0.35rem;
+}
+
+.claim-form .notice {
+  margin-bottom: 1rem;
+}
+
+.choice {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: 0.95rem;
+  margin-bottom: 0.4rem;
+}
+
+.choice input {
+  margin-top: 0.3rem;
+  accent-color: var(--navy-800);
+}
+
+.field__error {
+  color: var(--failed);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.claim-form__hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.steps span {
+  display: block;
+  color: var(--muted);
+}
+
+.rules {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.5rem;
+}

@@ -148,6 +148,15 @@ final class Revalidator {
 	}
 
 	/**
+	 * Commercial changes (claims, placements) and other non-post events.
+	 *
+	 * @param string $path Public path ('/' refreshes everything tagged).
+	 */
+	public function touch( string $path = '/' ): void {
+		$this->mark( $path );
+	}
+
+	/**
 	 * Queue the paths of a post.
 	 *
 	 * @param \WP_Post $post Post.

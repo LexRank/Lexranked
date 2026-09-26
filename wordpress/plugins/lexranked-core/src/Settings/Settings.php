@@ -51,24 +51,27 @@ final class Settings {
 	 */
 	public static function defaults(): array {
 		return array(
-			'frontend_url'           => '',
-			'headless_redirect'      => false,
-			'source_tiers'           => SourceTiers::DEFAULT_TIERS,
-			'freshness_rules'        => Freshness::DEFAULT_RULES,
-			'required_verifications' => array(
+			'frontend_url'              => '',
+			'headless_redirect'         => false,
+			'source_tiers'              => SourceTiers::DEFAULT_TIERS,
+			'freshness_rules'           => Freshness::DEFAULT_RULES,
+			'required_verifications'    => array(
 				'lawyer'   => array( 'identity', 'license', 'bar_status' ),
 				'law_firm' => array( 'business', 'website' ),
 			),
-			'min_ranking_entities'   => 5,
-			'rate_limit_per_minute'  => 120,
-			'search_rate_per_minute' => 30,
-			'trust_proxy_header'     => false,
-			'score_version'          => ScoreVersions::DEFAULT_VERSION,
-			'research_max_retries'   => 3,
-			'research_backoff_base'  => 300,
-			'research_lease_minutes' => 10,
-			'ai_enabled'             => false,
-			'disable_xmlrpc'         => true,
+			'min_ranking_entities'      => 5,
+			'rate_limit_per_minute'     => 120,
+			'search_rate_per_minute'    => 30,
+			'trust_proxy_header'        => false,
+			'score_version'             => ScoreVersions::DEFAULT_VERSION,
+			'research_max_retries'      => 3,
+			'research_backoff_base'     => 300,
+			'research_lease_minutes'    => 10,
+			'ai_enabled'                => false,
+			'disable_xmlrpc'            => true,
+			'claims_enabled'            => true,
+			'max_sponsored_per_ranking' => 2,
+			'max_featured_per_page'     => 3,
 		);
 	}
 
@@ -92,7 +95,7 @@ final class Settings {
 			}
 		}
 
-		foreach ( array( 'headless_redirect', 'trust_proxy_header', 'ai_enabled', 'disable_xmlrpc' ) as $key ) {
+		foreach ( array( 'headless_redirect', 'trust_proxy_header', 'ai_enabled', 'disable_xmlrpc', 'claims_enabled' ) as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = in_array( $input[ $key ], array( true, 1, '1', 'on', 'true' ), true );
 			}
@@ -132,12 +135,14 @@ final class Settings {
 		}
 
 		$ints = array(
-			'min_ranking_entities'   => array( 1, 100 ),
-			'rate_limit_per_minute'  => array( 10, 10000 ),
-			'search_rate_per_minute' => array( 5, 1000 ),
-			'research_max_retries'   => array( 0, 10 ),
-			'research_backoff_base'  => array( 30, 86400 ),
-			'research_lease_minutes' => array( 1, 120 ),
+			'min_ranking_entities'      => array( 1, 100 ),
+			'rate_limit_per_minute'     => array( 10, 10000 ),
+			'search_rate_per_minute'    => array( 5, 1000 ),
+			'research_max_retries'      => array( 0, 10 ),
+			'research_backoff_base'     => array( 30, 86400 ),
+			'research_lease_minutes'    => array( 1, 120 ),
+			'max_sponsored_per_ranking' => array( 0, 5 ),
+			'max_featured_per_page'     => array( 0, 6 ),
 		);
 		foreach ( $ints as $key => [ $min, $max ] ) {
 			if ( isset( $input[ $key ] ) && is_numeric( $input[ $key ] ) ) {

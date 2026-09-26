@@ -85,7 +85,7 @@ final class LawFirm extends PostType {
 			new Field( 'rating', Field::TYPE_FLOAT, 'Rating (0–5)', min: 0, max: 5 ),
 			new Field( 'review_count', Field::TYPE_INT, 'Review count', min: 0, max: 1000000 ),
 			new Field( 'summary', Field::TYPE_TEXT, 'Profile summary', help: 'Answer-first, 2–4 plain-text sentences shown at the top of the profile. Only facts backed by stored data and evidence.' ),
-			new Field( 'commercial_status', Field::TYPE_ENUM, 'Commercial status', options: CommercialStatus::values(), help: 'Commercial only. Never affects the organic score.' ),
+			new Field( 'commercial_status', Field::TYPE_ENUM, 'Commercial status', read_only: true, options: CommercialStatus::values(), help: 'Set automatically from profile claims and placements (LexRanked → Claims / Placements). Display only; never affects the organic score.' ),
 			new Field( 'score', Field::TYPE_FLOAT, 'LexRank score', read_only: true, min: 0, max: 100 ),
 			new Field( 'score_version', Field::TYPE_STRING, 'Score version', read_only: true, max: 20 ),
 			new Field( 'score_calculated_at', Field::TYPE_DATETIME, 'Score calculated at', read_only: true ),

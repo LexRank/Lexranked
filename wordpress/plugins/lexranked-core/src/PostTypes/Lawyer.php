@@ -100,7 +100,7 @@ final class Lawyer extends PostType {
 			new Field( 'awards', Field::TYPE_OBJECT_LIST, 'Awards', options: array( 'name', 'issuer', 'year' ), help: 'One per line: Award | Issuer | Year' ),
 			new Field( 'languages', Field::TYPE_STRING_LIST, 'Languages', help: 'One per line' ),
 			new Field( 'summary', Field::TYPE_TEXT, 'Profile summary', help: 'Answer-first, 2–4 plain-text sentences shown at the top of the profile. Only facts backed by stored data and evidence.' ),
-			new Field( 'commercial_status', Field::TYPE_ENUM, 'Commercial status', options: CommercialStatus::values(), help: 'Commercial only. Never affects the organic score.' ),
+			new Field( 'commercial_status', Field::TYPE_ENUM, 'Commercial status', read_only: true, options: CommercialStatus::values(), help: 'Set automatically from profile claims and placements (LexRanked → Claims / Placements). Display only; never affects the organic score.' ),
 			new Field( 'score', Field::TYPE_FLOAT, 'LexRank score', read_only: true, min: 0, max: 100 ),
 			new Field( 'score_version', Field::TYPE_STRING, 'Score version', read_only: true, max: 20 ),
 			new Field( 'score_calculated_at', Field::TYPE_DATETIME, 'Score calculated at', read_only: true ),

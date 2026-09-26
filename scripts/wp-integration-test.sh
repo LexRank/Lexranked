@@ -62,6 +62,9 @@ expect_status() {
   if [[ "$got" == "$want" ]]; then pass "$desc"; else fail "$desc (HTTP $got, expected $want)"; fi
 }
 
+# check <description> <jq filter that must output "true"> <json>
+check() { if [[ "$(jq -r "$2" <<<"$3" 2>/dev/null)" == "true" ]]; then pass "$1"; else fail "$1"; echo "    got: ${3:0:400}"; fi; }
+
 echo "==> Building the plugin ZIP and testing the packaged artefact"
 ZIP="$(scripts/build-plugin-zip.sh)"
 PKG_DIR="$ROOT/dist/it"
@@ -81,6 +84,8 @@ wp core install --url="http://localhost:${LOCAL_WP_PORT}" --title="LexRanked IT"
   --admin_password="it-admin-password" --admin_email=admin@example.com --skip-email >/dev/null
 wp rewrite structure '/%postname%/' >/dev/null
 wp plugin activate lexranked-core >/dev/null
+# Test-only mail sink (captures claim emails; see scripts/it/mail-sink.php).
+"${COMPOSE[@]}" exec -T wordpress sh -c 'mkdir -p wp-content/mu-plugins && cat > wp-content/mu-plugins/lexranked-it-mail-sink.php' <scripts/it/mail-sink.php
 wp lexranked seed-demo >/dev/null
 wp user create apiuser api@example.com --role=lexranked_api >/dev/null
 APP_PW="$(wp user application-password create apiuser it --porcelain | tail -1)"
@@ -120,6 +125,42 @@ expect "profile has breakdown summing to the score" '((.ranking.breakdown | map(
 expect "score versions endpoint" '.active == "v1.0" and ([.versions[0].weights[].weight] | add) == 100' "$API/score-versions"
 if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "all snapshots reproduce exactly from stored inputs"; else fail "snapshot reproduction"; fi
 
+echo "==> Commercial features (Phase 9)"
+RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+RID="$(curl -sS "$RANKING" | jq .id)"
+expect "sponsored placement is delivered separately and labelled" 'length == 1 and .[0].entity.slug == "emery-mockwell-demo" and .[0].isPaidPlacement == true and .[0].label == "Sponsored" and (.[0].disclosure | test("does not affect"))' "$API/placements?product=sponsored&ranking=$RID"
+expect "featured placement for the city page" 'length == 1 and .[0].entity.slug == "coral-placeholder-attorneys-demo" and .[0].product == "featured"' "$API/placements?product=featured&location=miami"
+expect "no featured placements elsewhere" 'length == 0' "$API/placements?product=featured&practice_area=personal-injury"
+expect_status "featured needs exactly one page" 400 "$API/placements?product=featured&location=miami&practice_area=personal-injury"
+expect "premium profile: status derived, content labelled" '.commercial.status == "premium" and .commercial.claimed and .commercial.isPaidPlacement == false and (.premiumContent.message | test("Demo premium message")) and (.premiumContent.disclosure | test("not used in the score"))' "$API/lawyers/emery-mockwell-demo"
+expect "ranking entries carry no placement data" '(.entries | tostring | test("placement|premiumContent|disclosure") | not) and ([.entries[] | select(.entity.slug == "emery-mockwell-demo")] | length) == 1' "$RANKING"
+check "paid status does not change the stored score" '.[0] == .[1]' "$(jq -n --argjson a "$(curl -sS "$RANKING" | jq '[.entries[] | select(.entity.slug == "emery-mockwell-demo") | .score][0]')" --argjson b "$(curl -sS "$API/lawyers/emery-mockwell-demo" | jq .ranking.score)" '[$a,$b]')"
+ORDER_BEFORE="$(curl -sS "$RANKING" | jq -c '[.entries[] | [.entity.slug, .score, .position]]')"
+
+CLAIM='{"entityType":"lawyer","entityId":BLAKE,"name":"Blake Sample","email":"blake@example.com","phone":"305-555-0111","role":"self","barState":"FL","barNumber":"DEMO-0002","message":"Test claim.","consent":true}'
+BLAKE="$(curl -sS "$API/lawyers/blake-sample-demo" | jq .id)"
+CLAIM="${CLAIM/BLAKE/$BLAKE}"
+expect_status "claims cannot be submitted anonymously" 401 "$API/claims" -X POST -H 'Content-Type: application/json' -d "$CLAIM"
+expect_status "invalid claim rejected" 400 "$API/claims" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "${CLAIM/\"consent\":true/\"consent\":false}"
+expect "claim accepted, email confirmation pending" '.status == "pending_email"' "$API/claims" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "$CLAIM"
+expect "repeat submission is indistinguishable and not duplicated" '.status == "pending_email"' "$API/claims" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "$CLAIM"
+check "one claim row for the repeated submission" '. == 1' "$(wp db query "SELECT COUNT(*) FROM wp_lr_profile_claims WHERE entity_id = $BLAKE" --skip-column-names | tr -dc 0-9)"
+check "only the token hash is stored" '. == 64' "$(wp db query "SELECT LENGTH(email_token_hash) FROM wp_lr_profile_claims WHERE entity_id = $BLAKE" --skip-column-names | tr -dc 0-9)"
+TOKEN="$("${COMPOSE[@]}" exec -T wordpress sh -c 'cat /tmp/it-mail.log' | grep -o 'token=[A-Za-z0-9_-]*' | tail -1 | cut -d= -f2)"
+check "confirmation email carries a link to the frontend" '. == 43' "${#TOKEN}"
+expect_status "a wrong token is rejected" 400 "$API/claims/confirm" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d '{"token":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}'
+expect "email confirmed, claim waits for an editor" '.status == "pending_review"' "$API/claims/confirm" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "{\"token\":\"$TOKEN\"}"
+expect_status "a token works once" 400 "$API/claims/confirm" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "{\"token\":\"$TOKEN\"}"
+CLAIM_ID="$(wp db query "SELECT claim_id FROM wp_lr_profile_claims WHERE entity_id = $BLAKE" --skip-column-names | tr -dc 0-9)"
+if wp lexranked claim-review "$CLAIM_ID" --approve >/dev/null 2>&1; then fail "approval without an identity check was accepted"; else pass "approval requires recording the identity check"; fi
+expect "unapproved claim changes nothing public" '.commercial.status == "free"' "$API/lawyers/blake-sample-demo"
+wp lexranked claim-review "$CLAIM_ID" --approve --identity=bar_record >/dev/null
+expect "approved claim shows as claimed" '.commercial.status == "claimed" and .commercial.claimed and .premiumContent == null' "$API/lawyers/blake-sample-demo"
+expect "claimant data never reaches the public API" '(tostring | test("blake@example.com|Test claim") | not)' "$API/lawyers/blake-sample-demo"
+if wp lexranked placement-add --product=sponsored --entity="$(curl -sS "$API/lawyers/avery-example-demo" | jq .id)" --ranking="$RID" >/dev/null 2>&1; then fail "unclaimed profile was placed"; else pass "only claimed profiles can buy placements"; fi
+check "claims and approvals are audited" '. >= 3' "$(wp db query "SELECT COUNT(*) FROM wp_lr_audit_log WHERE action LIKE 'claim.%'" --skip-column-names | tr -dc 0-9)"
+check "claim health check" 'test("claims")' "$(wp lexranked health --format=json | jq -c '[.checks[].key]' | jq -Rs .)"
+
 echo "==> Rate limiting"
 wp option update lexranked_settings '{"search_rate_per_minute":5}' --format=json >/dev/null
 codes=""
@@ -151,7 +192,6 @@ run_worker() {
     LEXRANKED_BATCH_SIZE=2 LEXRANKED_WORKER_ID=it-worker "$@" node workers/research/dist/cli.js --once >>"$DATA_DIR/worker.log" 2>&1
 }
 job_json() { wp lexranked research-status "$JOB" --format=json; }
-check() { if [[ "$(jq -r "$2" <<<"$3" 2>/dev/null)" == "true" ]]; then pass "$1"; else fail "$1"; echo "    got: ${3:0:400}"; fi; }
 
 # First attempt "crashes" (hard exit) after 4 rows: the lease stays, the cursor is saved.
 run_worker LEXRANKED_WORKER_CRASH_AFTER_ROWS=4 || true
@@ -276,6 +316,30 @@ if [[ -n "$FRONTEND" ]]; then
   expect_status "unknown ranking is 404" 404 "$WEB/rankings/texas/"
   expect_status "unknown lawyer is 404" 404 "$WEB/lawyers/does-not-exist/"
   page_has "status page reports connection" "/status/" "Connected to the LexRanked API."
+  echo "==> Commercial pages (Phase 9)"
+  page_has "sponsored block on the ranking page" "/rankings/florida/miami/personal-injury/" 'data-placements="sponsored"'
+  page_has "sponsored block is labelled as paid" "/rankings/florida/miami/personal-injury/" "Sponsored · Paid"
+  rhtml="$(curl -sS "$WEB/rankings/florida/miami/personal-injury/")"
+  list_at="$(grep -bo 'class="ranking-list"' <<<"$rhtml" | head -1 | cut -d: -f1)"
+  ad_at="$(grep -bo 'data-placements="sponsored"' <<<"$rhtml" | head -1 | cut -d: -f1)"
+  if [[ -n "$list_at" && -n "$ad_at" && "$ad_at" -gt "$list_at" ]]; then pass "sponsored block comes after the organic list"; else fail "sponsored block position ($list_at / $ad_at)"; fi
+  items="$(grep -o '<script type="application/ld+json">[^<]*' <<<"$rhtml" | sed 's/^<script[^>]*>//' | jq -s '[.[] | .. | objects | select(.["@type"] == "ItemList") | .itemListElement | length] | add')"
+  if (( items == 8 )); then pass "ItemList holds the 8 organic entries only"; else fail "ItemList has $items items"; fi
+  page_has "featured block on the city page" "/cities/miami/" 'data-placements="featured"'
+  page_has "featured firm shown" "/cities/miami/" "Coral Placeholder Attorneys (Demo)"
+  page_has "premium content labelled on the profile" "/lawyers/emery-mockwell-demo/" "Premium profile · Paid"
+  page_has "premium call to action is a sponsored link" "/lawyers/emery-mockwell-demo/" 'rel="sponsored noopener"'
+  page_has "claimed badge" "/lawyers/blake-sample-demo/" "Claimed by the lawyer"
+  page_has "unclaimed profile offers the claim link" "/lawyers/avery-example-demo/" 'href="/claim/lawyer/avery-example-demo/"'
+  expect_status "claim page" 200 "$WEB/claim/lawyer/avery-example-demo/"
+  page_has "claim page is noindex" "/claim/lawyer/avery-example-demo/" 'content="noindex, follow"'
+  page_has "claim page has the form" "/claim/lawyer/avery-example-demo/" 'name="barNumber"'
+  expect_status "claim page for an unknown profile is 404" 404 "$WEB/claim/lawyer/does-not-exist/"
+  page_has "confirm page never acts on GET" "/claim/confirm/?token=$(printf 'A%.0s' $(seq 1 43))" "Confirm my email address"
+  expect_status "advertising policy" 200 "$WEB/advertising/"
+  page_has "advertising policy states the rule" "/advertising/" "Payment never changes a score"
+  sitemap="$(curl -sS "$WEB/sitemap.xml")"
+  if grep -q "/advertising/" <<<"$sitemap" && ! grep -q "/claim/" <<<"$sitemap"; then pass "sitemap lists the policy, not claim pages"; else fail "sitemap commercial pages"; fi
   sitemap="$(curl -sS "$WEB/sitemap.xml")"
   if grep -q "/methodology/" <<<"$sitemap" && ! grep -q "demo" <<<"$sitemap"; then pass "sitemap has static pages and excludes demo pages"; else fail "sitemap content"; fi
   html="$(curl -sS "$WEB/lawyers/avery-example-demo/")"
@@ -321,9 +385,18 @@ expect "articles endpoint lists the demo guide" '[.[].slug] | index("how-to-read
 expect "article detail links its ranking" '.relatedRanking.path == "/rankings/florida/miami/personal-injury/" and .wordCount >= 300 and .isDemo' "$API/articles/how-to-read-a-lawyer-ranking-demo"
 expect "city carries editorial content" '[.[] | select(.slug == "miami") | .content.faq | length] == [1]' "$API/cities"
 
+echo "==> Payment never moves the ranking (Phase 9)"
+for pid in $(wp db query "SELECT placement_id FROM wp_lr_placements" --skip-column-names); do wp lexranked placement-cancel "$pid" >/dev/null; done
+for cid in $(wp db query "SELECT claim_id FROM wp_lr_profile_claims WHERE status = 'approved'" --skip-column-names); do wp lexranked claim-review "$cid" --reject >/dev/null; done
+expect "no placements after cancelling" 'length == 0' "$API/placements?product=sponsored&ranking=$RID"
+expect "status returns to free" '.commercial.status == "free" and .premiumContent == null' "$API/lawyers/emery-mockwell-demo"
+wp lexranked recalculate >/dev/null
+check "identical positions and scores with and without paid placements" '.[0] == .[1]' "$(jq -n --argjson a "$ORDER_BEFORE" --argjson b "$(curl -sS "$RANKING" | jq -c '[.entries[] | [.entity.slug, .score, .position]]')" '[$a,$b]')"
+
 echo "==> Demo purge"
 wp lexranked purge-demo --yes >/dev/null
 expect "purge removes all demo records" 'length == 0' "$API/lawyers"
+check "purge removes demo claims and placements" '. == 0' "$(wp db query "SELECT (SELECT COUNT(*) FROM wp_lr_profile_claims) + (SELECT COUNT(*) FROM wp_lr_placements)" --skip-column-names | tr -dc 0-9)"
 
 if (( FAILURES > 0 )); then
   echo "==> $FAILURES assertion(s) failed"

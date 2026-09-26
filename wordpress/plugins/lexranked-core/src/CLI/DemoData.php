@@ -19,6 +19,13 @@ namespace LexRanked\Core\CLI;
  */
 final class DemoData {
 
+	/** Demo lawyer with a demo claim and demo paid placements. */
+	public const COMMERCIAL_LAWYER = 'Emery Mockwell (Demo)';
+
+	/** Demo premium profile message (fictional). */
+	public const PREMIUM_MESSAGE = 'Demo premium message: this text is supplied by the profile owner in a paid premium profile. It is shown labelled and is never used in the score.';
+
+
 	public const STATE    = array(
 		'name' => 'Florida',
 		'slug' => 'florida',

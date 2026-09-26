@@ -60,7 +60,7 @@ final class DomainTest extends TestCase {
 		$this->assertFalse( $lawyer->field( 'email' )?->is_public );
 		$this->assertTrue( $lawyer->field( 'score' )?->read_only, 'Scores are engine-written only' );
 		$this->assertTrue( $lawyer->field( 'score_version' )?->read_only );
-		$this->assertFalse( $lawyer->field( 'commercial_status' )?->read_only );
+		$this->assertTrue( $lawyer->field( 'commercial_status' )?->read_only, 'Derived from claims and placements, never typed in' );
 		$this->assertFalse( ( new VerificationRecord() )->field( 'notes' )?->is_public );
 		$this->assertSame( array( 'lr_research_job', 'lr_research_jobs' ), ( new ResearchJob() )->capability_type() );
 	}

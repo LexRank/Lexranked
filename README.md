@@ -69,7 +69,7 @@ scripts/build-plugin-zip.sh      # installable plugin ZIP → dist/
 ```
 
 Connecting your own WordPress: [`docs/connecting-wordpress.md`](docs/connecting-wordpress.md).
-Adding cities, rankings, lawyers and articles: [`docs/editor-guide.md`](docs/editor-guide.md). AI: [`docs/ai.md`](docs/ai.md). Operations (monitoring, backups, security, revalidation): [`docs/operations.md`](docs/operations.md).
+Adding cities, rankings, lawyers and articles: [`docs/editor-guide.md`](docs/editor-guide.md). AI: [`docs/ai.md`](docs/ai.md). Operations (monitoring, backups, security, revalidation): [`docs/operations.md`](docs/operations.md). Claims and paid placements: [`docs/commercial.md`](docs/commercial.md).
 
 ## Roadmap
 
@@ -81,7 +81,7 @@ Adding cities, rankings, lawyers and articles: [`docs/editor-guide.md`](docs/edi
 6. ✅ **AI assistance**: quote-checked extraction & classification, advisory match review, ranking content drafts with deterministic + AI QA — strict schemas, never published automatically
 7. ✅ **Content engine**: guides at `/articles/`, editorial text on hub pages and profiles, AI drafts (ranking, hub, profile, article) with QA — drafts only
 8. ✅ **Production hardening**: signed instant revalidation, response cache, CSP/HSTS, health monitoring, backups, automated SEO/structured-data audit
-9. Commercial features (kept separate from organic ranking)
+9. ✅ **Commercial features**: profile claims with email confirmation and editor identity checks, premium profiles, featured profiles, sponsored listings — labelled, eligibility-checked, and provably unable to change a score or position
 
 ## Security
 

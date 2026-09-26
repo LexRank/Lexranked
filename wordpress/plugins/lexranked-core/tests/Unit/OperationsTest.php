@@ -48,6 +48,8 @@ final class OperationsTest extends TestCase {
 			'jobs_failed'             => 0,
 			'review_claims'           => 2,
 			'review_candidates'       => 1,
+			'claims_in_review'        => 1,
+			'claims_oldest_review'    => '2026-09-24 12:00:00',
 			'revalidation_configured' => true,
 			'revalidation'            => array(
 				'state'   => 'ok',
@@ -62,7 +64,7 @@ final class OperationsTest extends TestCase {
 	public function testHealthyInstallIsOk(): void {
 		$report = HealthCheck::evaluate( self::facts(), new \DateTimeImmutable( '2026-09-26T12:00:00Z' ) );
 		$this->assertSame( 'ok', $report['status'] );
-		$this->assertSame( array( 'database', 'scheduler', 'scores', 'research', 'review_queue', 'revalidation', 'configuration' ), array_column( $report['checks'], 'key' ) );
+		$this->assertSame( array( 'database', 'scheduler', 'scores', 'research', 'review_queue', 'claims', 'revalidation', 'configuration' ), array_column( $report['checks'], 'key' ) );
 	}
 
 	/**
@@ -89,6 +91,7 @@ final class OperationsTest extends TestCase {
 				'warning',
 			),
 			'errors shown'       => array( array( 'debug_display' => true ), 'configuration', 'warning' ),
+			'claims waiting'     => array( array( 'claims_oldest_review' => '2026-09-18 11:00:00' ), 'claims', 'warning' ),
 		);
 	}
 

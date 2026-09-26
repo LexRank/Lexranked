@@ -47,3 +47,6 @@ export function clientKey(headers: Headers): string {
 }
 
 export const searchLimiter = new RateLimiter(30);
+
+/** Claim form submissions and confirmations: a few per minute per client. */
+export const claimLimiter = new RateLimiter(5);

@@ -16,7 +16,8 @@ import { formatDate, isoDate, pluralize } from "@/lib/format";
 import { METHODOLOGY_VERSION } from "@/lib/methodology";
 import { rankingJsonLd, rankingPageJsonLd, type Crumb } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { getRanking } from "@/lib/wordpress/api";
+import { getPlacements, getRanking } from "@/lib/wordpress/api";
+import { PlacementBlock } from "@/components/commercial/Commercial";
 
 export const revalidate = 300;
 
@@ -68,6 +69,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
 
   const path = ranking.path ?? `/rankings/${segments.join("/")}/`;
   const updated = formatDate(ranking.updatedAt);
+  const sponsored = ranking.entries.length > 0 ? await getPlacements({ product: "sponsored", ranking: ranking.id }) : [];
   const related = (await allRankings())
     .filter((r) => r.id !== ranking.id && !r.isThin && (r.location?.stateSlug === ranking.location?.stateSlug || r.practiceArea?.slug === ranking.practiceArea?.slug))
     .slice(0, 4);
@@ -140,6 +142,8 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
               ))}
             </ol>
           </section>
+
+          <PlacementBlock placements={sponsored} product="sponsored" />
 
           <EditorialBody html={ranking.body} />
 

@@ -211,14 +211,20 @@ final class EntityMapper {
 	/**
 	 * Commercial block, separate from ranking.
 	 *
+	 * Since API 1.7 the status is derived from claims and placements and is one
+	 * of free|claimed|premium. Featured and sponsored placements are delivered
+	 * separately (GET /placements), never as a profile status.
+	 *
 	 * @param array<string, mixed> $fields Entity fields.
-	 * @return array{status: string, isPaidPlacement: bool}
+	 * @return array{status: string, isPaidPlacement: bool, claimed: bool, premium: bool}
 	 */
 	public static function commercial( array $fields ): array {
 		$status = CommercialStatus::tryFrom( (string) $fields['commercial_status'] ) ?? CommercialStatus::Free;
 		return array(
 			'status'          => $status->value,
 			'isPaidPlacement' => $status->is_paid_placement(),
+			'claimed'         => CommercialStatus::Free !== $status,
+			'premium'         => CommercialStatus::Premium === $status,
 		);
 	}
 

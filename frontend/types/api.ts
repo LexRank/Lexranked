@@ -65,9 +65,32 @@ export interface RankingPosition {
 }
 
 export interface CommercialBlock {
+  /** Since API 1.7: free | claimed | premium (derived from claims and placements). */
   status: CommercialStatus;
-  /** Featured/sponsored placements must be labelled as paid. */
+  /** Legacy (API < 1.7). Paid placements are now delivered separately as PlacementDto. */
   isPaidPlacement: boolean;
+  /** The profile owner has claimed it and an editor confirmed their identity (API 1.7). */
+  claimed?: boolean;
+  /** A premium profile is live (API 1.7). */
+  premium?: boolean;
+}
+
+/** Labelled paid content on a premium profile (API 1.7). Never evidence, never scored. */
+export interface PremiumContentDto {
+  label: string;
+  message: string | null;
+  ctaUrl: string | null;
+  disclosure: string;
+}
+
+/** A featured or sponsored placement (GET /placements, API 1.7). Separate from organic entries. */
+export interface PlacementDto {
+  id: number;
+  product: "featured" | "sponsored";
+  label: string;
+  isPaidPlacement: true;
+  disclosure: string;
+  entity: LawyerSummary | LawFirmSummary;
 }
 
 export interface VerificationBlock {
@@ -129,6 +152,7 @@ export interface LawyerSummary extends EntityBase {
 export interface LawyerDetail extends LawyerSummary {
   /** Answer-first profile summary (API 1.5). */
   summary?: string | null;
+  premiumContent?: PremiumContentDto | null;
   contact: { website: string | null; phone: string | null };
   address: { zipCode: string | null; country: string | null };
   professional: {
@@ -156,6 +180,7 @@ export interface LawFirmSummary extends EntityBase {
 export interface LawFirmDetail extends LawFirmSummary {
   /** Answer-first profile summary (API 1.5). */
   summary?: string | null;
+  premiumContent?: PremiumContentDto | null;
   contact: { website: string | null; phone: string | null; email: string | null };
   address: { street: string | null; zipCode: string | null; country: string | null };
   lawyers: LawyerSummary[];

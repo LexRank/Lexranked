@@ -5,7 +5,7 @@ import { HubPage } from "@/components/HubPage";
 import { hubEligibility } from "@/lib/content/eligibility";
 import { allRankings } from "@/lib/data/loaders";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { getLawFirms, getLawyers, getPracticeAreas } from "@/lib/wordpress/api";
+import { getLawFirms, getLawyers, getPracticeAreas, getPlacements } from "@/lib/wordpress/api";
 
 export const revalidate = 300;
 
@@ -16,13 +16,15 @@ export function generateStaticParams() {
 const loadArea = cache(async (slug: string) => {
   const area = (await getPracticeAreas()).data.find((p) => p.slug === slug);
   if (!area) return null;
-  const [lawyers, firms, rankings] = await Promise.all([
+  const [lawyers, firms, rankings, featured] = await Promise.all([
     getLawyers({ practice_area: slug, per_page: 12, orderby: "score", order: "desc" }),
     getLawFirms({ practice_area: slug, per_page: 6, orderby: "score", order: "desc" }),
     allRankings(),
+    getPlacements({ product: "featured", practice_area: slug }),
   ]);
   return {
     area,
+    featured,
     lawyers: lawyers.data,
     firms: firms.data,
     rankings: rankings.filter((r) => !r.isThin && r.practiceArea?.slug === slug),
@@ -59,6 +61,7 @@ export default async function PracticeAreaPage(props: PageProps<"/practice-areas
       title={`Top-rated ${a.name.toLowerCase()} lawyers`}
       lead={a.description || `${a.name} lawyers and law firms, ranked by location with the LexRank methodology.`}
       counts={a}
+      featured={data.featured}
       content={a.content ?? null}
       rankings={data.rankings}
       lawyers={data.lawyers}

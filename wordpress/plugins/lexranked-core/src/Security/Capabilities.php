@@ -14,6 +14,9 @@ namespace LexRanked\Core\Security;
  * - Research jobs and settings are administrator-only.
  * - The `lexranked_api` role is a least-privilege account for the Next.js
  *   frontend: it can read the API without rate limiting and nothing else.
+ * - The `lexranked_api` role may also submit profile claims for visitors
+ *   (they only enter the private review queue).
+ * - Claim review: editors and administrators. Paid placements: administrators.
  * - The `lexranked_worker` role is for research workers: it may use the
  *   research endpoints (claim jobs, submit candidates/claims) and nothing in
  *   wp-admin. Everything it submits is validated server-side and only lands
@@ -21,12 +24,18 @@ namespace LexRanked\Core\Security;
  */
 final class Capabilities {
 
-	public const API_ROLE     = 'lexranked_api';
-	public const API_READ     = 'lexranked_api_read';
-	public const WORKER_ROLE  = 'lexranked_worker';
-	public const RESEARCH     = 'lexranked_research';
-	public const MANAGE       = 'manage_options';
-	public const RESEARCH_CAP = array(
+	public const API_ROLE    = 'lexranked_api';
+	public const API_READ    = 'lexranked_api_read';
+	public const WORKER_ROLE = 'lexranked_worker';
+	public const RESEARCH    = 'lexranked_research';
+	public const MANAGE      = 'manage_options';
+	/** Frontend server submits claim requests on behalf of visitors. */
+	public const SUBMIT_CLAIMS = 'lexranked_submit_claims';
+	/** Review profile claims (editors and administrators). */
+	public const REVIEW_CLAIMS = 'lexranked_review_claims';
+	/** Create and change paid placements (administrators). */
+	public const MANAGE_COMMERCIAL = 'lexranked_manage_commercial';
+	public const RESEARCH_CAP      = array(
 		'edit_lr_research_jobs',
 		'edit_others_lr_research_jobs',
 		'edit_private_lr_research_jobs',
@@ -66,10 +75,13 @@ final class Capabilities {
 		}
 		$admin = get_role( 'administrator' );
 		if ( null !== $admin ) {
-			foreach ( array_merge( self::RESEARCH_CAP, array( self::API_READ, self::RESEARCH ) ) as $cap ) {
+			foreach ( array_merge( self::RESEARCH_CAP, array( self::API_READ, self::RESEARCH, self::REVIEW_CLAIMS, self::MANAGE_COMMERCIAL ) ) as $cap ) {
 				$admin->add_cap( $cap );
 			}
 		}
+		get_role( 'editor' )?->add_cap( self::REVIEW_CLAIMS );
+		// Existing roles gain new capabilities on upgrade (add_role() is a no-op for them).
+		get_role( self::API_ROLE )?->add_cap( self::SUBMIT_CLAIMS );
 	}
 
 	/**

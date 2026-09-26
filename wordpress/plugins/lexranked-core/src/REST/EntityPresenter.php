@@ -80,7 +80,7 @@ final class EntityPresenter {
 		$verification = $s->settings->verification_policy( 'lawyer' )->evaluate( $s->verifications->for_entities( array( $post->ID ) )[ $post->ID ] ?? array(), $this->now() );
 		$freshness    = $s->settings->freshness()->evaluate( 'profile', $verification['verified_at'], $this->now() );
 
-		$dto = EntityMapper::lawyer_detail(
+		$dto                   = EntityMapper::lawyer_detail(
 			$record,
 			$firm,
 			$verification,
@@ -89,6 +89,7 @@ final class EntityPresenter {
 			(string) wp_kses_post( wpautop( $post->post_content ) ),
 			$include_private
 		);
+		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
 		return $this->with_scoring( $dto, (int) $post->ID );
 	}
 
@@ -124,7 +125,7 @@ final class EntityPresenter {
 		$verification = $s->settings->verification_policy( 'law_firm' )->evaluate( $s->verifications->for_entities( array( $post->ID ) )[ $post->ID ] ?? array(), $this->now() );
 		$lawyers      = $this->lawyer_summaries( $this->firm_lawyer_posts( $post->ID ) );
 
-		$dto = EntityMapper::firm_detail(
+		$dto                   = EntityMapper::firm_detail(
 			$record,
 			$verification,
 			$lawyers,
@@ -132,6 +133,7 @@ final class EntityPresenter {
 			$this->evidence( 'law_firm', $post->ID ),
 			(string) wp_kses_post( wpautop( $post->post_content ) )
 		);
+		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
 		return $this->with_scoring( $dto, (int) $post->ID );
 	}
 

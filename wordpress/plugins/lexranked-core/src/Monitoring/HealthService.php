@@ -63,6 +63,8 @@ final class HealthService {
 			'jobs_failed'             => $this->count_jobs( ResearchJobStatus::Failed->value, 'next_retry_at' ),
 			'review_claims'           => count( $this->services->claims->pending_review( 1000 ) ),
 			'review_candidates'       => (int) ( $counts[ CandidateRepository::STATUS_NEEDS_REVIEW ] ?? 0 ),
+			'claims_in_review'        => (int) $this->services->commercial->claims->counts()['pending_review'],
+			'claims_oldest_review'    => $this->services->commercial->claims->oldest_in_review(),
 			'revalidation_configured' => $this->revalidator->configured(),
 			'revalidation'            => Revalidator::last_status(),
 			'debug_display'           => defined( 'WP_DEBUG' ) && WP_DEBUG && ( ! defined( 'WP_DEBUG_DISPLAY' ) || WP_DEBUG_DISPLAY ),

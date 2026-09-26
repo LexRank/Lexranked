@@ -64,7 +64,7 @@ export const METHODOLOGY_COMPONENTS: MethodologyComponent[] = [
 export const METHODOLOGY_PRINCIPLES = [
   {
     title: "Payment never buys rank",
-    body: "Organic scores and commercial status are stored separately. Featured or sponsored placements are always labelled and never change a score.",
+    body: "Organic scores and commercial data are stored separately, and the ranking code cannot read commercial data. Claimed profiles, premium profiles and featured or sponsored placements are always labelled, shown outside the ranked list and never change a score or position.",
   },
   {
     title: "Every fact has a source",

@@ -1,10 +1,11 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.6.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.7.0`
 (`X-LexRanked-API` response header).
 
-Public endpoints are `GET`; the private research API (below) also accepts
-`POST` from research workers. Responses are stable DTOs built by pure mappers in
+Public endpoints are `GET`; the private research API (below) accepts `POST`
+from research workers, and the claim endpoints accept `POST` from the
+frontend server. Responses are stable DTOs built by pure mappers in
 `src/REST/DTO/` — raw WordPress objects are never returned, and the custom
 post types are **not** exposed through `/wp/v2` (ADR-010).
 
@@ -111,6 +112,26 @@ updatedAt, reviewedBy, reviewedAt, categories[], image{url,width,height,alt}|nul
 wordCount, readingMinutes, isThin (< 300 words), relatedRankingId, isDemo }`.
 Detail adds `body` (sanitized HTML) and `relatedRanking {id, title, path}`.
 
+### `GET /placements` (API 1.7)
+Labelled paid placements for **one page**, delivered separately from organic
+data. `product=sponsored&ranking=<id>` (a published ranking) or
+`product=featured` with exactly one of `location=<slug>` / `practice_area=<slug>`.
+Returns `[{ id, product, label, isPaidPlacement: true, disclosure, entity }]`
+(`entity` = lawyer or firm summary), live placements only, eligible profiles
+only, at most `max_sponsored_per_ranking` / `max_featured_per_page`, oldest
+booking first. Rankings never embed placements. See [commercial.md](commercial.md).
+
+### `POST /claims` · `POST /claims/confirm` (API 1.7, frontend server only)
+Require `lexranked_submit_claims` (the `lexranked_api` role); 401 otherwise.
+`POST /claims` body `{ entityType, entityId, name, email, phone?, role:
+self|firm_representative, barState?, barNumber?, message?, consent: true }` →
+**202** `{ status: "pending_email" }` (also for repeats: nothing reveals whether
+a profile is claimed or an email known). 400 `lexranked_invalid_claim` with
+`data.field`, 404 unknown profile, 429 `lexranked_claim_limit` (3 per email /
+10 per profile per day), 503 when claims are switched off.
+`POST /claims/confirm` `{ token }` → `{ status: "pending_review" }`; 400 for
+an unknown, used or expired token. Responses are `no-store`.
+
 ### `GET /search?q=`
 Name search across lawyers and firms (`q` 2–100 chars, `type=all|lawyer|law_firm`,
 `per_page` ≤ 20). Sends `X-Robots-Tag: noindex`; stricter rate limit.
@@ -127,7 +148,7 @@ Name search across lawyers and firms (`q` 2–100 chars, `type=all|lawyer|law_fi
   "practiceAreas": [{ "slug": "personal-injury", "name": "Personal Injury" }],
   "rating": 4.9, "reviewCount": 387,
   "ranking": { "score": 94.21, "scoreVersion": "demo", "calculatedAt": "2026-09-25T07:46:24Z" },
-  "commercial": { "status": "free", "isPaidPlacement": false },
+  "commercial": { "status": "free", "isPaidPlacement": false, "claimed": false, "premium": false },
   "verification": { "status": "verified", "verifiedAt": "2026-09-24T07:46:24Z", "checks": { "bar_status": "verified", "identity": "verified", "license": "verified" } },
   "isDemo": true,
   "updatedAt": "2026-09-25T07:46:24Z"
@@ -136,6 +157,10 @@ Name search across lawyers and firms (`q` 2–100 chars, `type=all|lawyer|law_fi
 (Values above are the clearly-labelled demo seed, not real data.)
 
 `ranking` and `commercial` are sibling objects: payment never changes `ranking`.
+Since API 1.7 `commercial.status` is derived (never typed in): `free`,
+`claimed` (approved claim) or `premium` (approved claim + live premium
+placement). `isPaidPlacement` is kept for compatibility and is always `false`
+on profiles; featured and sponsored placements come from `GET /placements`.
 
 ### Lawyer / firm detail: scoring
 `ranking.breakdown` (the entity-level components) and `rankings`
@@ -143,7 +168,8 @@ Name search across lawyers and firms (`q` 2–100 chars, `type=all|lawyer|law_fi
 entity's position in the latest run of each ranking).
 
 ### Lawyer (detail) adds
-`summary` (API 1.5, plain text), `contact {website, phone}`, `address {zipCode, country}`, `professional
+`summary` (API 1.5, plain text), `premiumContent {label, message, ctaUrl,
+disclosure} | null` (API 1.7; paid, labelled, never evidence), `contact {website, phone}`, `address {zipCode, country}`, `professional
 {yearsExperience, barState, barNumber, barStatus, education[], awards[],
 languages[]}`, `bio` (sanitized HTML), `freshness {category, maxAgeDays,
 lastVerifiedAt, isStale, staleAt}`, `sources[]` (evidence), `createdAt`.
@@ -161,7 +187,7 @@ extraction; see [ai.md](ai.md)). Only editor-approved evidence is public.
 ### Law firm (detail)
 Summary fields + `lawyerCount`, `contact {website, phone, email}`, `address
 {street, zipCode, country}`, `lawyers[]` (lawyer summaries), `description`,
-`freshness`, `sources[]`.
+`freshness`, `sources[]`, `premiumContent` (API 1.7).
 
 ### Ranking (detail)
 `id, slug, path, title, entityType, location, practiceArea, scoreVersion,

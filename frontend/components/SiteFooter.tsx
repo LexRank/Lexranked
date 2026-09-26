@@ -33,6 +33,7 @@ export function SiteFooter() {
           <ul>
             <li><Link href="/methodology/">How rankings work</Link></li>
             <li><Link href="/verified/">Verification</Link></li>
+            <li><Link href="/advertising/">Advertising policy</Link></li>
             <li><Link href="/articles/">Guides</Link></li>
           </ul>
         </div>

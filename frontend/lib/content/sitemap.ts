@@ -18,7 +18,7 @@ export interface SitemapInput {
   articles?: ArticleSummary[];
 }
 
-export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/rankings/", "/states/", "/cities/", "/practice-areas/"];
+export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/", "/rankings/", "/states/", "/cities/", "/practice-areas/"];
 
 /** Listing pages that are noindex until they list real profiles (see listingEligibility). */
 export const LISTING_PATHS = { lawyers: "/lawyers/", lawFirms: "/law-firms/" } as const;

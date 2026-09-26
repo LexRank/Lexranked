@@ -250,3 +250,22 @@ Metadata, canonical, robots, sitemap consistency and JSON-LD rules are
 checked on the HTML crawlers receive, in CI, against a real WordPress
 build. Metadata is never streamed (`htmlLimitedBots`), so every crawler
 sees the same `<head>`.
+
+### ADR-031 — Commercial data lives beside the ranking, never inside it
+Claims and placements have their own tables and service
+(`src/Commercial`). The ranking engine cannot see them (enforced by a
+token-level test over `src/Ranking`), profile DTOs expose only a derived,
+display-only status, and paid placements are served by a separate endpoint
+for one page at a time. The frontend renders them in labelled blocks outside
+the organic list and outside structured data; organic markup is identical
+for paying and non-paying profiles. Only owners with an approved,
+identity-checked claim can buy placements, which prevents advertising a
+lawyer without consent.
+
+### ADR-032 — Claims are confirmed by a person, not by a signal
+Email confirmation proves control of an inbox, nothing more. Bar-number and
+email-domain comparisons are shown to the reviewer as signals, but approval
+requires the editor to record how identity was verified. Tokens are stored
+hashed, confirmation is a POST (link scanners cannot confirm), responses do
+not reveal whether a profile is claimed, and personal data of closed claims
+is erased after 30 days.

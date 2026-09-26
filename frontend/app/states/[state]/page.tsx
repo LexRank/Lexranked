@@ -5,7 +5,7 @@ import { HubPage } from "@/components/HubPage";
 import { hubEligibility } from "@/lib/content/eligibility";
 import { allRankings } from "@/lib/data/loaders";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { getCities, getLawFirms, getLawyers, getStates } from "@/lib/wordpress/api";
+import { getCities, getLawFirms, getLawyers, getStates, getPlacements } from "@/lib/wordpress/api";
 
 export const revalidate = 300;
 
@@ -16,14 +16,16 @@ export function generateStaticParams() {
 const loadState = cache(async (slug: string) => {
   const state = (await getStates()).data.find((s) => s.slug === slug);
   if (!state) return null;
-  const [lawyers, firms, cities, rankings] = await Promise.all([
+  const [lawyers, firms, cities, rankings, featured] = await Promise.all([
     getLawyers({ state: slug, per_page: 12, orderby: "score", order: "desc" }),
     getLawFirms({ state: slug, per_page: 6, orderby: "score", order: "desc" }),
     getCities(slug),
     allRankings(),
+    getPlacements({ product: "featured", location: slug }),
   ]);
   return {
     state,
+    featured,
     lawyers: lawyers.data,
     firms: firms.data,
     cities: cities.data,
@@ -61,6 +63,7 @@ export default async function StatePage(props: PageProps<"/states/[state]">) {
       title={`Top-rated lawyers in ${s.name}`}
       lead={`Rankings, lawyers and law firms in ${s.name}, scored with the LexRank methodology from sourced, verified data.`}
       counts={s}
+      featured={data.featured}
       content={s.content ?? null}
       rankings={data.rankings}
       lawyers={data.lawyers}

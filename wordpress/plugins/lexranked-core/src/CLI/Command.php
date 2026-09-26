@@ -241,15 +241,297 @@ final class Command {
 		);
 
 		$result = $s->runner->run_all();
+		$this->seed_demo_commercial( $ranking, $city, $firms['coral'] );
 		\WP_CLI::success(
 			sprintf(
-				'Demo data created: %d lawyers, %d firms, 1 ranking, 1 article (scored %d entities, calculated %d ranking). All records are flagged isDemo.',
+				'Demo data created: %d lawyers, %d firms, 1 ranking, 1 article, demo claims and paid placements (scored %d entities, calculated %d ranking). All records are flagged isDemo.',
 				count( DemoData::lawyers() ),
 				count( $firms ),
 				$result['entities'],
 				$result['rankings']
 			)
 		);
+	}
+
+	/**
+	 * Demo claims and placements, so the labelled commercial blocks can be seen.
+	 * They are attached to demo profiles only and removed by purge-demo.
+	 *
+	 * @param int $ranking Demo ranking ID.
+	 * @param int $city    Demo city term ID.
+	 * @param int $firm    Demo firm ID.
+	 */
+	private function seed_demo_commercial( int $ranking, int $city, int $firm ): void {
+		$c      = $this->services->commercial;
+		$lawyer = get_posts(
+			array(
+				'post_type'   => $this->services->lawyer->slug(),
+				'title'       => DemoData::COMMERCIAL_LAWYER,
+				'post_status' => 'publish',
+				'fields'      => 'ids',
+				'numberposts' => 1,
+			)
+		);
+		$lawyer = (int) ( $lawyer[0] ?? 0 );
+		foreach ( array( array( $lawyer, 'lawyer', 'self' ), array( $firm, 'law_firm', 'firm_representative' ) ) as [ $id, $type, $role ] ) {
+			$c->claims->insert(
+				array(
+					'entity_id'         => $id,
+					'entity_type'       => $type,
+					'status'            => 'approved',
+					'claimant_name'     => 'Demo Claimant',
+					'claimant_email'    => 'demo-claimant@example.com',
+					'claimant_role'     => $role,
+					'bar_state'         => 'lawyer' === $type ? 'FL' : '',
+					'bar_number'        => 'lawyer' === $type ? (string) get_post_meta( $id, '_lr_bar_number', true ) : '',
+					'message'           => 'Demo claim (fictional).',
+					'email_verified_at' => gmdate( 'Y-m-d H:i:s' ),
+					'identity_method'   => 'bar_record',
+					'review_note'       => 'Demo data.',
+					'reviewed_at'       => gmdate( 'Y-m-d H:i:s' ),
+				)
+			);
+		}
+		$period = array(
+			'starts_at' => gmdate( 'Y-m-d' ),
+			'ends_at'   => gmdate( 'Y-m-d', time() + 90 * DAY_IN_SECONDS ),
+			'order_ref' => 'DEMO',
+			'notes'     => 'Demo placement (not a real advertiser).',
+		);
+		$c->save_placement(
+			$period + array(
+				'product'     => 'sponsored',
+				'entity_type' => 'lawyer',
+				'entity_id'   => $lawyer,
+				'ranking_id'  => $ranking,
+			)
+		);
+		$c->save_placement(
+			$period + array(
+				'product'          => 'featured',
+				'entity_type'      => 'law_firm',
+				'entity_id'        => $firm,
+				'location_term_id' => $city,
+			)
+		);
+		$c->save_placement(
+			$period + array(
+				'product'         => 'premium',
+				'entity_type'     => 'lawyer',
+				'entity_id'       => $lawyer,
+				'premium_message' => DemoData::PREMIUM_MESSAGE,
+				'cta_url'         => 'https://example.com/demo/contact',
+			)
+		);
+	}
+
+	/**
+	 * List profile claims (no contact details).
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--status=<status>]
+	 * : pending_email, pending_review, approved, rejected or expired.
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function claims( array $args, array $assoc_args ): void {
+		unset( $args );
+		$rows = $this->services->commercial->claims->list( $assoc_args['status'] ?? null, 200 );
+		\WP_CLI\Utils\format_items(
+			'table',
+			array_map(
+				static fn( array $r ): array => array(
+					'id'              => $r['claim_id'],
+					'profile'         => get_the_title( (int) $r['entity_id'] ) . ' (#' . $r['entity_id'] . ')',
+					'role'            => $r['claimant_role'],
+					'status'          => $r['status'],
+					'email_confirmed' => null === $r['email_verified_at'] ? 'no' : 'yes',
+					'created'         => $r['created_at'],
+				),
+				$rows
+			),
+			array( 'id', 'profile', 'role', 'status', 'email_confirmed', 'created' )
+		);
+	}
+
+	/**
+	 * Approve or reject a profile claim.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <id>
+	 * : Claim ID.
+	 *
+	 * [--approve]
+	 * : Approve (requires --identity).
+	 *
+	 * [--reject]
+	 * : Reject, or revoke an approved claim.
+	 *
+	 * [--identity=<method>]
+	 * : How identity was checked: bar_record, phone_callback, firm_email or document.
+	 *
+	 * [--note=<note>]
+	 * : Private note.
+	 *
+	 * @subcommand claim-review
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function claim_review( array $args, array $assoc_args ): void {
+		$id = (int) ( $args[0] ?? 0 );
+		try {
+			if ( isset( $assoc_args['approve'] ) ) {
+				$this->services->commercial->approve( $id, (string) ( $assoc_args['identity'] ?? '' ), (string) ( $assoc_args['note'] ?? '' ) );
+				\WP_CLI::success( "Claim {$id} approved." );
+			} elseif ( isset( $assoc_args['reject'] ) ) {
+				$this->services->commercial->reject( $id, (string) ( $assoc_args['note'] ?? '' ) );
+				\WP_CLI::success( "Claim {$id} rejected." );
+			} else {
+				\WP_CLI::error( 'Pass --approve or --reject.' );
+			}
+		} catch ( \LexRanked\Core\Commercial\CommercialException $e ) {
+			\WP_CLI::error( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Add a paid placement (always labelled; never affects scores or positions).
+	 *
+	 * ## OPTIONS
+	 *
+	 * --product=<product>
+	 * : premium, featured or sponsored.
+	 *
+	 * --entity=<id>
+	 * : Lawyer or firm ID.
+	 *
+	 * [--entity-type=<type>]
+	 * : lawyer or law_firm.
+	 * ---
+	 * default: lawyer
+	 * ---
+	 *
+	 * [--ranking=<id>]
+	 * : Ranking ID (sponsored).
+	 *
+	 * [--location=<term_id>]
+	 * : Location term ID (featured).
+	 *
+	 * [--practice-area=<term_id>]
+	 * : Practice-area term ID (featured).
+	 *
+	 * [--starts=<date>]
+	 * : Start date (UTC, YYYY-MM-DD). Default today.
+	 *
+	 * [--ends=<date>]
+	 * : End date (exclusive). Default in 30 days.
+	 *
+	 * [--message=<text>]
+	 * : Premium message.
+	 *
+	 * [--cta=<url>]
+	 * : Premium call-to-action URL (https).
+	 *
+	 * [--order=<ref>]
+	 * : Order reference (private).
+	 *
+	 * @subcommand placement-add
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function placement_add( array $args, array $assoc_args ): void {
+		unset( $args );
+		try {
+			$id = $this->services->commercial->save_placement(
+				array(
+					'product'               => $assoc_args['product'] ?? '',
+					'entity_type'           => $assoc_args['entity-type'] ?? 'lawyer',
+					'entity_id'             => $assoc_args['entity'] ?? 0,
+					'ranking_id'            => $assoc_args['ranking'] ?? 0,
+					'location_term_id'      => $assoc_args['location'] ?? 0,
+					'practice_area_term_id' => $assoc_args['practice-area'] ?? 0,
+					'starts_at'             => $assoc_args['starts'] ?? gmdate( 'Y-m-d' ),
+					'ends_at'               => $assoc_args['ends'] ?? gmdate( 'Y-m-d', time() + 30 * DAY_IN_SECONDS ),
+					'premium_message'       => $assoc_args['message'] ?? '',
+					'cta_url'               => $assoc_args['cta'] ?? '',
+					'order_ref'             => $assoc_args['order'] ?? '',
+				)
+			);
+		} catch ( \LexRanked\Core\Schema\ValidationException $e ) {
+			\WP_CLI::error( $e->field_key . ' ' . $e->reason . '.' );
+		} catch ( \LexRanked\Core\Commercial\CommercialException $e ) {
+			\WP_CLI::error( $e->getMessage() );
+		}//end try
+		\WP_CLI::success( "Placement {$id} created." );
+	}
+
+	/**
+	 * List placements.
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function placements( array $args, array $assoc_args ): void {
+		unset( $args, $assoc_args );
+		$now = new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) );
+		\WP_CLI\Utils\format_items(
+			'table',
+			array_map(
+				static fn( array $r ): array => array(
+					'id'      => $r['placement_id'],
+					'product' => $r['product'],
+					'profile' => get_the_title( (int) $r['entity_id'] ) . ' (#' . $r['entity_id'] . ')',
+					'ranking' => $r['ranking_id'],
+					'term'    => max( (int) $r['location_term_id'], (int) $r['practice_area_term_id'] ),
+					'period'  => substr( (string) $r['starts_at'], 0, 10 ) . ' – ' . substr( (string) $r['ends_at'], 0, 10 ),
+					'status'  => \LexRanked\Core\Commercial\PlacementPolicy::is_live( $r, $now ) ? 'live' : $r['status'],
+				),
+				$this->services->commercial->placements->list( true )
+			),
+			array( 'id', 'product', 'profile', 'ranking', 'term', 'period', 'status' )
+		);
+	}
+
+	/**
+	 * Cancel a placement.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <id>
+	 * : Placement ID.
+	 *
+	 * @subcommand placement-cancel
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function placement_cancel( array $args, array $assoc_args ): void {
+		unset( $assoc_args );
+		try {
+			$this->services->commercial->cancel_placement( (int) ( $args[0] ?? 0 ) );
+		} catch ( \LexRanked\Core\Commercial\CommercialException $e ) {
+			\WP_CLI::error( $e->getMessage() );
+		}
+		\WP_CLI::success( 'Placement cancelled.' );
+	}
+
+	/**
+	 * Run commercial maintenance now: expire links, erase closed claims' personal data, apply placement start/end.
+	 *
+	 * @subcommand commercial-sync
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function commercial_sync( array $args, array $assoc_args ): void {
+		unset( $args, $assoc_args );
+		$this->services->commercial->hourly();
+		\WP_CLI::success( 'Commercial statuses synchronised.' );
 	}
 
 	/**
@@ -523,7 +805,10 @@ final class Command {
 			}
 		}
 		foreach ( array_merge( $this->services->post_types(), array( $this->services->article ) ) as $type ) {
-			foreach ( $this->demo_ids( $type ) as $id ) {
+			$ids = $this->demo_ids( $type );
+			$this->services->commercial->claims->delete_for( $ids );
+			$this->services->commercial->placements->delete_for( $ids );
+			foreach ( $ids as $id ) {
 				$this->services->claims->delete_for_entity( $id );
 				$this->services->snapshots->delete_for( $id );
 				wp_delete_post( $id, true );

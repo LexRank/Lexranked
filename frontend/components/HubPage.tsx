@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { CityDto, LawFirmSummary, LawyerSummary, RankingSummary, TermContentDto } from "@/types/api";
+import type { CityDto, LawFirmSummary, LawyerSummary, PlacementDto, RankingSummary, TermContentDto } from "@/types/api";
+import { PlacementBlock } from "./commercial/Commercial";
 import { pluralize } from "@/lib/format";
 import type { Crumb } from "@/lib/seo/jsonld";
 import { collectionPageJsonLd, rankingPageJsonLd } from "@/lib/seo/jsonld";
@@ -26,6 +27,7 @@ export function HubPage({
   lawyersHeading,
   firmsHeading,
   content,
+  featured = [],
 }: {
   crumbs: Crumb[];
   path: string;
@@ -41,6 +43,8 @@ export function HubPage({
   firmsHeading: string;
   /** Editorial summary, guide and FAQ (edited on the term in WordPress). */
   content?: TermContentDto | null;
+  /** Labelled paid placements, shown after the editorial lists (never mixed into them). */
+  featured?: PlacementDto[];
 }) {
   const reviewed = formatDate(content?.reviewedAt ?? null);
   const hasDemo = lawyers.some((l) => l.isDemo) || rankings.some((r) => r.isDemo);
@@ -103,6 +107,7 @@ export function HubPage({
               </div>
             </section>
           )}
+          <PlacementBlock placements={featured} product="featured" />
           {content && <EditorialBody html={content.body} />}
           {content && <FaqSection items={content.faq} />}
           {content && (content.reviewedBy || reviewed) && (

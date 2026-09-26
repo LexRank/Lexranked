@@ -121,6 +121,35 @@ shows only when the page exists, which needs at least 3 published lawyers.
 Lawyers and law firms have a *Profile summary* field: 2–4 plain sentences
 shown at the top of the profile and used as its search description.
 
+## Profile claims (lawyers and firms claiming their profile)
+
+Every profile has a **Claim this profile** link. After the claimant confirms
+their email, the claim appears in **LexRanked → Profile claims** (with a
+counter in the menu).
+
+1. Open the claim. Check the signals: does the bar number match the profile?
+   Is the email on the firm's website domain?
+2. **Verify the identity yourself**: look the lawyer up on the state bar
+   website, call the number listed there or on the firm website, or check a
+   document.
+3. Choose how you checked it and press **Approve claim**, or **Reject claim**
+   with a private note. The claimant is emailed either way.
+
+An approved profile shows "Claimed by the lawyer / firm". It does not change
+the score or position and does not make anything "verified". Corrections the
+owner sends you still need a public source. To undo an approval, open the
+claim and press **Revoke claim**. Details: `docs/commercial.md`.
+
+## Paid placements (administrators)
+
+**LexRanked → Placements**, after payment has been arranged outside
+WordPress. Pick the product (premium / featured / sponsored), the profile ID,
+the page (ranking ID for sponsored; one location **or** practice-area term
+ID for featured), the dates and an order reference. Only claimed profiles in
+good bar standing that belong to that page can be placed; the form tells you
+why otherwise. Every placement is labelled "Paid" on the site and never
+changes a ranking. Pause or cancel from the same screen.
+
 ## Research jobs
 
 **LexRanked → Research Jobs → Add** (or WP-CLI, see `docs/research.md`):
@@ -132,4 +161,4 @@ and the log. Workers pick jobs up automatically.
 ## Demo data
 
 `wp lexranked seed-demo` creates clearly labelled sample data (always
-noindex); `wp lexranked purge-demo` removes it. Remove it before launch.
+noindex), including a demo claim and demo paid placements; `wp lexranked purge-demo` removes it. Remove it before launch.

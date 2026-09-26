@@ -203,12 +203,14 @@ final class Menu {
 			);
 		}
 		foreach ( array(
-			'min_ranking_entities'   => 'Minimum entities for a ranking page',
-			'rate_limit_per_minute'  => 'API rate limit (requests/minute/IP)',
-			'search_rate_per_minute' => 'Search rate limit (requests/minute/IP)',
-			'research_max_retries'   => 'Research job retries (after the first attempt)',
-			'research_backoff_base'  => 'Research retry backoff base (seconds, doubles per retry)',
-			'research_lease_minutes' => 'Research job lease (minutes without heartbeat before a job is resumed)',
+			'min_ranking_entities'      => 'Minimum entities for a ranking page',
+			'rate_limit_per_minute'     => 'API rate limit (requests/minute/IP)',
+			'search_rate_per_minute'    => 'Search rate limit (requests/minute/IP)',
+			'research_max_retries'      => 'Research job retries (after the first attempt)',
+			'research_backoff_base'     => 'Research retry backoff base (seconds, doubles per retry)',
+			'research_lease_minutes'    => 'Research job lease (minutes without heartbeat before a job is resumed)',
+			'max_sponsored_per_ranking' => 'Sponsored listings per ranking page (0–5; paid, labelled, outside the ranked list)',
+			'max_featured_per_page'     => 'Featured profiles per state, city or practice-area page (0–6)',
 		) as $key => $label ) {
 			printf(
 				'<tr><th scope="row"><label for="lr-%1$s">%2$s</label></th><td><input type="number" id="lr-%1$s" class="small-text" name="%3$s[%1$s]" value="%4$d"></td></tr>',
@@ -238,6 +240,11 @@ final class Menu {
 			'<tr><th scope="row">AI assistance</th><td><input type="hidden" name="%1$s[ai_enabled]" value="0"><label><input type="checkbox" name="%1$s[ai_enabled]" value="1"%2$s> Accept AI-assisted research and content drafts from workers</label><p class="description">Off by default. AI output never publishes: extracted facts are low-confidence, quote-checked evidence; match suggestions are advisory; generated content arrives as drafts with a QA report.</p></td></tr>',
 			esc_attr( $name ),
 			checked( (bool) $s['ai_enabled'], true, false )
+		);
+		printf(
+			'<tr><th scope="row">Profile claims</th><td><input type="hidden" name="%1$s[claims_enabled]" value="0"><label><input type="checkbox" name="%1$s[claims_enabled]" value="1"%2$s> Accept profile claims from the public site</label><p class="description">Claims are reviewed under LexRanked → Profile claims. Confirmation emails use wp_mail(): configure a transactional mail service in production.</p></td></tr>',
+			esc_attr( $name ),
+			checked( (bool) $s['claims_enabled'], true, false )
 		);
 		printf(
 			'<tr><th scope="row">Proxy header</th><td><input type="hidden" name="%1$s[trust_proxy_header]" value="0"><label><input type="checkbox" name="%1$s[trust_proxy_header]" value="1"%2$s> Trust <code>CF-Connecting-IP</code> (enable only when WordPress is reachable exclusively through Cloudflare)</label></td></tr>',

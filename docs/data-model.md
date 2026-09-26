@@ -28,6 +28,8 @@
 | Ranking snapshot | Custom table `{prefix}lr_ranking_snapshots` | Append-only runs with components + inputs (implemented) |
 | Audit log | Custom table `{prefix}lr_audit_log` | Append-only (implemented) |
 | Editorial article | Core `post` | |
+| Profile claim | Custom table `{prefix}lr_profile_claims` | Private claimant data (Phase 9) |
+| Placement | Custom table `{prefix}lr_placements` | Paid products (Phase 9) |
 
 CPT slugs are prefixed `lr_` to avoid collisions (≤ 20 chars, WP limit).
 
@@ -190,11 +192,27 @@ categories) plus `related_ranking`, `reviewed_by`, `reviewed_at`, `is_demo`
 position, score, score_version, context, components, inputs, calculated_at`.
 See docs/ranking-methodology.md.
 
-## Commercial status (Phase 9)
+## Commercial data (Phase 9)
 
-Separate record per entity: `status` ∈ `free, claimed, verified, featured,
-sponsored, premium`, with billing metadata. **Never** read by the score
-calculator.
+**Never** read by the ranking engine (enforced by a test). See `docs/commercial.md`.
+
+- **Profile claim** (`lr_profile_claims`): `entity_id, entity_type, status`
+  (`pending_email → pending_review → approved | rejected`, or `expired`),
+  claimant `name, email, phone, role` (`self | firm_representative`),
+  `bar_state, bar_number, message`, `email_token_hash` (SHA-256; the token
+  itself is never stored), `email_token_expires, email_verified_at`,
+  `identity_method` (how the editor checked identity; required to approve),
+  `review_note, reviewed_by, reviewed_at, personal_data_purged`. Personal data
+  of rejected / expired claims is erased after 30 days.
+- **Placement** (`lr_placements`): `entity_id, entity_type, product`
+  (`premium | featured | sponsored`), page scope (`ranking_id` for sponsored;
+  `location_term_id` **or** `practice_area_term_id` for featured),
+  `starts_at, ends_at` (UTC, end exclusive, ≤ 366 days), `status`
+  (`active | paused | cancelled`), `premium_message, cta_url` (premium only),
+  private `order_ref, notes`, `created_by`.
+- **`commercial_status`** (profile meta, read-only): derived from the two
+  tables — `free`, `claimed` or `premium`. Display only. The legacy values
+  `verified`, `featured`, `sponsored` are no longer assigned to profiles.
 
 ## Freshness rules (configurable defaults)
 

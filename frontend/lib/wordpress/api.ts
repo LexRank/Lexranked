@@ -8,6 +8,7 @@ import type {
   LawFirmSummary,
   LawyerDetail,
   LawyerSummary,
+  PlacementDto,
   PracticeAreaDto,
   RankingDetail,
   RankingSummary,
@@ -96,3 +97,42 @@ export const getArticles = (query: { page?: number; per_page?: number; category?
   apiRequest<ArticleSummary[]>("articles", { query: { ...query }, ...opts });
 
 export const getArticle = (slug: string, opts?: Opts) => getOrNull<ArticleDetail>(`articles/${encodeURIComponent(slug)}`, opts);
+
+export type PlacementQuery =
+  | { product: "sponsored"; ranking: number }
+  | { product: "featured"; location: string }
+  | { product: "featured"; practice_area: string };
+
+/**
+ * Labelled featured / sponsored placements for one page. They are optional
+ * extras: a failure returns [] so the organic page always renders.
+ */
+export async function getPlacements(query: PlacementQuery, opts?: Opts): Promise<PlacementDto[]> {
+  try {
+    return (await apiRequest<PlacementDto[]>("placements", { query: { ...query }, ...opts })).data;
+  } catch (error) {
+    console.error(JSON.stringify({ level: "warn", source: "lexranked-api", message: "placements unavailable", error: error instanceof Error ? error.message : "unknown" }));
+    return [];
+  }
+}
+
+export interface ClaimSubmission {
+  entityType: "lawyer" | "law_firm";
+  entityId: number;
+  name: string;
+  email: string;
+  phone: string;
+  role: "self" | "firm_representative";
+  barState: string;
+  barNumber: string;
+  message: string;
+  consent: true;
+}
+
+/** Submit a profile claim (server action only; the browser never talks to WordPress). */
+export const submitClaim = (body: ClaimSubmission) =>
+  apiRequest<{ status: string }>("claims", { method: "POST", body, timeoutMs: 15000 });
+
+/** Confirm a claimant's email with the token from the link. */
+export const confirmClaim = (token: string) =>
+  apiRequest<{ status: string }>("claims/confirm", { method: "POST", body: { token }, timeoutMs: 15000 });

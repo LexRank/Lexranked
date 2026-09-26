@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
-import type { CommercialBlock, VerificationState } from "@/types/api";
+import type { VerificationState } from "@/types/api";
 import { formatCount, formatRating, formatScore, initials } from "@/lib/format";
 import { AlertIcon, ClockIcon, InfoIcon, ShieldCheckIcon, XCircleIcon } from "./icons";
 
@@ -62,11 +62,6 @@ export function VerificationBadge({ status }: { status: VerificationState }) {
   );
 }
 
-/** Paid placements are always labelled (spec §23, §37). */
-export function CommercialBadge({ commercial }: { commercial: CommercialBlock }) {
-  if (!commercial.isPaidPlacement) return null;
-  return <span className="badge badge--paid">{commercial.status === "sponsored" ? "Sponsored" : "Featured"} · Paid placement</span>;
-}
 
 export function DemoBadge() {
   return <span className="badge badge--demo">Demo data</span>;

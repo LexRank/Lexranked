@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core;
 
+use LexRanked\Core\Admin\CommercialAdmin;
 use LexRanked\Core\Admin\ContentDraftAdmin;
 use LexRanked\Core\Admin\ListColumns;
 use LexRanked\Core\Admin\MetaBoxes;
@@ -20,6 +21,7 @@ use LexRanked\Core\Content\TermContent;
 use LexRanked\Core\Database\Installer;
 use LexRanked\Core\REST\ArticlesController;
 use LexRanked\Core\REST\HealthController;
+use LexRanked\Core\REST\CommercialController;
 use LexRanked\Core\REST\EntitiesController;
 use LexRanked\Core\REST\RankingsController;
 use LexRanked\Core\REST\ResearchController;
@@ -42,7 +44,7 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.6.0';
+	public const API_VERSION = '1.7.0';
 
 	/**
 	 * Services, available after boot().
@@ -70,6 +72,7 @@ final class Plugin {
 		$services->jobs->register();
 		$services->entity_index->register();
 		$services->revalidator->register();
+		$services->commercial->register();
 		( new Hardening( $services->settings ) )->register();
 		( new Headless( $services->settings ) )->register();
 
@@ -83,6 +86,7 @@ final class Plugin {
 			new ResearchController( $services ),
 			new ArticlesController( $services ),
 			new HealthController( $services ),
+			new CommercialController( $services ),
 		);
 		foreach ( $controllers as $controller ) {
 			add_action( 'rest_api_init', array( $controller, 'register_routes' ) );
@@ -95,6 +99,7 @@ final class Plugin {
 			( new RankingCalculation( $services ) )->register();
 			( new ResearchAdmin( $services ) )->register();
 			( new ContentDraftAdmin( $services ) )->register();
+			( new CommercialAdmin( $services ) )->register();
 			( new TermContent() )->register();
 		}
 
@@ -160,6 +165,7 @@ final class Plugin {
 		wp_clear_scheduled_hook( \LexRanked\Core\Research\JobService::INTERNAL_HOOK );
 		wp_clear_scheduled_hook( \LexRanked\Core\Research\JobService::INTERNAL_HOOK . '_soon' );
 		wp_clear_scheduled_hook( \LexRanked\Core\Integration\Revalidator::RETRY_HOOK );
+		wp_clear_scheduled_hook( \LexRanked\Core\Commercial\CommercialService::CRON_HOOK );
 		flush_rewrite_rules();
 	}
 

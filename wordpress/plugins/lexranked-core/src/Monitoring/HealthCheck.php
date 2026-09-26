@@ -31,6 +31,7 @@ final class HealthCheck {
 	 * @param array<string, mixed> $f   Facts: schema_version, expected_schema, cron_next (int|null seconds),
 	 *                                  cron_disabled (bool), last_calculation (ISO|null), published_rankings (int),
 	 *                                  jobs_stuck (int), jobs_failed (int), review_claims (int), review_candidates (int),
+	 *                                  claims_in_review (int), claims_oldest_review (UTC datetime|null),
 	 *                                  revalidation_configured (bool), revalidation (array|null), debug_display (bool).
 	 * @param \DateTimeImmutable   $now Current time.
 	 * @return array{status: string, checks: array<int, array{key: string, status: string, message: string}>}
@@ -91,6 +92,16 @@ final class HealthCheck {
 
 		// Editorial queue (informational).
 		$add( 'review_queue', self::OK, sprintf( '%d evidence item(s) and %d candidate(s) awaiting review.', (int) $f['review_claims'], (int) $f['review_candidates'] ) );
+
+		// Profile claims: claimants wait for a person; do not let them wait long.
+		$in_review = (int) ( $f['claims_in_review'] ?? 0 );
+		$oldest    = is_string( $f['claims_oldest_review'] ?? null ) ? strtotime( (string) $f['claims_oldest_review'] . ' UTC' ) : false;
+		$days      = false === $oldest ? 0 : (int) floor( ( $now->getTimestamp() - $oldest ) / 86400 );
+		if ( $in_review > 0 && $days >= 7 ) {
+			$add( 'claims', self::WARNING, sprintf( '%d profile claim(s) awaiting review; the oldest has waited %d days.', $in_review, $days ) );
+		} else {
+			$add( 'claims', self::OK, sprintf( '%d profile claim(s) awaiting review.', $in_review ) );
+		}
 
 		// Frontend revalidation.
 		$rev = is_array( $f['revalidation'] ) ? $f['revalidation'] : null;

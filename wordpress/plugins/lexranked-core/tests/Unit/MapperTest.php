@@ -130,10 +130,22 @@ final class MapperTest extends TestCase {
 			array(
 				'status'          => 'sponsored',
 				'isPaidPlacement' => true,
+				'claimed'         => true,
+				'premium'         => false,
 			),
 			$dto['commercial']
 		);
 		$this->assertSame( 'free', EntityMapper::commercial( array( 'commercial_status' => 'bogus' ) )['status'] );
+		$this->assertSame(
+			array(
+				'status'          => 'premium',
+				'isPaidPlacement' => false,
+				'claimed'         => true,
+				'premium'         => true,
+			),
+			EntityMapper::commercial( array( 'commercial_status' => 'premium' ) )
+		);
+		$this->assertFalse( EntityMapper::commercial( array( 'commercial_status' => null ) )['claimed'] );
 	}
 
 	private static function snapshot_row( int $entity_id, int $position, float $score ): array {

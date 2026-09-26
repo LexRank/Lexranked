@@ -6,7 +6,8 @@ import { FirmCard, LawyerCard } from "@/components/cards";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { JsonLd } from "@/components/JsonLd";
 import { RankingPositions, ScoreSection, SourcesSection, VerificationSection } from "@/components/profile/sections";
-import { CommercialBadge, DemoBadge, DemoNotice, Monogram, ScoreRing, StarRating, VerificationBadge } from "@/components/ui";
+import { ClaimPanel, ClaimedBadge, PremiumPanel } from "@/components/commercial/Commercial";
+import { DemoBadge, DemoNotice, Monogram, ScoreRing, StarRating, VerificationBadge } from "@/components/ui";
 import { profileEligibility } from "@/lib/content/eligibility";
 import { load } from "@/lib/data/loaders";
 import { formatDate, formatLocation, isoDate } from "@/lib/format";
@@ -96,7 +97,7 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
                 </p>
                 <div className="profile-head__badges">
                   <VerificationBadge status={lawyer.verification.status} />
-                  <CommercialBadge commercial={lawyer.commercial} />
+                  <ClaimedBadge commercial={lawyer.commercial} entityType="lawyer" />
                   {lawyer.isDemo && <DemoBadge />}
                   {bestPosition && (
                     <Link
@@ -175,6 +176,8 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
               <div className="prose" dangerouslySetInnerHTML={{ __html: lawyer.bio }} />
             </section>
           )}
+
+          <PremiumPanel content={lawyer.premiumContent} name={lawyer.name} />
 
           <section className="card" aria-labelledby="professional-heading">
             <h2 id="professional-heading" style={{ fontSize: "1.4rem" }}>
@@ -319,6 +322,7 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
             Rankings are based on the LexRank methodology and publicly available, verified information. They are not an endorsement
             and not legal advice.
           </p>
+          <ClaimPanel commercial={lawyer.commercial} entityType="lawyer" slug={lawyer.slug} />
         </aside>
       </div>
     </>

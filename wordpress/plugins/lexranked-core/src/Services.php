@@ -9,6 +9,9 @@ declare(strict_types=1);
 
 namespace LexRanked\Core;
 
+use LexRanked\Core\Commercial\CommercialService;
+use LexRanked\Core\Commercial\PlacementRepository;
+use LexRanked\Core\Commercial\ProfileClaimRepository;
 use LexRanked\Core\Integration\Revalidator;
 use LexRanked\Core\Monitoring\HealthService;
 use LexRanked\Core\PostTypes\Article;
@@ -202,6 +205,13 @@ final class Services {
 	public readonly HealthService $health;
 
 	/**
+	 * Claims and placements (commercial; never read by the ranking engine).
+	 *
+	 * @var CommercialService
+	 */
+	public readonly CommercialService $commercial;
+
+	/**
 	 * Build the graph.
 	 *
 	 * @param Settings|null $settings Settings (injectable for tests).
@@ -237,6 +247,7 @@ final class Services {
 		$this->jobs          = new JobService( $this, $this->research_log );
 		$this->ingest        = new ResearchIngest( $this, $this->candidates, $this->entity_index, $this->research_log );
 		$this->revalidator   = new Revalidator( $this->settings );
+		$this->commercial    = new CommercialService( $this, new ProfileClaimRepository(), new PlacementRepository() );
 		$this->health        = new HealthService( $this, $this->revalidator );
 	}
 

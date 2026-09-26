@@ -6,7 +6,8 @@ import { FirmCard, LawyerCard } from "@/components/cards";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { JsonLd } from "@/components/JsonLd";
 import { RankingPositions, ScoreSection, SourcesSection, VerificationSection } from "@/components/profile/sections";
-import { CommercialBadge, DemoBadge, DemoNotice, Monogram, ScoreRing, StarRating, VerificationBadge } from "@/components/ui";
+import { ClaimPanel, ClaimedBadge, PremiumPanel } from "@/components/commercial/Commercial";
+import { DemoBadge, DemoNotice, Monogram, ScoreRing, StarRating, VerificationBadge } from "@/components/ui";
 import { profileEligibility } from "@/lib/content/eligibility";
 import { load } from "@/lib/data/loaders";
 import { formatDate, formatLocation, isoDate, pluralize } from "@/lib/format";
@@ -77,7 +78,7 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
                 </p>
                 <div className="profile-head__badges">
                   <VerificationBadge status={firm.verification.status} />
-                  <CommercialBadge commercial={firm.commercial} />
+                  <ClaimedBadge commercial={firm.commercial} entityType="law_firm" />
                   {firm.isDemo && <DemoBadge />}
                 </div>
               </div>
@@ -121,6 +122,7 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
               <div className="prose" dangerouslySetInnerHTML={{ __html: firm.description }} />
             </section>
           )}
+          <PremiumPanel content={firm.premiumContent} name={firm.name} />
           {firm.lawyers.length > 0 && (
             <section>
               <h2 style={{ fontSize: "1.4rem" }}>Lawyers at {firm.name}</h2>
@@ -202,6 +204,7 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
               </ul>
             </div>
           )}
+          <ClaimPanel commercial={firm.commercial} entityType="law_firm" slug={firm.slug} />
         </aside>
       </div>
     </>

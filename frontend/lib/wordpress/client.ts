@@ -38,6 +38,9 @@ export type QueryValue = string | number | boolean | undefined | null;
 
 export interface RequestOptions {
   query?: Record<string, QueryValue>;
+  /** POST sends `body` as JSON, is never cached and is not retried after the server answered. */
+  method?: "GET" | "POST";
+  body?: unknown;
   /** Seconds to cache (Next data cache). Default 300. `0` disables caching. */
   revalidate?: number;
   tags?: string[];
@@ -112,13 +115,17 @@ export async function apiRequest<T>(
   const auth = authHeader(env);
   if (auth) headers.Authorization = auth;
 
-  const revalidate = options.revalidate ?? DEFAULT_REVALIDATE;
+  const isPost = options.method === "POST";
+  const revalidate = isPost ? 0 : (options.revalidate ?? DEFAULT_REVALIDATE);
   const cacheInit: RequestInit =
     revalidate === 0
       ? { cache: "no-store" }
       : { next: { revalidate, tags: options.tags ?? ["lexranked"] } };
+  const bodyInit: RequestInit = isPost ? { method: "POST", body: JSON.stringify(options.body ?? {}) } : {};
+  if (isPost) headers["Content-Type"] = "application/json";
 
-  const retries = options.retries ?? DEFAULT_RETRIES;
+  // A POST that reached the server is never repeated (it may have taken effect).
+  const retries = options.retries ?? (isPost ? 0 : DEFAULT_RETRIES);
   let lastError: WordPressApiError | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -128,6 +135,7 @@ export async function apiRequest<T>(
     try {
       response = await deps.fetch(url, {
         ...cacheInit,
+        ...bodyInit,
         headers,
         signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
       });
@@ -157,7 +165,7 @@ export async function apiRequest<T>(
       response.status,
       body.code ?? `http_${response.status}`,
     );
-    if (!isRetryable(response.status)) break;
+    if (!isRetryable(response.status) || isPost) break;
   }
 
   throw lastError ?? new WordPressApiError(`Request to ${path} failed.`, null, "unknown");
