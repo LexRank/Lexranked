@@ -1,8 +1,8 @@
 # Data model
 
-> Status: entities, taxonomies, evidence storage and verification are
-> **implemented (Phase 2)**. Score calculation (Phase 4), ranking snapshots
-> (Phase 4) and research execution (Phase 5) are still to come.
+> Status: entities, taxonomies, evidence, verification (Phase 2), and score
+> calculation with ranking snapshots (Phase 4) are implemented. Research
+> execution (Phase 5) is still to come.
 
 ## Principles
 
@@ -25,7 +25,7 @@
 | Verification record | CPT `lr_verification` | |
 | Research job | CPT `lr_research_job` | Cursor for resumability |
 | Evidence claim | Custom table `{prefix}lr_claims` | High volume, append-mostly (implemented) |
-| Ranking snapshot | Custom table `{prefix}lr_ranking_snapshots` | Append-only history (Phase 4) |
+| Ranking snapshot | Custom table `{prefix}lr_ranking_snapshots` | Append-only runs with components + inputs (implemented) |
 | Audit log | Custom table `{prefix}lr_audit_log` | Append-only (implemented) |
 | Editorial article | Core `post` | |
 
@@ -146,7 +146,9 @@ Administrator-only (custom capability type `lr_research_job`).
 
 ## Ranking snapshot
 
-`ranking_snapshot_id, ranking_id, entity_id, position, score, score_version, calculated_at`.
+`snapshot_id, run_id, ranking_id (0 = entity-level), entity_id, entity_type,
+position, score, score_version, context, components, inputs, calculated_at`.
+See docs/ranking-methodology.md.
 
 ## Commercial status (Phase 9)
 

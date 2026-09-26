@@ -1,6 +1,6 @@
 -- Reference DDL for LexRanked custom tables (MySQL/MariaDB, prefix wp_).
 -- Source of truth: wordpress/plugins/lexranked-core/src/Database/Schema.php (applied with dbDelta).
--- Schema version: 2
+-- Schema version: 3
 
 CREATE TABLE wp_lr_claims (
   claim_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -32,5 +32,24 @@ CREATE TABLE wp_lr_audit_log (
   PRIMARY KEY  (id),
   KEY occurred_at (occurred_at),
   KEY object (object_type,object_id)
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE wp_lr_ranking_snapshots (
+  snapshot_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  run_id char(36) NOT NULL,
+  ranking_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  entity_id bigint(20) unsigned NOT NULL,
+  entity_type varchar(20) NOT NULL,
+  position int(10) unsigned NOT NULL DEFAULT 0,
+  score decimal(6,2) NOT NULL,
+  score_version varchar(20) NOT NULL,
+  context longtext NOT NULL,
+  components longtext NOT NULL,
+  inputs longtext NOT NULL,
+  calculated_at datetime NOT NULL,
+  PRIMARY KEY  (snapshot_id),
+  KEY ranking_run (ranking_id,run_id),
+  KEY entity (entity_id,ranking_id),
+  KEY calculated_at (calculated_at)
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

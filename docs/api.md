@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.1.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.2.0`
 (`X-LexRanked-API` response header).
 
 All endpoints are `GET`. Responses are stable DTOs built by pure mappers in
@@ -63,8 +63,21 @@ score DESC, then ID ASC. **Commercial status is never an input.** If fewer
 than `minEntities` qualify, the ranking `isThin`, returns no entries and is
 not `indexable`. Demo rankings are never `indexable`.
 
-> Phase 2 reads stored scores. Phase 4 replaces this with engine-written
-> ranking snapshots; the DTO shape stays the same.
+Entries come from the **latest engine run** (snapshot). Each entry has
+`position`, `score`, `scoreVersion`, `movement` (places gained since the
+previous run; `null` on the first run), `isNew` and `breakdown` (the seven
+components with `points`, `max`, `explanation` and `missing`). The ranking has
+`calculatedAt`; `updatedAt` is the later of the last edit and the last
+calculation. Detail responses also include `summary`, `body`, `faq` and
+`editorial` (API 1.2).
+
+### `GET /rankings/{id|slug}/history?limit=10`
+Recent runs, newest first: `{ rankingId, runs: [{ runId, calculatedAt,
+scoreVersion, entries: [{ entityId, name, position, score }] }] }`.
+
+### `GET /score-versions`
+`{ active: "v1.0", versions: [{ id, weights: [{ key, label, weight }], params }] }`.
+This is the single source of methodology weights for the frontend.
 
 ### `GET /states` · `GET /cities?state=` · `GET /practice-areas`
 Terms with published `lawyerCount` / `lawFirmCount`. `hide_empty` (default
@@ -106,6 +119,11 @@ Name search across lawyers and firms (`q` 2–100 chars, `type=all|lawyer|law_fi
 (Values above are the clearly-labelled demo seed, not real data.)
 
 `ranking` and `commercial` are sibling objects: payment never changes `ranking`.
+
+### Lawyer / firm detail: scoring
+`ranking.breakdown` (the entity-level components) and `rankings`
+(`[{ id, title, path, position, score, calculatedAt, isDemo }]`, the
+entity's position in the latest run of each ranking).
 
 ### Lawyer (detail) adds
 `contact {website, phone}`, `address {zipCode, country}`, `professional

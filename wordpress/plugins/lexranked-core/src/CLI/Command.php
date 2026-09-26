@@ -101,7 +101,6 @@ final class Command {
 			);
 		}
 
-		$now   = gmdate( 'Y-m-d\TH:i:s\Z' );
 		$firms = array();
 		foreach ( DemoData::firms() as $key => $firm ) {
 			$firms[ $key ] = $this->create(
@@ -116,11 +115,6 @@ final class Command {
 					'country'      => 'US',
 					'rating'       => $firm['rating'],
 					'review_count' => $firm['review_count'],
-				),
-				array(
-					'score'               => $firm['score'],
-					'score_version'       => DemoData::SCORE_VERSION,
-					'score_calculated_at' => $now,
 				)
 			);
 			wp_set_object_terms( $firms[ $key ], array( $city ), Location::SLUG );
@@ -150,11 +144,7 @@ final class Command {
 					'bar_status'       => $lawyer['bar_status'],
 					'education'        => $lawyer['education'],
 					'languages'        => $lawyer['languages'],
-				),
-				array(
-					'score'               => $lawyer['score'],
-					'score_version'       => DemoData::SCORE_VERSION,
-					'score_calculated_at' => $now,
+					'awards'           => $lawyer['awards'],
 				)
 			);
 			wp_set_object_terms( $id, array( $city ), Location::SLUG );
@@ -209,20 +199,100 @@ final class Command {
 			'Best Personal Injury Lawyers in Miami, Florida (Demo)',
 			DemoData::ranking_body(),
 			array(
-				'entity_type'   => 'lawyer',
-				'score_version' => DemoData::SCORE_VERSION,
-				'min_entities'  => 5,
-				'max_entities'  => 25,
-				'summary'       => DemoData::RANKING_SUMMARY,
-				'faq'           => DemoData::ranking_faq(),
-				'reviewed_by'   => 'LexRanked Demo Editor',
-				'reviewed_at'   => gmdate( 'Y-m-d' ),
+				'entity_type'  => 'lawyer',
+				'min_entities' => 5,
+				'max_entities' => 25,
+				'summary'      => DemoData::RANKING_SUMMARY,
+				'faq'          => DemoData::ranking_faq(),
+				'reviewed_by'  => 'LexRanked Demo Editor',
+				'reviewed_at'  => gmdate( 'Y-m-d' ),
 			)
 		);
 		wp_set_object_terms( $ranking, array( $city ), Location::SLUG );
 		wp_set_object_terms( $ranking, array( $practice ), PracticeArea::SLUG );
 
-		\WP_CLI::success( sprintf( 'Demo data created: %d lawyers, %d firms, 1 ranking. All records are flagged isDemo.', count( DemoData::lawyers() ), count( $firms ) ) );
+		$result = $s->runner->run_all();
+		\WP_CLI::success(
+			sprintf(
+				'Demo data created: %d lawyers, %d firms, 1 ranking (scored %d entities, calculated %d ranking). All records are flagged isDemo.',
+				count( DemoData::lawyers() ),
+				count( $firms ),
+				$result['entities'],
+				$result['rankings']
+			)
+		);
+	}
+
+	/**
+	 * Recalculate scores and rankings with the deterministic engine.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--ranking=<id>]
+	 * : Only this ranking (post ID).
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp lexranked recalculate
+	 *     wp lexranked recalculate --ranking=42
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function recalculate( array $args, array $assoc_args ): void {
+		unset( $args );
+		$runner = $this->services->runner;
+		if ( isset( $assoc_args['ranking'] ) ) {
+			$result = $runner->run_ranking( (int) $assoc_args['ranking'] );
+			\WP_CLI::success( sprintf( 'Ranking %d: %d entries (run %s).', (int) $assoc_args['ranking'], $result['entries'], $result['run_id'] ?? 'none' ) );
+			return;
+		}
+		$result = $runner->run_all();
+		\WP_CLI::success( sprintf( 'Scored %d entities and calculated %d rankings with %s.', $result['entities'], $result['rankings'], $runner->active_version()->id ) );
+	}
+
+	/**
+	 * Recompute the latest run of every ranking from its stored inputs and
+	 * confirm the stored scores are reproduced exactly.
+	 *
+	 * @subcommand verify-snapshots
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function verify_snapshots( array $args, array $assoc_args ): void {
+		unset( $args, $assoc_args );
+		$runner  = $this->services->runner;
+		$checked = 0;
+		$failed  = 0;
+		$ids     = array_merge(
+			array( 0 ),
+			array_map(
+				'intval',
+				get_posts(
+					array(
+						'post_type'      => $this->services->ranking->slug(),
+						'post_status'    => 'any',
+						'posts_per_page' => -1,
+						'fields'         => 'ids',
+					)
+				)
+			)
+		);
+		foreach ( $ids as $ranking_id ) {
+			foreach ( $this->services->snapshots->run_ids( $ranking_id, 0 === $ranking_id ? 2 : 1 ) as $run_id ) {
+				$result   = $runner->verify_run( $run_id );
+				$checked += $result['rows'];
+				$failed  += count( $result['mismatches'] );
+				foreach ( $result['mismatches'] as $entity_id ) {
+					\WP_CLI::warning( sprintf( 'Run %s: entity %d does not reproduce.', $run_id, $entity_id ) );
+				}
+			}
+		}
+		if ( $failed > 0 ) {
+			\WP_CLI::error( sprintf( '%d of %d snapshot rows did not reproduce.', $failed, $checked ) );
+		}
+		\WP_CLI::success( sprintf( 'All %d snapshot rows reproduce exactly from stored inputs.', $checked ) );
 	}
 
 	/**
@@ -253,6 +323,7 @@ final class Command {
 		foreach ( $this->services->post_types() as $type ) {
 			foreach ( $this->demo_ids( $type ) as $id ) {
 				$this->services->claims->delete_for_entity( $id );
+				$this->services->snapshots->delete_for( $id );
 				wp_delete_post( $id, true );
 				++$count;
 			}

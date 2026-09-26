@@ -48,6 +48,7 @@ export function lawyerDetail(overrides: Partial<LawyerDetail> = {}): LawyerDetai
     bio: "<p>Bio</p>",
     freshness: { category: "profile", maxAgeDays: 90, lastVerifiedAt: null, isStale: true, staleAt: null },
     sources: [],
+    rankings: [],
     createdAt: null,
     ...overrides,
   };
@@ -90,6 +91,7 @@ export function rankingSummary(id: number, overrides: Partial<RankingSummary> = 
     indexable: true,
     isDemo: false,
     updatedAt: "2026-09-23T00:00:00Z",
+    calculatedAt: "2026-09-23T00:00:00Z",
     methodologyUrl: "/methodology/",
     ...overrides,
   };
@@ -100,6 +102,9 @@ export function rankingDetail(overrides: Partial<RankingDetail> = {}): RankingDe
     position: i,
     score: 95 - i,
     scoreVersion: "v1.0",
+    movement: null,
+    isNew: false,
+    breakdown: [],
     entity: lawyerSummary(i),
   }));
   return {

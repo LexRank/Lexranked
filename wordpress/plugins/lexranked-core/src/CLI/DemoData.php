@@ -19,20 +19,19 @@ namespace LexRanked\Core\CLI;
  */
 final class DemoData {
 
-	public const STATE         = array(
+	public const STATE    = array(
 		'name' => 'Florida',
 		'slug' => 'florida',
 		'code' => 'FL',
 	);
-	public const CITY          = array(
+	public const CITY     = array(
 		'name' => 'Miami',
 		'slug' => 'miami',
 	);
-	public const PRACTICE      = array(
+	public const PRACTICE = array(
 		'name' => 'Personal Injury',
 		'slug' => 'personal-injury',
 	);
-	public const SCORE_VERSION = 'demo';
 
 	public const RANKING_SUMMARY = 'Demo content: this sample ranking compares eight fictional personal injury lawyers in Miami using mock data, to show how LexRanked pages present rankings, sources and verification.';
 
@@ -117,7 +116,6 @@ final class DemoData {
 				'zip_code'     => '33101',
 				'rating'       => 4.7,
 				'review_count' => 212,
-				'score'        => 88.5,
 			),
 			'bayside' => array(
 				'title'        => 'Bayside Sample Legal Group (Demo)',
@@ -128,7 +126,6 @@ final class DemoData {
 				'zip_code'     => '33130',
 				'rating'       => 4.5,
 				'review_count' => 98,
-				'score'        => 81.2,
 			),
 			'coral'   => array(
 				'title'        => 'Coral Placeholder Attorneys (Demo)',
@@ -139,7 +136,6 @@ final class DemoData {
 				'zip_code'     => '33125',
 				'rating'       => 4.9,
 				'review_count' => 41,
-				'score'        => 79.9,
 			),
 		);
 	}
@@ -151,18 +147,18 @@ final class DemoData {
 	 */
 	public static function lawyers(): array {
 		$rows = array(
-			// first, last, firm, title, years, rating, reviews, score, verified.
-			array( 'Avery', 'Example', 'harbor', 'Founding Partner', 22, 4.9, 387, 94.21, 'verified' ),
-			array( 'Blake', 'Sample', 'harbor', 'Partner', 15, 4.8, 154, 90.4, 'verified' ),
-			array( 'Casey', 'Placeholder', 'bayside', 'Partner', 18, 4.7, 201, 88.75, 'verified' ),
-			array( 'Drew', 'Specimen', 'bayside', 'Associate', 7, 4.9, 63, 84.1, 'verified' ),
-			array( 'Emery', 'Mockwell', 'coral', 'Managing Attorney', 12, 4.6, 120, 83.3, 'verified' ),
-			array( 'Finley', 'Testa', 'coral', 'Associate', 4, 5.0, 12, 76.8, 'pending' ),
-			array( 'Gray', 'Dummond', 'harbor', 'Associate', 9, 4.4, 77, 74.05, 'pending' ),
-			array( 'Harper', 'Exemplar', 'bayside', 'Of Counsel', 30, 4.2, 45, 71.6, 'failed' ),
+			// first, last, firm, title, years, rating, reviews, verified. Scores are calculated by the engine.
+			array( 'Avery', 'Example', 'harbor', 'Founding Partner', 22, 4.9, 387, 'verified' ),
+			array( 'Blake', 'Sample', 'harbor', 'Partner', 15, 4.8, 154, 'verified' ),
+			array( 'Casey', 'Placeholder', 'bayside', 'Partner', 18, 4.7, 201, 'verified' ),
+			array( 'Drew', 'Specimen', 'bayside', 'Associate', 7, 4.9, 63, 'verified' ),
+			array( 'Emery', 'Mockwell', 'coral', 'Managing Attorney', 12, 4.6, 120, 'verified' ),
+			array( 'Finley', 'Testa', 'coral', 'Associate', 4, 5.0, 12, 'pending' ),
+			array( 'Gray', 'Dummond', 'harbor', 'Associate', 9, 4.4, 77, 'pending' ),
+			array( 'Harper', 'Exemplar', 'bayside', 'Of Counsel', 30, 4.2, 45, 'failed' ),
 		);
 		$out  = array();
-		foreach ( $rows as $i => [ $first, $last, $firm, $title, $years, $rating, $reviews, $score, $verified ] ) {
+		foreach ( $rows as $i => [ $first, $last, $firm, $title, $years, $rating, $reviews, $verified ] ) {
 			$out[] = array(
 				'title'            => sprintf( '%s %s (Demo)', $first, $last ),
 				'content'          => sprintf( '%s %s is a fictional lawyer profile used to test LexRanked. None of this information is real.', $first, $last ),
@@ -173,7 +169,6 @@ final class DemoData {
 				'years_experience' => $years,
 				'rating'           => $rating,
 				'review_count'     => $reviews,
-				'score'            => $score,
 				'bar_state'        => 'FL',
 				'bar_number'       => sprintf( 'DEMO-%04d', $i + 1 ),
 				'bar_status'       => 'active',
@@ -187,6 +182,13 @@ final class DemoData {
 						'year'        => (string) ( 2026 - $years - 1 ),
 					),
 				),
+				'awards'           => 0 === $i % 2 ? array(
+					array(
+						'name'   => 'Example Trial Advocacy Award (Demo)',
+						'issuer' => 'Example Bar Foundation (Demo)',
+						'year'   => '2024',
+					),
+				) : array(),
 				'verified'         => $verified,
 			);
 		}//end foreach

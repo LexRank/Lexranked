@@ -12,6 +12,7 @@ namespace LexRanked\Core;
 use LexRanked\Core\Admin\ListColumns;
 use LexRanked\Core\Admin\MetaBoxes;
 use LexRanked\Core\Admin\Menu;
+use LexRanked\Core\Admin\RankingCalculation;
 use LexRanked\Core\CLI\Command;
 use LexRanked\Core\Database\Installer;
 use LexRanked\Core\REST\EntitiesController;
@@ -58,6 +59,7 @@ final class Plugin {
 		add_action( 'init', array( self::class, 'register_content_model' ) );
 
 		( new ApiGuard( $services->settings ) )->register();
+		$services->runner->register();
 		( new Headless( $services->settings ) )->register();
 
 		$controllers = array(
@@ -76,6 +78,7 @@ final class Plugin {
 			( new Menu( $services ) )->register();
 			( new MetaBoxes( $services ) )->register();
 			( new ListColumns( $services ) )->register();
+			( new RankingCalculation( $services ) )->register();
 		}
 
 		if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( '\WP_CLI' ) ) {
@@ -135,6 +138,8 @@ final class Plugin {
 	 * Deactivation hook. Data is intentionally kept.
 	 */
 	public static function deactivate(): void {
+		wp_clear_scheduled_hook( \LexRanked\Core\Ranking\RankingRunner::CRON_HOOK );
+		wp_clear_scheduled_hook( \LexRanked\Core\Ranking\RankingRunner::CRON_HOOK . '_soon' );
 		flush_rewrite_rules();
 	}
 

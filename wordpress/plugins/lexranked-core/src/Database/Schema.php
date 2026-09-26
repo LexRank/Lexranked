@@ -18,10 +18,11 @@ namespace LexRanked\Core\Database;
 final class Schema {
 
 	/** Bump when the DDL below changes; triggers dbDelta on next load. */
-	public const VERSION = '2';
+	public const VERSION = '3';
 
 	public const CLAIMS    = 'lr_claims';
 	public const AUDIT_LOG = 'lr_audit_log';
+	public const SNAPSHOTS = 'lr_ranking_snapshots';
 
 	/**
 	 * CREATE TABLE statements.
@@ -33,6 +34,7 @@ final class Schema {
 	public static function statements( string $prefix, string $charset_collate ): array {
 		$claims = $prefix . self::CLAIMS;
 		$audit  = $prefix . self::AUDIT_LOG;
+		$snaps  = $prefix . self::SNAPSHOTS;
 
 		return array(
 			$claims => "CREATE TABLE {$claims} (
@@ -64,6 +66,24 @@ final class Schema {
   PRIMARY KEY  (id),
   KEY occurred_at (occurred_at),
   KEY object (object_type,object_id)
+) {$charset_collate};",
+			$snaps  => "CREATE TABLE {$snaps} (
+  snapshot_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  run_id char(36) NOT NULL,
+  ranking_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  entity_id bigint(20) unsigned NOT NULL,
+  entity_type varchar(20) NOT NULL,
+  position int(10) unsigned NOT NULL DEFAULT 0,
+  score decimal(6,2) NOT NULL,
+  score_version varchar(20) NOT NULL,
+  context longtext NOT NULL,
+  components longtext NOT NULL,
+  inputs longtext NOT NULL,
+  calculated_at datetime NOT NULL,
+  PRIMARY KEY  (snapshot_id),
+  KEY ranking_run (ranking_id,run_id),
+  KEY entity (entity_id,ranking_id),
+  KEY calculated_at (calculated_at)
 ) {$charset_collate};",
 		);
 	}

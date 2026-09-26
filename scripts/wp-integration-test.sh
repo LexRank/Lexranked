@@ -31,7 +31,7 @@ API="$BASE/wp-json/lexranked/v1"
 COMPOSE=(docker compose --env-file /dev/null -f docker-compose.yml)
 
 cleanup() {
-  if [[ -n "${NEXT_PID:-}" ]]; then kill "$NEXT_PID" >/dev/null 2>&1 || true; fi
+  if [[ -n "${NEXT_PID:-}" && "$KEEP" != "--keep" ]]; then kill "$NEXT_PID" >/dev/null 2>&1 || true; fi
   if [[ "$KEEP" != "--keep" ]]; then
     "${COMPOSE[@]}" down -v --remove-orphans >/dev/null 2>&1 || true
   fi
@@ -107,6 +107,15 @@ expect_status "404 for unknown lawyer" 404 "$API/lawyers/does-not-exist"
 expect_status "core users endpoint hidden from anonymous" 404 "$BASE/wp-json/wp/v2/users"
 expect_status "CPTs not exposed via wp/v2" 404 "$BASE/wp-json/wp/v2/lr_lawyer"
 
+echo "==> Ranking engine"
+wp lexranked recalculate >/dev/null
+expect "ranking comes from engine snapshots with breakdowns" '(.calculatedAt != null) and ((.entries | length) == 8) and all(.entries[]; (.breakdown | length) == 7)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+expect "second calculation reports movement" 'all(.entries[]; .movement == 0 and .isNew == false)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+expect "ranking history has both runs" '(.runs | length) == 2 and ((.runs[0].entries | length) == 8)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo/history"
+expect "profile has breakdown summing to the score" '((.ranking.breakdown | map(.points) | add) * 100 | round) == ((.ranking.score) * 100 | round) and ((.rankings | length) == 1)' "$API/lawyers/avery-example-demo"
+expect "score versions endpoint" '.active == "v1.0" and ([.versions[0].weights[].weight] | add) == 100' "$API/score-versions"
+if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "all snapshots reproduce exactly from stored inputs"; else fail "snapshot reproduction"; fi
+
 echo "==> Rate limiting"
 wp option update lexranked_settings '{"search_rate_per_minute":5}' --format=json >/dev/null
 codes=""
@@ -122,6 +131,8 @@ if [[ -n "$FRONTEND" ]]; then
   (
     cd frontend
     [[ -d node_modules ]] || npm ci --no-audit --no-fund >/dev/null
+    # Stale fetch-cache entries from earlier local runs would be served first (stale-while-revalidate).
+    rm -rf .next/cache/fetch-cache
     WORDPRESS_API_URL="$BASE/wp-json" WORDPRESS_USERNAME=apiuser WORDPRESS_APP_PASSWORD="$APP_PW" \
       NEXT_PUBLIC_SITE_URL=https://lexranked.com npm run build >/dev/null
   )
@@ -152,7 +163,8 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "ranking shows editorial review" "/rankings/florida/miami/personal-injury/" "LexRanked Demo Editor"
   expect_status "ranking slug redirects to canonical path" 308 "$WEB/rankings/best-personal-injury-lawyers-in-miami-florida-demo/"
   expect_status "lawyer profile" 200 "$WEB/lawyers/avery-example-demo/"
-  page_has "profile shows score" "/lawyers/avery-example-demo/" "94.21"
+  page_has "profile shows score breakdown" "/lawyers/avery-example-demo/" "Score breakdown"
+  page_has "profile explains a component" "/lawyers/avery-example-demo/" "adjusted for volume to"
   page_has "profile shows sources" "/lawyers/avery-example-demo/" "Example State Bar Registry (Demo)"
   page_has "profile shows data freshness" "/lawyers/avery-example-demo/" "Data verified"
   page_has "profile canonical" "/lawyers/avery-example-demo/" '<link rel="canonical" href="https://lexranked.com/lawyers/avery-example-demo/"/>'
@@ -169,8 +181,10 @@ if [[ -n "$FRONTEND" ]]; then
   if grep -q "/methodology/" <<<"$sitemap" && ! grep -q "demo" <<<"$sitemap"; then pass "sitemap has static pages and excludes demo pages"; else fail "sitemap content"; fi
   html="$(curl -sS "$WEB/lawyers/avery-example-demo/")"
   if grep -q "$APP_PW" <<<"$html" || grep -rqF "$APP_PW" frontend/.next/static; then fail "credentials leaked into HTML or client bundle"; else pass "no credentials in HTML or client bundle"; fi
-  kill "$NEXT_PID" >/dev/null 2>&1 || true
-  NEXT_PID=""
+  if [[ "$KEEP" != "--keep" ]]; then
+    kill "$NEXT_PID" >/dev/null 2>&1 || true
+    NEXT_PID=""
+  fi
 fi
 
 echo "==> Demo purge"

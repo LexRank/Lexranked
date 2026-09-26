@@ -173,3 +173,10 @@ Pages emit the following JSON-LD:
 Pages do **not** emit `AggregateRating`. The ratings come from third-party
 platforms, and search-engine guidelines allow review markup only for reviews
 the site collects itself.
+
+### ADR-020 — Engine output is stored, not recomputed on read
+Rankings and profile breakdowns are served from the latest snapshot run.
+The API never scores on the fly, which keeps reads fast and makes every
+number the public sees traceable to a stored, reproducible calculation.
+Snapshots store the inputs, so later data changes never rewrite history.
+Recalculation happens daily, shortly after edits (debounced) and on demand.

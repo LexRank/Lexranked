@@ -1,15 +1,25 @@
 import Link from "next/link";
-import type { EvidenceDto, FreshnessDto, VerificationBlock, VerificationState } from "@/types/api";
+import type { EvidenceDto, FreshnessDto, RankingPosition, ScoreComponent, VerificationBlock, VerificationState } from "@/types/api";
 import { formatDate, formatShortDate, humanize, isoDate } from "@/lib/format";
 import { METHODOLOGY_VERSION } from "@/lib/methodology";
 import { ScoreRing, VerificationBadge } from "../ui";
 
 /** Shared profile sections for lawyers and law firms. */
 
-export function ScoreSection({ score, scoreVersion, calculatedAt }: { score: number | null; scoreVersion: string | null; calculatedAt: string | null }) {
+export function ScoreSection({
+  score,
+  scoreVersion,
+  calculatedAt,
+  breakdown = [],
+}: {
+  score: number | null;
+  scoreVersion: string | null;
+  calculatedAt: string | null;
+  breakdown?: ScoreComponent[];
+}) {
   const calculated = formatDate(calculatedAt);
   return (
-    <section className="card" aria-labelledby="score-heading">
+    <section id="score" className="card" aria-labelledby="score-heading">
       <h2 id="score-heading" style={{ fontSize: "1.4rem" }}>
         LexRank score
       </h2>
@@ -21,22 +31,16 @@ export function ScoreSection({ score, scoreVersion, calculatedAt }: { score: num
               This profile has not been scored yet. A score is published only once enough verified data exists — it is never estimated.
             </p>
           ) : (
-            <>
-              <p style={{ margin: "0 0 0.5rem" }}>
-                Scored with <strong>{scoreVersion === "demo" ? "demo placeholder values" : (scoreVersion ?? METHODOLOGY_VERSION)}</strong>
-                {calculated && (
-                  <>
-                    {" "}
-                    on <time dateTime={isoDate(calculatedAt)}>{calculated}</time>
-                  </>
-                )}
-                .
-              </p>
-              <p className="muted" style={{ margin: 0, fontSize: "0.92rem" }}>
-                A per-factor breakdown is shown only when each component can be explained from stored, sourced data. Payment never
-                changes this score.
-              </p>
-            </>
+            <p style={{ margin: 0 }}>
+              Calculated with <strong>{scoreVersion ? `LexRank ${scoreVersion}` : METHODOLOGY_VERSION}</strong>
+              {calculated && (
+                <>
+                  {" "}
+                  on <time dateTime={isoDate(calculatedAt)}>{calculated}</time>
+                </>
+              )}
+              . The same data always produces the same score, and payment never changes it.
+            </p>
           )}
           <p style={{ margin: "0.75rem 0 0", fontSize: "0.92rem" }}>
             <Link className="link-arrow" href="/methodology/">
@@ -45,6 +49,55 @@ export function ScoreSection({ score, scoreVersion, calculatedAt }: { score: num
           </p>
         </div>
       </div>
+      {breakdown.length > 0 && <ScoreBreakdown components={breakdown} />}
+    </section>
+  );
+}
+
+/** Per-factor breakdown (spec §25): only components explained by stored data. */
+export function ScoreBreakdown({ components }: { components: ScoreComponent[] }) {
+  return (
+    <div style={{ marginTop: "1.5rem", paddingTop: "1.25rem", borderTop: "1px solid var(--line)" }}>
+      <p className="panel-title">Score breakdown</p>
+      <ul className="breakdown">
+        {components.map((c) => (
+          <li key={c.key}>
+            <div className="breakdown__row">
+              <span className="breakdown__label">{c.label}</span>
+              <span className="breakdown__points">
+                <strong>{c.points.toFixed(1)}</strong> / {c.max}
+              </span>
+            </div>
+            <span className="weights__bar" aria-hidden="true">
+              <span style={{ width: `${c.max > 0 ? (c.points / c.max) * 100 : 0}%` }} />
+            </span>
+            <p className="breakdown__why">
+              {c.explanation}
+              {c.missing.length > 0 && <> Not on record: {c.missing.map(humanize).join(", ").toLowerCase()} (scored 0, never estimated).</>}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function RankingPositions({ rankings }: { rankings: RankingPosition[] }) {
+  const shown = rankings.filter((r) => r.path);
+  if (shown.length === 0) return null;
+  return (
+    <section className="card" aria-labelledby="rankings-heading">
+      <h2 id="rankings-heading" style={{ fontSize: "1.4rem" }}>
+        Rankings
+      </h2>
+      <ul className="weights" style={{ gap: "0.5rem" }}>
+        {shown.map((r) => (
+          <li key={r.id} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", paddingBottom: "0.5rem", borderBottom: "1px solid var(--line)" }}>
+            <Link href={r.path as string}>{r.title}</Link>
+            <strong>#{r.position}</strong>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

@@ -17,34 +17,34 @@ final class RankingMapper {
 	public const DEFAULT_MAX = 25;
 
 	/**
-	 * Order entity summaries by stored organic score.
+	 * Entries from a snapshot run (Phase 4 engine output).
 	 *
-	 * Deterministic: score DESC, then ID ASC. Entities without a score are
-	 * excluded (never ranked on guessed data). Commercial status is ignored.
+	 * Rows whose entity is no longer published are skipped and positions are
+	 * compacted, keeping the stored order. Movement compares with the previous
+	 * run (positive = moved up; null = new entry or first run).
 	 *
-	 * @param array<int, array<string, mixed>> $summaries Entity summary DTOs.
-	 * @param string|null                      $score_version Only include this score version (null = any).
-	 * @return array<int, array<string, mixed>> Ranked entries with position.
+	 * @param array<int, array<string, mixed>> $rows      Snapshot rows ordered by position.
+	 * @param array<int, array<string, mixed>> $summaries Entity summary DTOs keyed by entity ID.
+	 * @param array<int, int>|null             $previous  Previous run: entity ID => position, or null.
+	 * @return array<int, array<string, mixed>>
 	 */
-	public static function order( array $summaries, ?string $score_version ): array {
-		$eligible = array_values(
-			array_filter(
-				$summaries,
-				static fn( array $s ): bool => null !== $s['ranking']['score']
-					&& ( null === $score_version || $s['ranking']['scoreVersion'] === $score_version )
-			)
-		);
-		usort(
-			$eligible,
-			static fn( array $a, array $b ): int => array( $b['ranking']['score'], $a['id'] ) <=> array( $a['ranking']['score'], $b['id'] )
-		);
-
-		$entries = array();
-		foreach ( $eligible as $i => $summary ) {
+	public static function entries_from_snapshots( array $rows, array $summaries, ?array $previous ): array {
+		$entries  = array();
+		$position = 0;
+		foreach ( $rows as $row ) {
+			$summary = $summaries[ $row['entity_id'] ] ?? null;
+			if ( null === $summary ) {
+				continue;
+			}
+			++$position;
+			$before    = null === $previous ? null : ( $previous[ $row['entity_id'] ] ?? null );
 			$entries[] = array(
-				'position'     => $i + 1,
-				'score'        => $summary['ranking']['score'],
-				'scoreVersion' => $summary['ranking']['scoreVersion'],
+				'position'     => $position,
+				'score'        => round( (float) $row['score'], 2 ),
+				'scoreVersion' => $row['score_version'],
+				'movement'     => null === $before ? null : $before - $position,
+				'isNew'        => null !== $previous && null === $before,
+				'breakdown'    => EntityMapper::breakdown( $row['components'] ),
 				'entity'       => $summary,
 			);
 		}
@@ -59,9 +59,10 @@ final class RankingMapper {
 	 * @param int                              $min_default Default minimum entity count.
 	 * @param string                           $intro_html  Sanitized body HTML (shown below the ranking).
 	 * @param bool                             $with_entries Include entries (detail) or only counts (list).
+	 * @param string|null                      $calculated_at Time of the snapshot run the entries come from.
 	 * @return array<string, mixed>
 	 */
-	public static function ranking( array $record, array $entries, int $min_default, string $intro_html = '', bool $with_entries = true ): array {
+	public static function ranking( array $record, array $entries, int $min_default, string $intro_html = '', bool $with_entries = true, ?string $calculated_at = null ): array {
 		$f        = $record['fields'];
 		$min      = $f['min_entities'] ?? $min_default;
 		$max      = $f['max_entities'] ?? self::DEFAULT_MAX;
@@ -83,7 +84,8 @@ final class RankingMapper {
 			'isThin'         => $is_thin,
 			'indexable'      => ! $is_thin && ! $f['is_demo'],
 			'isDemo'         => (bool) $f['is_demo'],
-			'updatedAt'      => $record['updated_at'],
+			'updatedAt'      => self::latest( $record['updated_at'], $calculated_at ),
+			'calculatedAt'   => $calculated_at,
 			'methodologyUrl' => '/methodology/',
 		);
 		if ( $with_entries ) {
@@ -99,6 +101,19 @@ final class RankingMapper {
 			$dto['entries']   = $is_thin ? array() : array_slice( $entries, 0, $max );
 		}
 		return $dto;
+	}
+
+	/**
+	 * Later of two ISO timestamps (a recalculation also updates the page).
+	 *
+	 * @param string|null $a Timestamp.
+	 * @param string|null $b Timestamp.
+	 */
+	public static function latest( ?string $a, ?string $b ): ?string {
+		if ( null === $a || null === $b ) {
+			return $a ?? $b;
+		}
+		return strcmp( $a, $b ) >= 0 ? $a : $b;
 	}
 
 	/**

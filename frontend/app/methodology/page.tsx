@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLd } from "@/components/JsonLd";
 import { PageHeader } from "@/components/PageHeader";
-import { METHODOLOGY_COMPONENTS, METHODOLOGY_PRINCIPLES, METHODOLOGY_VERSION } from "@/lib/methodology";
+import { componentsWithWeights, METHODOLOGY_PRINCIPLES } from "@/lib/methodology";
+import { load } from "@/lib/data/loaders";
+import { getScoreVersions } from "@/lib/wordpress/api";
 import { collectionPageJsonLd } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 
@@ -22,7 +24,14 @@ const TIERS = [
   ["5", "Secondary sources"],
 ];
 
-export default function MethodologyPage() {
+export const revalidate = 3600;
+
+export default async function MethodologyPage() {
+  const versions = await load(async () => (await getScoreVersions()).data);
+  const active = versions.ok ? versions.data.versions.find((v) => v.id === versions.data.active) : undefined;
+  const components = componentsWithWeights(active?.weights ?? null);
+  const params = active?.params;
+  const versionLabel = `LexRank ${active?.id ?? "v1.0"}`;
   return (
     <>
       <JsonLd data={collectionPageJsonLd("LexRanked ranking methodology", "/methodology/", "How LexRanked calculates lawyer rankings.")} />
@@ -31,7 +40,7 @@ export default function MethodologyPage() {
           { name: "Home", path: "/" },
           { name: "Methodology", path: "/methodology/" },
         ]}
-        eyebrow={METHODOLOGY_VERSION}
+        eyebrow={versionLabel}
         title="How we rank lawyers"
         lead="LexRank is a deterministic scoring methodology. The same data and methodology version always produce the same score — and no one can pay to change it."
       />
@@ -41,7 +50,7 @@ export default function MethodologyPage() {
             <h2>The seven factors</h2>
             <p>Each lawyer or firm receives a LexRank score from 0 to 100, built from seven weighted components:</p>
             <div className="grid grid--2">
-              {METHODOLOGY_COMPONENTS.map((c) => (
+              {components.map((c) => (
                 <div key={c.key} className="card">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "1rem" }}>
                     <h3 style={{ fontSize: "1.1rem", margin: 0 }}>{c.label}</h3>
@@ -69,8 +78,10 @@ export default function MethodologyPage() {
               <code>adjusted rating = (C × m + n × r) / (C + n)</code>
             </pre>
             <p className="muted" style={{ fontSize: "0.92rem" }}>
-              r = average rating, n = number of reviews, m = baseline rating, C = confidence constant. We never copy review text or
-              publish invented quotations.
+              r = average rating, n = number of reviews, m = baseline rating
+              {params ? ` (${params.review_prior_mean})` : ""}, C = confidence constant{params ? ` (${params.review_prior_weight} reviews)` : ""}.
+              {params ? ` Adjusted ratings of ${params.review_floor} or lower earn no review-strength points; 5.0 earns full points.` : ""} We
+              never copy review text or publish invented quotations.
             </p>
           </section>
 

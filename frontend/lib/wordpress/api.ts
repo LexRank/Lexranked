@@ -9,6 +9,7 @@ import type {
   PracticeAreaDto,
   RankingDetail,
   RankingSummary,
+  ScoreVersionsDto,
   SourceDto,
   StateDto,
   StatusDto,
@@ -86,3 +87,5 @@ export interface SearchResult {
 
 export const searchEntities = (q: string, opts?: Opts) =>
   apiRequest<SearchResult[]>("search", { query: { q, per_page: 20 }, revalidate: 60, ...opts });
+
+export const getScoreVersions = (opts?: Opts) => apiRequest<ScoreVersionsDto>("score-versions", { revalidate: 3600, ...opts });

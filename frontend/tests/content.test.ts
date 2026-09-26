@@ -124,3 +124,18 @@ describe("format", () => {
     expect(formatLocation(null)).toBeNull();
   });
 });
+
+import { componentsWithWeights, METHODOLOGY_COMPONENTS } from "@/lib/methodology";
+
+describe("methodology weights", () => {
+  it("documented defaults sum to 100", () => {
+    expect(METHODOLOGY_COMPONENTS.reduce((s, c) => s + c.weight, 0)).toBe(100);
+  });
+
+  it("uses API weights when available and falls back otherwise", () => {
+    expect(componentsWithWeights(null)).toBe(METHODOLOGY_COMPONENTS);
+    const merged = componentsWithWeights([{ key: "reputation", weight: 25 }]);
+    expect(merged.find((c) => c.key === "reputation")?.weight).toBe(25);
+    expect(merged.find((c) => c.key === "experience")?.weight).toBe(15);
+  });
+});

@@ -215,6 +215,11 @@ final class Menu {
 				(int) $s[ $key ]
 			);
 		}
+		echo '<tr><th scope="row"><label for="lr-version">Score version</label></th><td><select id="lr-version" name="' . esc_attr( $name ) . '[score_version]">';
+		foreach ( $this->services->versions->all() as $version ) {
+			printf( '<option value="%1$s"%2$s>%1$s</option>', esc_attr( $version->id ), selected( $s['score_version'], $version->id, false ) );
+		}
+		echo '</select><p class="description">Methodology version used for new calculations. Weights of a version never change; a new version is added instead.</p></td></tr>';
 		printf(
 			'<tr><th scope="row">Proxy header</th><td><input type="hidden" name="%1$s[trust_proxy_header]" value="0"><label><input type="checkbox" name="%1$s[trust_proxy_header]" value="1"%2$s> Trust <code>CF-Connecting-IP</code> (enable only when WordPress is reachable exclusively through Cloudflare)</label></td></tr>',
 			esc_attr( $name ),

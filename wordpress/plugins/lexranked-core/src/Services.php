@@ -16,9 +16,12 @@ use LexRanked\Core\PostTypes\Ranking;
 use LexRanked\Core\PostTypes\ResearchJob;
 use LexRanked\Core\PostTypes\Source;
 use LexRanked\Core\PostTypes\VerificationRecord;
+use LexRanked\Core\Ranking\RankingRunner;
+use LexRanked\Core\Ranking\ScoreVersions;
 use LexRanked\Core\REST\EntityPresenter;
 use LexRanked\Core\Repository\ClaimRepository;
 use LexRanked\Core\Repository\EntityRepository;
+use LexRanked\Core\Repository\SnapshotRepository;
 use LexRanked\Core\Repository\VerificationRepository;
 use LexRanked\Core\Settings\Settings;
 use LexRanked\Core\Sources\ClaimValidator;
@@ -106,6 +109,27 @@ final class Services {
 	public readonly EntityPresenter $presenter;
 
 	/**
+	 * Ranking snapshots.
+	 *
+	 * @var SnapshotRepository
+	 */
+	public readonly SnapshotRepository $snapshots;
+
+	/**
+	 * Score version registry.
+	 *
+	 * @var ScoreVersions
+	 */
+	public readonly ScoreVersions $versions;
+
+	/**
+	 * Ranking runner.
+	 *
+	 * @var RankingRunner
+	 */
+	public readonly RankingRunner $runner;
+
+	/**
 	 * Build the graph.
 	 *
 	 * @param Settings|null $settings Settings (injectable for tests).
@@ -129,7 +153,10 @@ final class Services {
 				$this->settings->source_tiers()
 			)
 		);
+		$this->snapshots     = new SnapshotRepository();
+		$this->versions      = new ScoreVersions();
 		$this->presenter     = new EntityPresenter( $this );
+		$this->runner        = new RankingRunner( $this, $this->snapshots, $this->versions );
 	}
 
 	/**

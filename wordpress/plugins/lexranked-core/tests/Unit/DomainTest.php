@@ -87,6 +87,5 @@ final class DomainTest extends TestCase {
 		foreach ( DemoData::sources() as $source ) {
 			$this->assertStringEndsWith( '(Demo)', $source['title'] );
 		}
-		$this->assertSame( 'demo', DemoData::SCORE_VERSION );
 	}
 }

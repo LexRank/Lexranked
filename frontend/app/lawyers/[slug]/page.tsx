@@ -5,14 +5,14 @@ import { cache } from "react";
 import { FirmCard, LawyerCard } from "@/components/cards";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { JsonLd } from "@/components/JsonLd";
-import { ScoreSection, SourcesSection, VerificationSection } from "@/components/profile/sections";
+import { RankingPositions, ScoreSection, SourcesSection, VerificationSection } from "@/components/profile/sections";
 import { CommercialBadge, DemoBadge, DemoNotice, Monogram, ScoreRing, StarRating, VerificationBadge } from "@/components/ui";
 import { profileEligibility } from "@/lib/content/eligibility";
-import { allRankings, load } from "@/lib/data/loaders";
+import { load } from "@/lib/data/loaders";
 import { formatDate, formatLocation, isoDate } from "@/lib/format";
 import { lawyerJsonLd, type Crumb } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { getLawFirms, getLawyer, getLawyers, getRanking } from "@/lib/wordpress/api";
+import { getLawFirms, getLawyer, getLawyers } from "@/lib/wordpress/api";
 import type { LawyerDetail } from "@/types/api";
 
 export const revalidate = 300;
@@ -61,31 +61,14 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
 
   const city = lawyer.location?.citySlug ?? undefined;
   const practice = lawyer.practiceAreas[0]?.slug;
-  const practiceSlugs = new Set(lawyer.practiceAreas.map((p) => p.slug));
-
-  const [related, firms, positions] = await Promise.all([
+  const [related, firms] = await Promise.all([
     load(async () => (await getLawyers({ city, practice_area: practice, per_page: 7 })).data.filter((l) => l.id !== lawyer.id).slice(0, 4)),
     load(async () => (city ? (await getLawFirms({ city, per_page: 4 })).data.filter((f) => f.id !== lawyer.firm?.id).slice(0, 3) : [])),
-    load(async () => {
-      const candidates = (await allRankings()).filter(
-        (r) =>
-          !r.isThin &&
-          r.entityType === "lawyer" &&
-          r.practiceArea &&
-          practiceSlugs.has(r.practiceArea.slug) &&
-          (r.location?.citySlug ? r.location.citySlug === lawyer.location?.citySlug : r.location?.stateSlug === lawyer.location?.stateSlug),
-      );
-      const details = await Promise.all(candidates.slice(0, 4).map((r) => getRanking(String(r.id))));
-      return details
-        .filter((d) => d !== null)
-        .map((d) => ({ ranking: d, entry: d.entries.find((e) => e.entity.id === lawyer.id) }))
-        .filter((x) => x.entry !== undefined);
-    }),
   ]);
 
   const where = formatLocation(lawyer.location);
   const p = lawyer.professional;
-  const bestPosition = positions.ok ? positions.data[0] : undefined;
+  const bestPosition = lawyer.rankings.filter((r) => r.path).sort((a, b) => a.position - b.position)[0];
 
   return (
     <>
@@ -115,11 +98,14 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
                   <VerificationBadge status={lawyer.verification.status} />
                   <CommercialBadge commercial={lawyer.commercial} />
                   {lawyer.isDemo && <DemoBadge />}
-                  {bestPosition?.entry && (
-                    <span className="badge badge--paid" style={{ background: "rgb(255 255 255 / 10%)", color: "var(--brass-300)", borderColor: "rgb(217 194 154 / 40%)" }}>
-                      #{bestPosition.entry.position} in {bestPosition.ranking.practiceArea?.name ?? "ranking"}
-                      {bestPosition.ranking.location?.city ? `, ${bestPosition.ranking.location.city}` : ""}
-                    </span>
+                  {bestPosition && (
+                    <Link
+                      href={bestPosition.path as string}
+                      className="badge badge--paid"
+                      style={{ background: "rgb(255 255 255 / 10%)", color: "var(--brass-300)", borderColor: "rgb(217 194 154 / 40%)", textDecoration: "none" }}
+                    >
+                      #{bestPosition.position} · {bestPosition.title}
+                    </Link>
                   )}
                 </div>
               </div>
@@ -165,25 +151,14 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
             )}
           </dl>
 
-          <ScoreSection score={lawyer.ranking.score} scoreVersion={lawyer.ranking.scoreVersion} calculatedAt={lawyer.ranking.calculatedAt} />
+          <ScoreSection
+            score={lawyer.ranking.score}
+            scoreVersion={lawyer.ranking.scoreVersion}
+            calculatedAt={lawyer.ranking.calculatedAt}
+            breakdown={lawyer.ranking.breakdown}
+          />
 
-          {positions.ok && positions.data.length > 0 && (
-            <section className="card" aria-labelledby="rankings-heading">
-              <h2 id="rankings-heading" style={{ fontSize: "1.4rem" }}>
-                Rankings
-              </h2>
-              <ul className="weights" style={{ gap: "0.5rem" }}>
-                {positions.data.map(({ ranking, entry }) =>
-                  ranking.path ? (
-                    <li key={ranking.id} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", paddingBottom: "0.5rem", borderBottom: "1px solid var(--line)" }}>
-                      <Link href={ranking.path}>{ranking.title}</Link>
-                      <strong>#{entry!.position}</strong>
-                    </li>
-                  ) : null,
-                )}
-              </ul>
-            </section>
-          )}
+          <RankingPositions rankings={lawyer.rankings} />
 
           {lawyer.bio && (
             <section aria-labelledby="about-heading">

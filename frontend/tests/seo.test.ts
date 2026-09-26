@@ -98,6 +98,7 @@ describe("JSON-LD", () => {
       description: "",
       freshness: { category: "profile", maxAgeDays: 90, lastVerifiedAt: null, isStale: true, staleAt: null },
       sources: [],
+      rankings: [],
       createdAt: null,
     };
     expect(lawFirmJsonLd(firm)).toMatchObject({

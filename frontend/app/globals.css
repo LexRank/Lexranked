@@ -1134,6 +1134,7 @@ a.chip:hover {
 }
 
 .weights__bar {
+  display: block;
   grid-column: 1 / -1;
   height: 6px;
   border-radius: 999px;
@@ -1704,4 +1705,73 @@ main {
   .overview__facts dd {
     font-size: 1.15rem;
   }
+}
+
+/* ---------- Score breakdown & movement ---------- */
+
+.breakdown {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.breakdown__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+
+.breakdown__label {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.breakdown__points {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.breakdown__points strong {
+  color: var(--navy-900);
+}
+
+.breakdown__why {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.move {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font: 700 0.72rem/1 var(--font-sans);
+  padding: 0.2rem 0.4rem;
+  border-radius: 999px;
+  margin-top: 0.35rem;
+}
+
+.move--up {
+  background: var(--verified-bg);
+  color: var(--verified);
+}
+
+.move--down {
+  background: var(--failed-bg);
+  color: var(--failed);
+}
+
+.move--same {
+  background: var(--neutral-bg);
+  color: var(--muted);
+}
+
+.move--new {
+  background: var(--brass-100);
+  color: var(--brass-600);
 }

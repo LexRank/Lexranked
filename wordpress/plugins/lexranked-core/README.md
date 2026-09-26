@@ -28,7 +28,7 @@ src/
   Admin/             Menu + dashboard, settings screen, schema-driven meta boxes, list columns
   Database/          Custom tables (claims, audit log) + installer/migrations
   CLI/               wp lexranked status | seed-demo | purge-demo
-  Ranking/           ScoreCalculator, RankingEngine, snapshots (Phase 4)
+  Ranking/           ScoreVersion(s), ScoreCalculator, BayesianReviewScorer, RankingEngine, InputBuilder, RankingRunner
   Research/          Research execution (Phase 5)
 tests/Unit/          PHPUnit (no WordPress runtime)
 ```
@@ -53,6 +53,8 @@ See [docs/api.md](../../../docs/api.md): `status`, `lawyers`, `law-firms`,
 wp lexranked status
 wp lexranked seed-demo [--force]   # clearly-labelled mock data (Miami · Personal Injury)
 wp lexranked purge-demo --yes
+wp lexranked recalculate [--ranking=<id>]   # deterministic engine run (also daily + after edits)
+wp lexranked verify-snapshots              # recompute stored runs; fails if any score differs
 ```
 
 ## Development

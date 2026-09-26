@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace LexRanked\Core\Settings;
 
 use LexRanked\Core\Domain\VerificationType;
+use LexRanked\Core\Ranking\ScoreVersions;
 use LexRanked\Core\Sources\SourceTiers;
 use LexRanked\Core\Verification\Freshness;
 use LexRanked\Core\Verification\VerificationPolicy;
@@ -61,6 +62,7 @@ final class Settings {
 			'rate_limit_per_minute'  => 120,
 			'search_rate_per_minute' => 30,
 			'trust_proxy_header'     => false,
+			'score_version'          => ScoreVersions::DEFAULT_VERSION,
 		);
 	}
 
@@ -117,6 +119,10 @@ final class Settings {
 
 				$out['required_verifications'][ $entity ] = $valid;
 			}
+		}
+
+		if ( isset( $input['score_version'] ) && is_string( $input['score_version'] ) && array_key_exists( $input['score_version'], ScoreVersions::builtin() ) ) {
+			$out['score_version'] = $input['score_version'];
 		}
 
 		$ints = array(

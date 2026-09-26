@@ -5,7 +5,7 @@ import { cache } from "react";
 import { FirmCard, LawyerCard } from "@/components/cards";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { JsonLd } from "@/components/JsonLd";
-import { ScoreSection, SourcesSection, VerificationSection } from "@/components/profile/sections";
+import { RankingPositions, ScoreSection, SourcesSection, VerificationSection } from "@/components/profile/sections";
 import { CommercialBadge, DemoBadge, DemoNotice, Monogram, ScoreRing, StarRating, VerificationBadge } from "@/components/ui";
 import { profileEligibility } from "@/lib/content/eligibility";
 import { load } from "@/lib/data/loaders";
@@ -104,7 +104,8 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
               </div>
             </dl>
           )}
-          <ScoreSection score={firm.ranking.score} scoreVersion={firm.ranking.scoreVersion} calculatedAt={firm.ranking.calculatedAt} />
+          <ScoreSection score={firm.ranking.score} scoreVersion={firm.ranking.scoreVersion} calculatedAt={firm.ranking.calculatedAt} breakdown={firm.ranking.breakdown} />
+          <RankingPositions rankings={firm.rankings} />
           {firm.description && (
             <section aria-labelledby="about-heading">
               <h2 id="about-heading" style={{ fontSize: "1.4rem" }}>

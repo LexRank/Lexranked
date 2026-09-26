@@ -187,6 +187,26 @@ final class EntityMapper {
 	}
 
 	/**
+	 * Explainable score breakdown from stored snapshot components.
+	 *
+	 * @param array<int, array<string, mixed>> $components Snapshot components.
+	 * @return array<int, array{key: string, label: string, points: float, max: float, explanation: string, missing: array<int, string>}>
+	 */
+	public static function breakdown( array $components ): array {
+		return array_map(
+			static fn( array $c ): array => array(
+				'key'         => (string) $c['key'],
+				'label'       => (string) $c['label'],
+				'points'      => round( (float) $c['points'], 2 ),
+				'max'         => (float) $c['weight'],
+				'explanation' => (string) $c['explanation'],
+				'missing'     => array_values( array_map( 'strval', (array) ( $c['missing'] ?? array() ) ) ),
+			),
+			$components
+		);
+	}
+
+	/**
 	 * Commercial block, separate from ranking.
 	 *
 	 * @param array<string, mixed> $fields Entity fields.

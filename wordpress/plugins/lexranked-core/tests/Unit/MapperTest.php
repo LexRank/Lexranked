@@ -136,26 +136,59 @@ final class MapperTest extends TestCase {
 		$this->assertSame( 'free', EntityMapper::commercial( array( 'commercial_status' => 'bogus' ) )['status'] );
 	}
 
-	public function testRankingOrderIsDeterministicAndIgnoresPayment(): void {
-		$summaries = array_map(
-			static fn( array $r ): array => EntityMapper::lawyer_summary( $r, null, self::verification() ),
+	private static function snapshot_row( int $entity_id, int $position, float $score ): array {
+		return array(
+			'entity_id'     => $entity_id,
+			'entity_type'   => 'lawyer',
+			'position'      => $position,
+			'score'         => $score,
+			'score_version' => 'v1.0',
+			'components'    => array(
+				array(
+					'key'         => 'experience',
+					'label'       => 'Experience',
+					'weight'      => 15,
+					'factor'      => 0.6,
+					'points'      => 9.0,
+					'explanation' => '15 years in practice (full credit at 25).',
+					'missing'     => array(),
+				),
+			),
+		);
+	}
+
+	public function testSnapshotEntriesKeepEngineOrderAndReportMovement(): void {
+		$summaries = array();
+		foreach ( array( 1, 2, 3 ) as $id ) {
+			$summaries[ $id ] = EntityMapper::lawyer_summary( self::lawyer( $id, 50.0, 3 === $id ? 'sponsored' : 'free' ), null, self::verification() );
+		}
+		$rows    = array( self::snapshot_row( 3, 1, 90.5 ), self::snapshot_row( 1, 2, 80.25 ), self::snapshot_row( 2, 3, 70.0 ) );
+		$entries = RankingMapper::entries_from_snapshots(
+			$rows,
+			$summaries,
 			array(
-				self::lawyer( 5, 80.0, 'sponsored' ),
-				self::lawyer( 3, 90.0 ),
-				self::lawyer( 4, 90.0, 'premium' ),
-				self::lawyer( 2, null, 'featured' ),
-				self::lawyer( 1, 70.0 ),
+				1 => 1,
+				3 => 2,
 			)
 		);
-		$entries   = RankingMapper::order( $summaries, 'v1.0' );
-		$this->assertSame( array( 3, 4, 5, 1 ), array_map( static fn( array $e ): int => $e['entity']['id'], $entries ) );
-		$this->assertSame( array( 1, 2, 3, 4 ), array_column( $entries, 'position' ) );
 
-		// Same input in a different order → identical output.
-		$this->assertSame( $entries, RankingMapper::order( array_reverse( $summaries ), 'v1.0' ) );
+		$this->assertSame( array( 3, 1, 2 ), array_map( static fn( array $e ): int => $e['entity']['id'], $entries ) );
+		$this->assertSame( array( 90.5, 80.25, 70.0 ), array_column( $entries, 'score' ) );
+		$this->assertSame( array( 1, -1, null ), array_column( $entries, 'movement' ) );
+		$this->assertSame( array( false, false, true ), array_column( $entries, 'isNew' ) );
+		$this->assertSame( 9.0, $entries[0]['breakdown'][0]['points'] );
+		$this->assertSame( 15.0, $entries[0]['breakdown'][0]['max'] );
+		// Commercial status is displayed, but the engine's order stands.
+		$this->assertSame( 'sponsored', $entries[0]['entity']['commercial']['status'] );
+	}
 
-		// Entities scored with another version are not mixed in.
-		$this->assertSame( array(), RankingMapper::order( $summaries, 'v2.0' ) );
+	public function testUnpublishedEntitiesAreSkippedAndPositionsCompacted(): void {
+		$summaries = array( 2 => EntityMapper::lawyer_summary( self::lawyer( 2, 50.0 ), null, self::verification() ) );
+		$entries   = RankingMapper::entries_from_snapshots( array( self::snapshot_row( 1, 1, 90.0 ), self::snapshot_row( 2, 2, 80.0 ) ), $summaries, null );
+		$this->assertCount( 1, $entries );
+		$this->assertSame( 1, $entries[0]['position'] );
+		$this->assertNull( $entries[0]['movement'] );
+		$this->assertFalse( $entries[0]['isNew'], 'No previous run means no "new" badge' );
 	}
 
 	private static function ranking_record( bool $demo = false ): array {
@@ -183,9 +216,10 @@ final class MapperTest extends TestCase {
 	}
 
 	public function testThinRankingsHaveNoEntriesAndAreNotIndexable(): void {
-		$entries = RankingMapper::order(
-			array( EntityMapper::lawyer_summary( self::lawyer( 1, 90.0 ), null, self::verification() ) ),
-			'v1.0'
+		$entries = RankingMapper::entries_from_snapshots(
+			array( self::snapshot_row( 1, 1, 90.0 ) ),
+			array( 1 => EntityMapper::lawyer_summary( self::lawyer( 1, 90.0 ), null, self::verification() ) ),
+			null
 		);
 		$dto     = RankingMapper::ranking( self::ranking_record(), $entries, 5 );
 		$this->assertTrue( $dto['isThin'] );
@@ -195,13 +229,19 @@ final class MapperTest extends TestCase {
 	}
 
 	public function testRankingCapsEntriesAndDemoIsNeverIndexable(): void {
-		$summaries = array_map(
-			static fn( int $id ): array => EntityMapper::lawyer_summary( self::lawyer( $id, 50.0 + $id ), null, self::verification() ),
-			array( 1, 2, 3 )
+		$summaries = array();
+		foreach ( array( 1, 2, 3 ) as $id ) {
+			$summaries[ $id ] = EntityMapper::lawyer_summary( self::lawyer( $id, 50.0 + $id ), null, self::verification() );
+		}
+		$entries = RankingMapper::entries_from_snapshots(
+			array( self::snapshot_row( 3, 1, 53.0 ), self::snapshot_row( 2, 2, 52.0 ), self::snapshot_row( 1, 3, 51.0 ) ),
+			$summaries,
+			null
 		);
-		$entries   = RankingMapper::order( $summaries, 'v1.0' );
 
-		$dto = RankingMapper::ranking( self::ranking_record(), $entries, 5 );
+		$dto = RankingMapper::ranking( self::ranking_record(), $entries, 5, '', true, '2026-09-26T10:00:00Z' );
+		$this->assertSame( '2026-09-26T10:00:00Z', $dto['calculatedAt'] );
+		$this->assertSame( '2026-09-26T10:00:00Z', $dto['updatedAt'], 'A newer calculation also updates the page date' );
 		$this->assertFalse( $dto['isThin'] );
 		$this->assertTrue( $dto['indexable'] );
 		$this->assertCount( 2, $dto['entries'] );

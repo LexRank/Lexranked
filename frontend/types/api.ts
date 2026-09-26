@@ -36,11 +36,32 @@ export interface EntityRef {
   path: string;
 }
 
+export interface ScoreComponent {
+  key: string;
+  label: string;
+  points: number;
+  max: number;
+  explanation: string;
+  missing: string[];
+}
+
 /** Organic ranking data. Never influenced by commercial status. */
 export interface RankingBlock {
   score: number | null;
   scoreVersion: string | null;
   calculatedAt: string | null;
+  /** Per-component breakdown (detail responses only, when calculated). */
+  breakdown?: ScoreComponent[];
+}
+
+export interface RankingPosition {
+  id: number;
+  title: string;
+  path: string | null;
+  position: number;
+  score: number;
+  calculatedAt: string;
+  isDemo: boolean;
 }
 
 export interface CommercialBlock {
@@ -119,6 +140,7 @@ export interface LawyerDetail extends LawyerSummary {
   bio: string;
   freshness: FreshnessDto;
   sources: EvidenceDto[];
+  rankings: RankingPosition[];
   createdAt: string | null;
 }
 
@@ -134,6 +156,7 @@ export interface LawFirmDetail extends LawFirmSummary {
   description: string;
   freshness: FreshnessDto;
   sources: EvidenceDto[];
+  rankings: RankingPosition[];
   createdAt: string | null;
 }
 
@@ -141,6 +164,10 @@ export interface RankingEntry {
   position: number;
   score: number;
   scoreVersion: string | null;
+  /** Places gained (+) or lost (−) since the previous calculation; null on first run or for new entries. */
+  movement: number | null;
+  isNew: boolean;
+  breakdown: ScoreComponent[];
   entity: LawyerSummary | LawFirmSummary;
 }
 
@@ -159,6 +186,8 @@ export interface RankingSummary {
   indexable: boolean;
   isDemo: boolean;
   updatedAt: string | null;
+  /** When the engine last calculated this ranking. */
+  calculatedAt: string | null;
   methodologyUrl: string;
 }
 
@@ -223,4 +252,15 @@ export interface ApiErrorBody {
   code: string;
   message: string;
   data?: { status?: number };
+}
+
+export interface ScoreVersionDto {
+  id: string;
+  weights: Array<{ key: string; label: string; weight: number }>;
+  params: Record<string, number>;
+}
+
+export interface ScoreVersionsDto {
+  active: string;
+  versions: ScoreVersionDto[];
 }

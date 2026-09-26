@@ -66,8 +66,8 @@ Connecting your own WordPress: [`docs/connecting-wordpress.md`](docs/connecting-
 
 1. ✅ Repository and architecture
 2. ✅ WordPress core: entities, REST API, admin UI, validation (+ frontend API client and `/status/`)
-3. ✅ **Frontend**: public pages, design system, SEO, structured data, sitemap
-4. Ranking engine: ScoreCalculator, RankingEngine, ScoreVersion, RankingSnapshot
+3. ✅ Frontend: public pages, design system, SEO/GEO content, structured data, sitemap
+4. ✅ **Ranking engine**: ScoreCalculator, RankingEngine, ScoreVersion, snapshots, history, breakdowns
 5. Research engine: resumable jobs, evidence, verification
 6. OpenAI integration: structured extraction, strict schemas
 7. Content engine (drafts only)

@@ -85,6 +85,27 @@ export function RankingCard({ ranking }: { ranking: RankingSummary }) {
   );
 }
 
+/** Change since the previous calculation (spec §34). */
+export function Movement({ movement, isNew }: { movement: number | null; isNew: boolean }) {
+  if (isNew) return <span className="move move--new">New</span>;
+  if (movement === null) return null;
+  if (movement === 0)
+    return (
+      <span className="move move--same" title="No change since the previous calculation">
+        <span aria-hidden="true">–</span>
+        <span className="sr-only">No change</span>
+      </span>
+    );
+  const up = movement > 0;
+  return (
+    <span className={`move move--${up ? "up" : "down"}`} title={`${up ? "Up" : "Down"} ${Math.abs(movement)} since the previous calculation`}>
+      <span aria-hidden="true">{up ? "▲" : "▼"}</span>
+      {Math.abs(movement)}
+      <span className="sr-only"> {up ? "places up" : "places down"}</span>
+    </span>
+  );
+}
+
 export function RankingEntry({ entry }: { entry: RankingEntryDto }) {
   const e = entry.entity;
   const isLawyer = e.type === "lawyer";
@@ -94,6 +115,7 @@ export function RankingEntry({ entry }: { entry: RankingEntryDto }) {
       <div className="entry__pos" aria-label={`Rank ${entry.position}`}>
         <small aria-hidden="true">Rank</small>
         <span aria-hidden="true">{entry.position}</span>
+        <Movement movement={entry.movement} isNew={entry.isNew} />
       </div>
       <div className="entry__main">
         <Monogram name={e.name} square={!isLawyer} />
