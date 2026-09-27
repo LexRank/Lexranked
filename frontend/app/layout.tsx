@@ -1,14 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Source_Serif_4 } from "next/font/google";
+import localFont from "next/font/local";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/config/site";
 import "./globals.css";
 
-// next/font downloads the fonts at build time and serves them from our own
-// domain: no third-party requests from visitors' browsers.
-const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
-const serif = Source_Serif_4({ subsets: ["latin"], display: "swap", variable: "--font-serif-display", weight: ["500", "600", "700"] });
+// Self-hosted variable fonts (SIL OFL, files and licences in app/fonts/): no
+// third-party requests from visitors' browsers, and builds never depend on
+// downloading fonts from Google.
+const inter = localFont({
+  src: "./fonts/Inter-latin-wght.woff2",
+  weight: "100 900",
+  style: "normal",
+  display: "swap",
+  variable: "--font-inter",
+  fallback: ["system-ui", "Arial", "sans-serif"],
+});
+const serif = localFont({
+  src: "./fonts/SourceSerif4-latin-wght.woff2",
+  weight: "200 900",
+  style: "normal",
+  display: "swap",
+  variable: "--font-serif-display",
+  fallback: ["Georgia", "Times New Roman", "serif"],
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
