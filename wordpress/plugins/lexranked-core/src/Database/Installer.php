@@ -46,8 +46,12 @@ final class Installer {
 		$services = \LexRanked\Core\Plugin::services();
 		$services->claims->backfill_hashes();
 		$services->entity_index->reindex_all();
+		// Schema v7: stable entity IDs for every lawyer, firm, location and practice area.
+		$services->registry->backfill();
 		// Schema v6: commercial status is derived from claims and placements.
 		$services->commercial->sync_all();
+		// DTO shapes may have changed: drop cached API responses.
+		\LexRanked\Core\Support\ContentVersion::bump();
 		update_option( self::VERSION_OPTION, Schema::VERSION, false );
 	}
 }

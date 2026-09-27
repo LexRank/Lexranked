@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Entity\EntityType;
 use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\PostTypes\Source;
@@ -48,7 +49,8 @@ final class EntityPresenter {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function lawyer_summaries( array $posts ): array {
-		$s             = $this->services;
+		$s = $this->services;
+		$s->registry->ids_for( EntityType::Lawyer, array_map( static fn( \WP_Post $p ): int => (int) $p->ID, $posts ) );
 		$records       = array_map( fn( \WP_Post $p ): array => $s->entities->record( $p, $s->lawyer ), $posts );
 		$firms         = $this->firm_records( array_filter( array_map( static fn( array $r ): ?int => $r['fields']['firm_id'], $records ) ) );
 		$verifications = $s->verifications->for_entities( array_column( $records, 'id' ) );
@@ -100,7 +102,8 @@ final class EntityPresenter {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function firm_summaries( array $posts ): array {
-		$s             = $this->services;
+		$s = $this->services;
+		$s->registry->ids_for( EntityType::LawFirm, array_map( static fn( \WP_Post $p ): int => (int) $p->ID, $posts ) );
 		$records       = array_map( fn( \WP_Post $p ): array => $s->entities->record( $p, $s->law_firm ), $posts );
 		$verifications = $s->verifications->for_entities( array_column( $records, 'id' ) );
 		$counts        = $this->lawyer_counts( array_column( $records, 'id' ) );

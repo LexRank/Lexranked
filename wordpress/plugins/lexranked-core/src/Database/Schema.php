@@ -18,7 +18,7 @@ namespace LexRanked\Core\Database;
 final class Schema {
 
 	/** Bump when the DDL below changes; triggers dbDelta on next load. */
-	public const VERSION = '6';
+	public const VERSION = '7';
 
 	public const CLAIMS         = 'lr_claims';
 	public const AUDIT_LOG      = 'lr_audit_log';
@@ -27,6 +27,8 @@ final class Schema {
 	public const JOB_LOG        = 'lr_research_log';
 	public const PROFILE_CLAIMS = 'lr_profile_claims';
 	public const PLACEMENTS     = 'lr_placements';
+	public const ENTITIES       = 'lr_entities';
+	public const ENTITY_ALIASES = 'lr_entity_aliases';
 
 	/**
 	 * CREATE TABLE statements.
@@ -43,6 +45,8 @@ final class Schema {
 		$logs   = $prefix . self::JOB_LOG;
 		$pclaim = $prefix . self::PROFILE_CLAIMS;
 		$place  = $prefix . self::PLACEMENTS;
+		$ents   = $prefix . self::ENTITIES;
+		$alias  = $prefix . self::ENTITY_ALIASES;
 
 		return array(
 			$claims => "CREATE TABLE {$claims} (
@@ -185,6 +189,36 @@ final class Schema {
   KEY entity (entity_id,product),
   KEY product_window (product,status,starts_at,ends_at),
   KEY ranking_id (ranking_id)
+) {$charset_collate};",
+			$ents   => "CREATE TABLE {$ents} (
+  entity_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  entity_type varchar(32) NOT NULL,
+  canonical_name varchar(255) NOT NULL,
+  slug varchar(200) NOT NULL,
+  status varchar(20) NOT NULL,
+  wp_object varchar(10) NOT NULL,
+  wp_id bigint(20) unsigned NOT NULL,
+  merged_into bigint(20) unsigned DEFAULT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY  (entity_id),
+  UNIQUE KEY wp_ref (wp_object,wp_id),
+  KEY type_slug (entity_type,slug),
+  KEY type_status (entity_type,status)
+) {$charset_collate};",
+			$alias  => "CREATE TABLE {$alias} (
+  alias_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  entity_id bigint(20) unsigned NOT NULL,
+  entity_type varchar(32) NOT NULL,
+  alias_type varchar(10) NOT NULL,
+  value varchar(255) NOT NULL,
+  normalized varchar(255) NOT NULL,
+  is_current tinyint(1) NOT NULL DEFAULT 1,
+  first_seen datetime NOT NULL,
+  last_seen datetime NOT NULL,
+  PRIMARY KEY  (alias_id),
+  UNIQUE KEY entity_alias (entity_id,alias_type,normalized(150)),
+  KEY lookup (entity_type,alias_type,normalized(150))
 ) {$charset_collate};",
 		);
 	}

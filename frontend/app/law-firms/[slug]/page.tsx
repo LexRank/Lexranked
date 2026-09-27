@@ -1,3 +1,4 @@
+import { redirectIfMoved } from "@/lib/content/moved";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -52,7 +53,10 @@ export async function generateMetadata(props: PageProps<"/law-firms/[slug]">): P
 export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">) {
   const { slug } = await props.params;
   const firm = await loadFirm(slug);
-  if (!firm) notFound();
+  if (!firm) {
+    await redirectIfMoved("law_firm", slug, `/law-firms/${slug}/`);
+    notFound();
+  }
   if (firm.slug !== slug) permanentRedirect(firm.path);
 
   const city = firm.location?.citySlug ?? undefined;

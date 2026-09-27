@@ -126,6 +126,8 @@ export interface EvidenceDto {
 
 interface EntityBase {
   id: number;
+  /** Stable LexRanked entity ID (API 1.8): survives renames and slug changes; `id` is the CMS record ID. */
+  entityId?: number | null;
   slug: string;
   path: string;
   name: string;
@@ -241,6 +243,7 @@ export interface RankingDetail extends RankingSummary {
 
 export interface StateDto {
   id: number;
+  entityId?: number | null;
   slug: string;
   name: string;
   code: string | null;
@@ -253,6 +256,7 @@ export interface StateDto {
 
 export interface CityDto {
   id: number;
+  entityId?: number | null;
   slug: string;
   name: string;
   path: string;
@@ -264,6 +268,7 @@ export interface CityDto {
 
 export interface PracticeAreaDto {
   id: number;
+  entityId?: number | null;
   slug: string;
   name: string;
   description: string;
@@ -334,4 +339,18 @@ export interface ArticleDetail extends ArticleSummary {
   /** Sanitized HTML. */
   body: string;
   relatedRanking: { id: number; title: string; path: string | null } | null;
+}
+
+export type EntityType = "lawyer" | "law_firm" | "location" | "practice_area";
+
+/** GET /entities/{id} and /entities/resolve (API 1.8). */
+export interface EntityDto {
+  entityId: number;
+  entityType: EntityType;
+  canonicalName: string;
+  slug: string;
+  status: "active";
+  path: string;
+  createdAt: string;
+  updatedAt: string;
 }

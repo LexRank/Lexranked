@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\Research;
 
+use LexRanked\Core\Entity\EntityRegistry;
+use LexRanked\Core\Entity\EntityType;
 use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\Repository\EntityRepository;
@@ -34,11 +36,13 @@ final class EntityIndex {
 	 * @param EntityRepository $entities Entity repository.
 	 * @param Lawyer           $lawyer   Lawyer type.
 	 * @param LawFirm          $law_firm Law firm type.
+	 * @param EntityRegistry   $registry Entity registry (former names).
 	 */
 	public function __construct(
 		private readonly EntityRepository $entities,
 		private readonly Lawyer $lawyer,
-		private readonly LawFirm $law_firm
+		private readonly LawFirm $law_firm,
+		private readonly EntityRegistry $registry
 	) {
 	}
 
@@ -114,7 +118,7 @@ final class EntityIndex {
 	 * Existing entities that could match a candidate, in the matcher's shape.
 	 *
 	 * @param array{entity_type: string, normalized_name: string, domain: string|null} $candidate Candidate.
-	 * @return array<int, array{id: int, status: string, normalized_name: string, cities: array<int, string>, states: array<int, string>, domain: string|null}>
+	 * @return array<int, array{id: int, status: string, normalized_name: string, cities: array<int, string>, states: array<int, string>, domain: string|null, aliases: array<int, string>}>
 	 */
 	public function candidates_for( array $candidate ): array {
 		$or = array(
@@ -134,9 +138,10 @@ final class EntityIndex {
 				'value' => $candidate['domain'],
 			);
 		}
+		$type  = 'law_firm' === $candidate['entity_type'] ? EntityType::LawFirm : EntityType::Lawyer;
 		$posts = get_posts(
 			array(
-				'post_type'        => 'law_firm' === $candidate['entity_type'] ? LawFirm::SLUG : Lawyer::SLUG,
+				'post_type'        => $type->wp_kind(),
 				'post_status'      => self::STATUSES,
 				'posts_per_page'   => 50,
 				'orderby'          => 'ID',
@@ -146,6 +151,16 @@ final class EntityIndex {
 				'meta_query'       => $or, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Indexed lookup, max 50 rows.
 			)
 		);
+
+		// Entities that were known under this name before a rename.
+		$known = array_map( static fn( \WP_Post $p ): int => (int) $p->ID, $posts );
+		foreach ( array_diff( $this->registry->wp_ids_by_name( $type, array( $candidate['normalized_name'] ) ), $known ) as $wp_id ) {
+			$post = get_post( $wp_id );
+			if ( $post instanceof \WP_Post && in_array( $post->post_status, self::STATUSES, true ) ) {
+				$posts[] = $post;
+			}
+		}
+		$aliases = $this->registry->names_for( $type, array_map( static fn( \WP_Post $p ): int => (int) $p->ID, $posts ) );
 
 		$out = array();
 		foreach ( $posts as $post ) {
@@ -165,6 +180,7 @@ final class EntityIndex {
 				'cities'          => $cities,
 				'states'          => array_values( array_unique( $states ) ),
 				'domain'          => ( '' === (string) get_post_meta( $post->ID, self::META_DOMAIN, true ) ) ? null : (string) get_post_meta( $post->ID, self::META_DOMAIN, true ),
+				'aliases'         => array_values( array_unique( $aliases[ (int) $post->ID ] ?? array() ) ),
 			);
 		}
 		return $out;

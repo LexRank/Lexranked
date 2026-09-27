@@ -28,6 +28,7 @@
 | Ranking snapshot | Custom table `{prefix}lr_ranking_snapshots` | Append-only runs with components + inputs (implemented) |
 | Audit log | Custom table `{prefix}lr_audit_log` | Append-only (implemented) |
 | Editorial article | Core `post` | |
+| Entity registry | Custom tables `{prefix}lr_entities`, `{prefix}lr_entity_aliases` | Stable IDs, names and slug history (Etap A) |
 | Profile claim | Custom table `{prefix}lr_profile_claims` | Private claimant data (Phase 9) |
 | Placement | Custom table `{prefix}lr_placements` | Paid products (Phase 9) |
 
@@ -191,6 +192,17 @@ categories) plus `related_ranking`, `reviewed_by`, `reviewed_at`, `is_demo`
 `snapshot_id, run_id, ranking_id (0 = entity-level), entity_id, entity_type,
 position, score, score_version, context, components, inputs, calculated_at`.
 See docs/ranking-methodology.md.
+
+## Entity (Etap A)
+
+Every lawyer, law firm, location and practice area is an **entity** with a
+stable `entity_id` in `lr_entities` (`entity_type, canonical_name, slug,
+status: active|draft|archived|merged, wp_object: post|term, wp_id,
+merged_into, created_at, updated_at`). WordPress holds the content; the
+registry holds identity. Renames keep the ID and add the former name and slug
+to `lr_entity_aliases` (`alias_type: name|slug, value, normalized,
+is_current, first_seen, last_seen`). IDs are never reused. See
+`docs/knowledge-base.md`.
 
 ## Commercial data (Phase 9)
 

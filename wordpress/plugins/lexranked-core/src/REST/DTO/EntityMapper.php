@@ -32,6 +32,7 @@ final class EntityMapper {
 		$f = $record['fields'];
 		return array(
 			'id'            => $record['id'],
+			'entityId'      => $record['entity_id'] ?? null,
 			'type'          => 'lawyer',
 			'slug'          => $record['slug'],
 			'path'          => '/lawyers/' . $record['slug'] . '/',
@@ -108,6 +109,7 @@ final class EntityMapper {
 		$f = $record['fields'];
 		return array(
 			'id'            => $record['id'],
+			'entityId'      => $record['entity_id'] ?? null,
 			'type'          => 'law_firm',
 			'slug'          => $record['slug'],
 			'path'          => '/law-firms/' . $record['slug'] . '/',

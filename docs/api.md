@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.7.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.8.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -111,6 +111,15 @@ Summary: `{ id, slug, path, title, excerpt, author{name}, publishedAt,
 updatedAt, reviewedBy, reviewedAt, categories[], image{url,width,height,alt}|null,
 wordCount, readingMinutes, isThin (< 300 words), relatedRankingId, isDemo }`.
 Detail adds `body` (sanitized HTML) and `relatedRanking {id, title, path}`.
+
+### `GET /entities/{entity_id}` · `GET /entities/resolve?type=&slug=` (API 1.8)
+Stable identities ([knowledge-base.md](knowledge-base.md)). `{ entityId,
+entityType: lawyer|law_firm|location|practice_area, canonicalName, slug,
+status: "active", path, createdAt, updatedAt }`. `resolve` accepts a current
+**or former** slug (renames) and follows merges; unknown → 404, invalid
+`type` → 400. Drafts and archived entities are 404. Lawyer, firm, state,
+city and practice-area DTOs carry `entityId` (the `id` field stays the CMS
+record ID).
 
 ### `GET /placements` (API 1.7)
 Labelled paid placements for **one page**, delivered separately from organic

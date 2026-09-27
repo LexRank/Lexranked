@@ -1,6 +1,6 @@
 -- Reference DDL for LexRanked custom tables (MySQL/MariaDB, prefix wp_).
 -- Source of truth: wordpress/plugins/lexranked-core/src/Database/Schema.php (applied with dbDelta).
--- Schema version: 6
+-- Schema version: 7
 
 CREATE TABLE wp_lr_claims (
   claim_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -148,4 +148,36 @@ CREATE TABLE wp_lr_placements (
   KEY entity (entity_id,product),
   KEY product_window (product,status,starts_at,ends_at),
   KEY ranking_id (ranking_id)
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE wp_lr_entities (
+  entity_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  entity_type varchar(32) NOT NULL,
+  canonical_name varchar(255) NOT NULL,
+  slug varchar(200) NOT NULL,
+  status varchar(20) NOT NULL,
+  wp_object varchar(10) NOT NULL,
+  wp_id bigint(20) unsigned NOT NULL,
+  merged_into bigint(20) unsigned DEFAULT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY  (entity_id),
+  UNIQUE KEY wp_ref (wp_object,wp_id),
+  KEY type_slug (entity_type,slug),
+  KEY type_status (entity_type,status)
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE wp_lr_entity_aliases (
+  alias_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  entity_id bigint(20) unsigned NOT NULL,
+  entity_type varchar(32) NOT NULL,
+  alias_type varchar(10) NOT NULL,
+  value varchar(255) NOT NULL,
+  normalized varchar(255) NOT NULL,
+  is_current tinyint(1) NOT NULL DEFAULT 1,
+  first_seen datetime NOT NULL,
+  last_seen datetime NOT NULL,
+  PRIMARY KEY  (alias_id),
+  UNIQUE KEY entity_alias (entity_id,alias_type,normalized(150)),
+  KEY lookup (entity_type,alias_type,normalized(150))
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

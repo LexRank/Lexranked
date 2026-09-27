@@ -23,6 +23,7 @@ use LexRanked\Core\REST\ArticlesController;
 use LexRanked\Core\REST\HealthController;
 use LexRanked\Core\REST\CommercialController;
 use LexRanked\Core\REST\EntitiesController;
+use LexRanked\Core\REST\EntityController;
 use LexRanked\Core\REST\RankingsController;
 use LexRanked\Core\REST\ResearchController;
 use LexRanked\Core\REST\SearchController;
@@ -44,7 +45,7 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.7.0';
+	public const API_VERSION = '1.8.0';
 
 	/**
 	 * Services, available after boot().
@@ -70,6 +71,7 @@ final class Plugin {
 		( new ApiGuard( $services->settings ) )->register();
 		$services->runner->register();
 		$services->jobs->register();
+		$services->registry->register();
 		$services->entity_index->register();
 		$services->revalidator->register();
 		$services->commercial->register();
@@ -80,13 +82,14 @@ final class Plugin {
 			new StatusController( LEXRANKED_CORE_VERSION ),
 			new EntitiesController( $services ),
 			new RankingsController( $services ),
-			new TaxonomiesController(),
+			new TaxonomiesController( $services->registry ),
 			new SourcesController( $services ),
 			new SearchController( $services ),
 			new ResearchController( $services ),
 			new ArticlesController( $services ),
 			new HealthController( $services ),
 			new CommercialController( $services ),
+			new EntityController( $services ),
 		);
 		foreach ( $controllers as $controller ) {
 			add_action( 'rest_api_init', array( $controller, 'register_routes' ) );

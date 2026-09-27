@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace LexRanked\Core\REST;
 
 use LexRanked\Core\Content\TermContent;
+use LexRanked\Core\Entity\EntityRegistry;
+use LexRanked\Core\Entity\EntityType;
 use LexRanked\Core\Plugin;
 use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
@@ -26,6 +28,14 @@ use LexRanked\Core\Taxonomies\PracticeArea;
  * page has enough data to exist.
  */
 final class TaxonomiesController extends RestController {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param EntityRegistry $registry Entity registry.
+	 */
+	public function __construct( private readonly EntityRegistry $registry ) {
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -99,6 +109,7 @@ final class TaxonomiesController extends RestController {
 					$location = LocationMapper::build( null, EntityRepository::location_term( $term ) );
 					$items[]  = array(
 						'id'        => (int) $term->term_id,
+						'entityId'  => $this->registry->id_for( EntityType::Location, (int) $term->term_id ),
 						'slug'      => $term->slug,
 						'name'      => $location['state'],
 						'code'      => $location['stateCode'],
@@ -146,16 +157,17 @@ final class TaxonomiesController extends RestController {
 						}
 						$location = LocationMapper::build( EntityRepository::location_term( $city ), $state );
 						$items[]  = array(
-							'id'      => (int) $city->term_id,
-							'slug'    => $city->slug,
-							'name'    => $city->name,
-							'path'    => '/cities/' . $city->slug . '/',
-							'state'   => array(
+							'id'       => (int) $city->term_id,
+							'entityId' => $this->registry->id_for( EntityType::Location, (int) $city->term_id ),
+							'slug'     => $city->slug,
+							'name'     => $city->name,
+							'path'     => '/cities/' . $city->slug . '/',
+							'state'    => array(
 								'slug' => $location['stateSlug'],
 								'name' => $location['state'],
 								'code' => $location['stateCode'],
 							),
-							'content' => TermContent::dto( (int) $city->term_id ),
+							'content'  => TermContent::dto( (int) $city->term_id ),
 						) + $counts;
 					}
 				}//end foreach
@@ -188,6 +200,7 @@ final class TaxonomiesController extends RestController {
 					}
 					$items[] = array(
 						'id'          => (int) $term->term_id,
+						'entityId'    => $this->registry->id_for( EntityType::PracticeArea, (int) $term->term_id ),
 						'slug'        => $term->slug,
 						'name'        => $term->name,
 						'description' => $term->description,

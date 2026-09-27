@@ -1,3 +1,4 @@
+import { redirectIfMoved } from "@/lib/content/moved";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -47,6 +48,7 @@ export async function generateMetadata(props: PageProps<"/practice-areas/[practi
 export default async function PracticeAreaPage(props: PageProps<"/practice-areas/[practiceArea]">) {
   const { practiceArea } = await props.params;
   const data = await loadArea(practiceArea);
+  if (!data) await redirectIfMoved("practice_area", practiceArea, `/practice-areas/${practiceArea}/`);
   if (!data || !data.eligibility.exists) notFound();
   const a = data.area;
   return (

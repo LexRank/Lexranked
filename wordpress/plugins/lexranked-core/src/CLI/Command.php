@@ -535,6 +535,55 @@ final class Command {
 	}
 
 	/**
+	 * Entity registry: counts per type, or one entity by ID or type:slug.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [<entity>]
+	 * : Entity ID, or type:slug (e.g. lawyer:avery-example-demo; former slugs resolve too).
+	 *
+	 * [--backfill]
+	 * : Register every existing lawyer, firm, location and practice area first.
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function entities( array $args, array $assoc_args ): void {
+		$registry = $this->services->registry;
+		if ( isset( $assoc_args['backfill'] ) ) {
+			\WP_CLI::log( sprintf( 'Synchronised %d objects.', $registry->backfill() ) );
+		}
+		if ( ! isset( $args[0] ) ) {
+			$rows = array();
+			foreach ( $registry->counts() as $type => $by_status ) {
+				foreach ( $by_status as $status => $n ) {
+					$rows[] = array(
+						'type'   => $type,
+						'status' => $status,
+						'count'  => $n,
+					);
+				}
+			}
+			\WP_CLI\Utils\format_items( 'table', $rows, array( 'type', 'status', 'count' ) );
+			return;
+		}
+		if ( ctype_digit( $args[0] ) ) {
+			$row = $registry->find( (int) $args[0] );
+		} else {
+			[ $type, $slug ] = array_pad( explode( ':', $args[0], 2 ), 2, '' );
+			$entity_type     = \LexRanked\Core\Entity\EntityType::tryFrom( $type );
+			if ( null === $entity_type ) {
+				\WP_CLI::error( 'Use an entity ID or type:slug with type ' . implode( '|', \LexRanked\Core\Entity\EntityType::values() ) . '.' );
+			}
+			$row = $registry->resolve( $entity_type, $slug );
+		}
+		if ( null === $row ) {
+			\WP_CLI::error( 'Entity not found.' );
+		}
+		\WP_CLI::line( (string) wp_json_encode( $registry->dto( $row ) + array( 'wpObject' => $row['wp_object'] . ':' . $row['wp_id'] ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
+	}
+
+	/**
 	 * Recalculate scores and rankings with the deterministic engine.
 	 *
 	 * ## OPTIONS

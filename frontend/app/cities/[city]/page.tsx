@@ -1,3 +1,4 @@
+import { redirectIfMoved } from "@/lib/content/moved";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -51,6 +52,7 @@ export async function generateMetadata(props: PageProps<"/cities/[city]">): Prom
 export default async function CityPage(props: PageProps<"/cities/[city]">) {
   const { city } = await props.params;
   const data = await loadCity(city);
+  if (!data) await redirectIfMoved("location", city, `/cities/${city}/`);
   if (!data || !data.eligibility.exists) notFound();
   const c = data.city;
   const crumbs = [{ name: "Home", path: "/" }];

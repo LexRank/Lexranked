@@ -83,6 +83,11 @@ Adding cities, rankings, lawyers and articles: [`docs/editor-guide.md`](docs/edi
 8. ✅ **Production hardening**: signed instant revalidation, response cache, CSP/HSTS, health monitoring, backups, automated SEO/structured-data audit
 9. ✅ **Commercial features**: profile claims with email confirmation and editor identity checks, premium profiles, featured profiles, sponsored listings — labelled, eligibility-checked, and provably unable to change a score or position
 
+### Knowledge base (docs/knowledge-base.md)
+
+A. ✅ **Entity model**: stable entity IDs for lawyers, firms, locations and practice areas; renames keep identity and redirect old URLs
+B. Attributes, claims keyed by entity, source objects, fact layers · C. Data Quality Score · D. Ranking explanations · E. Comparison engine · F. Contextual rankings · G. Page eligibility engine · H. AI-readable pages · I. Market statistics · J. AI interpretation layer
+
 ## Security
 
 Never commit secrets. Server-only variables (no `NEXT_PUBLIC_` prefix) are

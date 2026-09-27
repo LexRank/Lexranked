@@ -125,6 +125,23 @@ expect "profile has breakdown summing to the score" '((.ranking.breakdown | map(
 expect "score versions endpoint" '.active == "v1.0" and ([.versions[0].weights[].weight] | add) == 100' "$API/score-versions"
 if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "all snapshots reproduce exactly from stored inputs"; else fail "snapshot reproduction"; fi
 
+echo "==> Entity layer (Etap A)"
+expect "every lawyer and firm has a stable entity ID" '(map(.entityId) | all(. != null)) and (map(.entityId) | unique | length) == length' "$API/lawyers?per_page=100"
+expect "locations and practice areas are entities too" '(.[0].entityId != null)' "$API/states"
+expect "cities carry entity IDs" 'all(.[]; .entityId != null)' "$API/cities"
+expect "practice areas carry entity IDs" 'all(.[]; .entityId != null)' "$API/practice-areas"
+DREW_EID="$(curl -sS "$API/lawyers/drew-specimen-demo" | jq .entityId)"
+DREW_ID="$(curl -sS "$API/lawyers/drew-specimen-demo" | jq .id)"
+expect "entity endpoint" ".entityId == $DREW_EID and .entityType == \"lawyer\" and .canonicalName == \"Drew Specimen (Demo)\" and .path == \"/lawyers/drew-specimen-demo/\"" "$API/entities/$DREW_EID"
+ENTITIES_BEFORE="$(wp db query "SELECT COUNT(*) FROM wp_lr_entities" --skip-column-names | tr -dc 0-9)"
+wp post update "$DREW_ID" --post_title="Drew Specimen-Renamed (Demo)" --post_name=drew-specimen-renamed-demo >/dev/null
+expect "a rename keeps the entity ID" ".entityId == $DREW_EID and .name == \"Drew Specimen-Renamed (Demo)\"" "$API/lawyers/drew-specimen-renamed-demo"
+check "a rename creates no new entity" ". == $ENTITIES_BEFORE" "$(wp db query "SELECT COUNT(*) FROM wp_lr_entities" --skip-column-names | tr -dc 0-9)"
+expect "the former slug resolves to the renamed entity" ".entityId == $DREW_EID and .path == \"/lawyers/drew-specimen-renamed-demo/\"" "$API/entities/resolve?type=lawyer&slug=drew-specimen-demo"
+check "former and current names are both stored" '. == 2' "$(wp db query "SELECT COUNT(*) FROM wp_lr_entity_aliases WHERE entity_id = $DREW_EID AND alias_type = 'name'" --skip-column-names | tr -dc 0-9)"
+expect_status "unknown slugs do not resolve" 404 "$API/entities/resolve?type=lawyer&slug=nobody-at-all"
+expect_status "resolve validates the type" 400 "$API/entities/resolve?type=ranking&slug=x"
+
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 RID="$(curl -sS "$RANKING" | jq .id)"
@@ -316,6 +333,11 @@ if [[ -n "$FRONTEND" ]]; then
   expect_status "unknown ranking is 404" 404 "$WEB/rankings/texas/"
   expect_status "unknown lawyer is 404" 404 "$WEB/lawyers/does-not-exist/"
   page_has "status page reports connection" "/status/" "Connected to the LexRanked API."
+  echo "==> Renamed entities keep their links (Etap A)"
+  loc="$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$WEB/lawyers/drew-specimen-demo/")"
+  if [[ "$loc" == 308*"/lawyers/drew-specimen-renamed-demo/" ]]; then pass "former profile URL redirects permanently to the renamed profile"; else fail "former URL: $loc"; fi
+  expect_status "renamed profile page" 200 "$WEB/lawyers/drew-specimen-renamed-demo/"
+
   echo "==> Commercial pages (Phase 9)"
   page_has "sponsored block on the ranking page" "/rankings/florida/miami/personal-injury/" 'data-placements="sponsored"'
   page_has "sponsored block is labelled as paid" "/rankings/florida/miami/personal-injury/" "Sponsored · Paid"
@@ -392,6 +414,15 @@ expect "no placements after cancelling" 'length == 0' "$API/placements?product=s
 expect "status returns to free" '.commercial.status == "free" and .premiumContent == null' "$API/lawyers/emery-mockwell-demo"
 wp lexranked recalculate >/dev/null
 check "identical positions and scores with and without paid placements" '.[0] == .[1]' "$(jq -n --argjson a "$ORDER_BEFORE" --argjson b "$(curl -sS "$RANKING" | jq -c '[.entries[] | [.entity.slug, .score, .position]]')" '[$a,$b]')"
+
+echo "==> Archiving keeps the entity ID (Etap A)"
+GRAY_ID="$(curl -sS "$API/lawyers/gray-dummond-demo" | jq .id)"
+GRAY_EID="$(curl -sS "$API/lawyers/gray-dummond-demo" | jq .entityId)"
+wp eval "wp_trash_post( $GRAY_ID );" >/dev/null
+check "trashed profile is archived, not removed" '. == "archived"' "\"$(wp db query "SELECT status FROM wp_lr_entities WHERE entity_id = $GRAY_EID" --skip-column-names | tr -d '[:space:]')\""
+expect_status "archived entities are not public" 404 "$API/entities/$GRAY_EID"
+wp eval "wp_untrash_post( $GRAY_ID ); wp_publish_post( $GRAY_ID );" >/dev/null
+expect "restored profile keeps its entity ID" ".entityId == $GRAY_EID" "$API/lawyers/gray-dummond-demo"
 
 echo "==> Demo purge"
 wp lexranked purge-demo --yes >/dev/null

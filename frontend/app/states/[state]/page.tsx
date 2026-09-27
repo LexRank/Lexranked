@@ -1,3 +1,4 @@
+import { redirectIfMoved } from "@/lib/content/moved";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -49,6 +50,7 @@ export async function generateMetadata(props: PageProps<"/states/[state]">): Pro
 export default async function StatePage(props: PageProps<"/states/[state]">) {
   const { state } = await props.params;
   const data = await loadState(state);
+  if (!data) await redirectIfMoved("location", state, `/states/${state}/`);
   if (!data || !data.eligibility.exists) notFound();
   const { state: s } = data;
   return (

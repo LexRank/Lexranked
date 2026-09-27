@@ -28,8 +28,8 @@ final class CandidateMatcher {
 	/**
 	 * Decide.
 	 *
-	 * @param array{entity_type: string, normalized_name: string, city: string|null, state: string|null, domain: string|null}                  $candidate Candidate.
-	 * @param array<int, array{id: int, normalized_name: string, cities: array<int, string>, states: array<int, string>, domain: string|null}> $entities Existing entities of the same type
+	 * @param array{entity_type: string, normalized_name: string, city: string|null, state: string|null, domain: string|null}                                                $candidate Candidate.
+	 * @param array<int, array{id: int, normalized_name: string, cities: array<int, string>, states: array<int, string>, domain: string|null, aliases?: array<int, string>}> $entities Existing entities of the same type
 	 *        whose name, name key or domain could match (pre-filtered by the index).
 	 * @return array{decision: string, entity_id: int|null, confidence: float|null, reason: string}
 	 */
@@ -55,8 +55,8 @@ final class CandidateMatcher {
 			}
 		}
 
-		// 2. Exact normalized name.
-		$by_name = array_values( array_filter( $entities, static fn( array $e ): bool => $e['normalized_name'] === $candidate['normalized_name'] ) );
+		// 2. Exact normalized name, current or former (a renamed entity is still the same entity).
+		$by_name = array_values( array_filter( $entities, static fn( array $e ): bool => $e['normalized_name'] === $candidate['normalized_name'] || in_array( $candidate['normalized_name'], $e['aliases'] ?? array(), true ) ) );
 		$local   = array_values( array_filter( $by_name, $same_state ) );
 		if ( 1 === count( $local ) ) {
 			$e = $local[0];

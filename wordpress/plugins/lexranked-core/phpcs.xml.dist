@@ -51,11 +51,13 @@
 	<rule ref="PHPCompatibility.Variables.ForbiddenThisUseContexts.OutsideObjectContext">
 		<exclude-pattern>src/Domain/*</exclude-pattern>
 		<exclude-pattern>src/Commercial/ClaimStatus.php</exclude-pattern>
+		<exclude-pattern>src/Entity/EntityType.php</exclude-pattern>
 		<exclude-pattern>src/Commercial/Product.php</exclude-pattern>
 	</rule>
 	<rule ref="PHPCompatibility.FunctionDeclarations.NewParamTypeDeclarations.SelfOutsideClassScopeFound">
 		<exclude-pattern>src/Domain/*</exclude-pattern>
 		<exclude-pattern>src/Commercial/ClaimStatus.php</exclude-pattern>
+		<exclude-pattern>src/Entity/EntityType.php</exclude-pattern>
 		<exclude-pattern>src/Commercial/Product.php</exclude-pattern>
 	</rule>
 

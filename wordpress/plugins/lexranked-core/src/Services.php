@@ -12,6 +12,7 @@ namespace LexRanked\Core;
 use LexRanked\Core\Commercial\CommercialService;
 use LexRanked\Core\Commercial\PlacementRepository;
 use LexRanked\Core\Commercial\ProfileClaimRepository;
+use LexRanked\Core\Entity\EntityRegistry;
 use LexRanked\Core\Integration\Revalidator;
 use LexRanked\Core\Monitoring\HealthService;
 use LexRanked\Core\PostTypes\Article;
@@ -105,6 +106,13 @@ final class Services {
 	 * @var ContentDraft
 	 */
 	public readonly ContentDraft $content_draft;
+
+	/**
+	 * Stable entity identities (lr_entities).
+	 *
+	 * @var EntityRegistry
+	 */
+	public readonly EntityRegistry $registry;
 
 	/**
 	 * Entities.
@@ -226,7 +234,8 @@ final class Services {
 		$this->research_job  = new ResearchJob();
 		$this->content_draft = new ContentDraft();
 		$this->article       = new Article();
-		$this->entities      = new EntityRepository();
+		$this->registry      = new EntityRegistry();
+		$this->entities      = new EntityRepository( $this->registry );
 		$this->verifications = new VerificationRepository( $this->entities, $this->verification );
 		$this->claims        = new ClaimRepository(
 			new ClaimValidator(
@@ -243,7 +252,7 @@ final class Services {
 		$this->runner        = new RankingRunner( $this, $this->snapshots, $this->versions );
 		$this->research_log  = new ResearchLog();
 		$this->candidates    = new CandidateRepository();
-		$this->entity_index  = new EntityIndex( $this->entities, $this->lawyer, $this->law_firm );
+		$this->entity_index  = new EntityIndex( $this->entities, $this->lawyer, $this->law_firm, $this->registry );
 		$this->jobs          = new JobService( $this, $this->research_log );
 		$this->ingest        = new ResearchIngest( $this, $this->candidates, $this->entity_index, $this->research_log );
 		$this->revalidator   = new Revalidator( $this->settings );

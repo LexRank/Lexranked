@@ -269,3 +269,12 @@ requires the editor to record how identity was verified. Tokens are stored
 hashed, confirmation is a POST (link scanners cannot confirm), responses do
 not reveal whether a profile is claimed, and personal data of closed claims
 is erased after 30 days.
+
+### ADR-033 — Identity lives in an entity registry, not in names or CMS records
+Lawyers, firms, locations and practice areas get a stable `entity_id` from
+`lr_entities`, independent of their name, slug and of whether WordPress
+stores them as posts or terms. Renames record aliases instead of creating
+entities; deletions archive; merges point at the survivor. This is the
+foundation of the knowledge-base direction (docs/knowledge-base.md):
+evidence, scores, rankings and comparisons are functions over entities.
+

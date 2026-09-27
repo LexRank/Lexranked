@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\Repository;
 
+use LexRanked\Core\Entity\EntityRegistry;
+use LexRanked\Core\Entity\EntityType;
 use LexRanked\Core\PostTypes\PostType;
 use LexRanked\Core\Schema\Field;
 use LexRanked\Core\Schema\FieldSanitizer;
@@ -26,6 +28,14 @@ use LexRanked\Core\Taxonomies\PracticeArea;
 final class EntityRepository {
 
 	/**
+	 * Constructor.
+	 *
+	 * @param EntityRegistry|null $registry Entity registry (stable entity IDs); null in pure tests.
+	 */
+	public function __construct( private readonly ?EntityRegistry $registry = null ) {
+	}
+
+	/**
 	 * Build a record from a post.
 	 *
 	 * @param \WP_Post $post Post.
@@ -38,8 +48,10 @@ final class EntityRepository {
 			$fields[ $field->key ] = MetaCodec::decode( $field, get_post_meta( $post->ID, $field->meta_key(), true ) );
 		}
 
+		$entity_type = EntityType::from_wp_kind( $type->slug() );
 		return array(
 			'id'             => (int) $post->ID,
+			'entity_id'      => null === $entity_type || null === $this->registry ? null : $this->registry->id_for( $entity_type, (int) $post->ID ),
 			'type'           => $type->slug(),
 			'slug'           => (string) $post->post_name,
 			'title'          => (string) get_the_title( $post ),

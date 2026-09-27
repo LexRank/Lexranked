@@ -4,6 +4,8 @@ import type {
   ArticleDetail,
   ArticleSummary,
   CityDto,
+  EntityDto,
+  EntityType,
   LawFirmDetail,
   LawFirmSummary,
   LawyerDetail,
@@ -136,3 +138,14 @@ export const submitClaim = (body: ClaimSubmission) =>
 /** Confirm a claimant's email with the token from the link. */
 export const confirmClaim = (token: string) =>
   apiRequest<{ status: string }>("claims/confirm", { method: "POST", body: { token }, timeoutMs: 15000 });
+
+/** Current entity for a current or former slug (renames and merges); null when unknown. */
+export async function resolveEntity(type: EntityType, slug: string, opts?: Opts): Promise<EntityDto | null> {
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return null;
+  try {
+    return (await apiRequest<EntityDto>("entities/resolve", { query: { type, slug }, ...opts })).data;
+  } catch (error) {
+    if (error instanceof WordPressApiError && (error.status === 404 || error.status === 400)) return null;
+    throw error;
+  }
+}
