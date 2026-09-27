@@ -1,7 +1,8 @@
 import Link from "next/link";
-import type { EvidenceDto, FreshnessDto, RankingPosition, ScoreComponent, VerificationBlock, VerificationState } from "@/types/api";
+import type { ComparableType, EvidenceDto, FreshnessDto, RankingPosition, ScoreComponent, VerificationBlock, VerificationState } from "@/types/api";
 import { formatDate, formatShortDate, humanize, isoDate } from "@/lib/format";
 import { METHODOLOGY_VERSION } from "@/lib/methodology";
+import { compareHref } from "@/lib/content/compare";
 import { ScoreRing, VerificationBadge } from "../ui";
 
 /** Shared profile sections for lawyers and law firms. */
@@ -82,7 +83,7 @@ export function ScoreBreakdown({ components }: { components: ScoreComponent[] })
   );
 }
 
-export function RankingPositions({ rankings }: { rankings: RankingPosition[] }) {
+export function RankingPositions({ rankings, self }: { rankings: RankingPosition[]; self?: { type: ComparableType; entityId: number | null | undefined } }) {
   const shown = rankings.filter((r) => r.path);
   if (shown.length === 0) return null;
   return (
@@ -91,12 +92,28 @@ export function RankingPositions({ rankings }: { rankings: RankingPosition[] }) 
         Rankings
       </h2>
       <ul className="weights" style={{ gap: "0.5rem" }}>
-        {shown.map((r) => (
-          <li key={r.id} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", paddingBottom: "0.5rem", borderBottom: "1px solid var(--line)" }}>
-            <Link href={r.path as string}>{r.title}</Link>
-            <strong>#{r.position}</strong>
-          </li>
-        ))}
+        {shown.map((r) => {
+          const compare = self ? (r.neighbors ?? []).map((n) => ({ n, href: compareHref(self.type, [self.entityId, n.entityId]) })).filter((c) => c.href) : [];
+          return (
+            <li key={r.id} style={{ paddingBottom: "0.5rem", borderBottom: "1px solid var(--line)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
+                <Link href={r.path as string}>{r.title}</Link>
+                <strong>#{r.position}</strong>
+              </div>
+              {compare.length > 0 && (
+                <ul className="compare-links" aria-label={`Compare within ${r.title}`}>
+                  {compare.map(({ n, href }) => (
+                    <li key={n.entityId}>
+                      <Link href={href as string}>
+                        {`Compare with #${n.position} ${n.name}`}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

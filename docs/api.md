@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.11.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.12.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -126,6 +126,21 @@ The published Data Quality model: `{ version, dimensions[{key, label, weight,
 description}], expected{lawyer: {attribute: weight}, law_firm: …},
 sourceTierScores, summary{count, average, bands} }`. See
 [knowledge-base.md](knowledge-base.md#etap-c-data-quality-score-implemented).
+
+### `GET /compare?type=lawyer|law_firm&entities=12,34` (API 1.12)
+Side-by-side comparison of 2–4 published entities of one type, by stable
+entity ID (merges followed). `{ version: "cmp-1.0", type, entities[{id,
+entityId, type, name, path, location, firm, verification, isDemo}],
+rows[{key, label, group, kind: number|text|list|objects, cells[{id, value,
+display, status: verified|unverified|conflict|missing|directory|derived,
+source{name, publisher, tierLabel, url}|null, checkedAt, isStale, note}],
+highest[id], shared[]|null, note}], sharedRankings[{id, title, path,
+calculatedAt, positions[{id, position, score}]}], summary[], basis }`.
+`highest` is set only on numeric rows where every value is on record, none
+conflicts and one entity is strictly ahead (scores: same methodology version
+only). Commercial data is never included. Unknown/unpublished/wrong type →
+404; fewer than 2 or more than 4 distinct IDs → 400. Profile `rankings[]`
+entries carry `neighbors[{id, entityId, name, position}]` since 1.12.
 
 ### `GET /attributes` (API 1.9)
 The data dictionary: `{ attributes: [{ key, label, valueType, entityTypes[],

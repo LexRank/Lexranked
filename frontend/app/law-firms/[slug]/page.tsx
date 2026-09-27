@@ -118,7 +118,7 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
             </dl>
           )}
           <ScoreSection score={firm.ranking.score} scoreVersion={firm.ranking.scoreVersion} calculatedAt={firm.ranking.calculatedAt} breakdown={firm.ranking.breakdown} />
-          <RankingPositions rankings={firm.rankings} />
+          <RankingPositions rankings={firm.rankings} self={{ type: "law_firm", entityId: firm.entityId }} />
           {firm.description && (
             <section aria-labelledby="about-heading">
               <h2 id="about-heading" style={{ fontSize: "1.4rem" }}>

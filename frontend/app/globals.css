@@ -2010,3 +2010,162 @@ main {
 .entry__why .panel-title {
   margin: 0.75rem 0 0;
 }
+
+/* ---------- Comparison (Etap E) ---------- */
+
+.compare__summary {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.compare__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.compare__scroll:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.compare__table {
+  width: 100%;
+  min-width: 40rem;
+  border-collapse: collapse;
+  font-size: 0.94rem;
+}
+
+.compare__table th,
+.compare__table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.compare__table tbody tr:last-child th,
+.compare__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.compare__table thead th {
+  background: var(--navy-100);
+  font-size: 1rem;
+}
+
+.compare__table thead th:first-child,
+.compare__table tbody th {
+  width: 12rem;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.compare__table thead a {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+}
+
+.compare__sub,
+.compare__note,
+.compare__meta {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 400;
+  margin-top: 0.25rem;
+}
+
+.compare__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.compare__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+}
+
+.compare__value {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink);
+}
+
+.compare__value--highest {
+  font-weight: 700;
+}
+
+.compare__tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--navy-800);
+  background: var(--navy-100);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+
+.compare__missing {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.compare__status--verified {
+  color: var(--verified);
+}
+
+.compare__status--conflict,
+.compare__stale {
+  color: var(--pending);
+}
+
+.compare__ranking {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.compare-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.88rem;
+}
+
+@media (max-width: 640px) {
+  .compare__table thead th:first-child,
+  .compare__table tbody th {
+    width: 7.5rem;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--surface);
+    box-shadow: 1px 0 0 var(--line);
+  }
+
+  .compare__table thead th:first-child {
+    background: var(--navy-100);
+  }
+
+  .compare__table th,
+  .compare__table td {
+    padding: 0.7rem 0.75rem;
+  }
+}

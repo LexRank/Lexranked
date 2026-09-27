@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
-import { RankingCard, RankingEntry } from "@/components/cards";
+import { CompareLinks, RankingCard, RankingEntry } from "@/components/cards";
 import { JsonLd } from "@/components/JsonLd";
 import { MethodologyPanel } from "@/components/Methodology";
 import { PageHeader } from "@/components/PageHeader";
@@ -141,6 +141,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
                 <RankingEntry key={entry.entity.id} entry={entry} />
               ))}
             </ol>
+            <CompareLinks ranking={ranking} />
           </section>
 
           <PlacementBlock placements={sponsored} product="sponsored" />

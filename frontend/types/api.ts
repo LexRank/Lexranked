@@ -62,6 +62,15 @@ export interface RankingPosition {
   score: number;
   calculatedAt: string;
   isDemo: boolean;
+  /** Since API 1.12: the published entries directly above and below in the same run (compare candidates). */
+  neighbors?: RankingNeighbor[];
+}
+
+export interface RankingNeighbor {
+  id: number;
+  entityId: number;
+  name: string;
+  position: number;
 }
 
 export interface CommercialBlock {
@@ -447,4 +456,64 @@ export interface DataQualityModelDto {
   expected: Record<string, Record<string, number>>;
   sourceTierScores: Record<string, number>;
   summary: { count: number; average: number | null; bands: Record<string, number> };
+}
+
+/* ---------- Comparison engine (Etap E, API 1.12) ---------- */
+
+export type ComparableType = "lawyer" | "law_firm";
+
+/** missing = not on record; directory = LexRanked's own directory link; derived = computed by LexRanked. */
+export type ComparisonCellStatus = "verified" | "unverified" | "conflict" | "missing" | "directory" | "derived";
+
+export interface ComparisonCell {
+  /** Post ID of the entity (matches ComparisonEntity.id). */
+  id: number;
+  value: unknown;
+  display: string | null;
+  status: ComparisonCellStatus;
+  source: { name: string | null; publisher: string | null; tierLabel: string | null; url: string | null } | null;
+  checkedAt: string | null;
+  isStale: boolean;
+  note: string | null;
+}
+
+export interface ComparisonRow {
+  key: string;
+  label: string;
+  group: string;
+  kind: "number" | "text" | "list" | "objects";
+  cells: ComparisonCell[];
+  /** Post IDs with the strictly highest value; empty on ties, gaps, conflicts or non-numeric rows. */
+  highest: number[];
+  /** Items every entity shares (list rows only). */
+  shared: string[] | null;
+  note: string | null;
+}
+
+export interface ComparisonEntity {
+  id: number;
+  entityId: number | null;
+  type: ComparableType;
+  name: string;
+  path: string;
+  location: LocationDto | null;
+  firm: { name: string; path: string } | null;
+  verification: string;
+  isDemo: boolean;
+}
+
+export interface ComparisonDto {
+  version: string;
+  type: ComparableType;
+  entities: ComparisonEntity[];
+  rows: ComparisonRow[];
+  sharedRankings: Array<{
+    id: number;
+    title: string;
+    path: string;
+    calculatedAt: string | null;
+    positions: Array<{ id: number; position: number; score: number }>;
+  }>;
+  summary: string[];
+  basis: string;
 }

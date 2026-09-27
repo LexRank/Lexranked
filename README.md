@@ -89,7 +89,8 @@ A. ✅ **Entity model**: stable entity IDs for lawyers, firms, locations and pra
 B. ✅ **Evidence layers**: attribute registry, entity-keyed claims with raw + normalised values, fact layer with per-fact source and freshness, source objects, identifier-based entity resolution, provenance
 C. ✅ **Data Quality Score**: separate, published documentation score (completeness, freshness, source quality, verification coverage, consistency), shown on profiles, never a ranking input
 D. ✅ **Ranking explanations + methodology v1.1**: scores from evidence-backed facts; "Why #N?" on every entry; position changes explained from snapshot differences
-E. Comparison engine · F. Contextual rankings · G. Page eligibility engine · H. AI-readable pages · I. Market statistics · J. AI interpretation layer
+E. ✅ **Comparison engine**: `/compare/?lawyer=…&lawyer=…` (noindex) compares 2–4 lawyers or firms from stored facts, each cell with its source and check date; differences stated, never a verdict; linked from rankings and profiles
+F. Contextual rankings · G. Page eligibility engine · H. AI-readable pages · I. Market statistics · J. AI interpretation layer
 
 ## Security
 

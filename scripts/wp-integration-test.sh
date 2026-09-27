@@ -169,6 +169,25 @@ wp lexranked recalculate >/dev/null
 expect "the change is explained from the snapshot difference" '(.entries[] | select(.entity.slug == "blake-sample-demo")) | .change != null and ([.change.reasons[].text] | any(test("review count 154 → 900"))) and ([.change.reasons[].type] | index("component") != null)' "$RANKING_URL"
 if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "v1.0 and v1.1 snapshots all reproduce from their stored inputs"; else fail "snapshot reproduction after v1.1"; fi
 
+echo "==> Comparison engine (Etap E)"
+AVERY_E="$(curl -sS "$API/lawyers/avery-example-demo" | jq .entityId)"
+BLAKE_E="$(curl -sS "$API/lawyers/blake-sample-demo" | jq .entityId)"
+EMERY_E="$(curl -sS "$API/lawyers/emery-mockwell-demo" | jq .entityId)"
+FIRM_E="$(curl -sS "$API/law-firms/harbor-example-injury-law-demo" | jq .entityId)"
+COMPARE="$API/compare?type=lawyer&entities=$AVERY_E,$BLAKE_E"
+expect "compares two lawyers by stable entity ID, in request order" '.version == "cmp-1.0" and ([.entities[].name] == ["Avery Example (Demo)", "Blake Sample (Demo)"])' "$COMPARE"
+expect "every cell carries status, source and check date or says not on record" 'all(.rows[].cells[]; (.status == "missing" and .value == null) or (.status != "missing" and .checkedAt != null or .status == "directory"))' "$COMPARE"
+expect "numeric rows mark the higher stored value" '(.rows[] | select(.key == "review_count")) as $r | ($r.highest | length) == 1 and ($r.cells[] | select(.id == $r.highest[0]) | .value) == 900' "$COMPARE"
+expect "the summary states differences from data, never a verdict" '(.summary | any(test("Blake Sample \\(Demo\\) has more reviews on record \\(900 vs 387\\)"))) and (.summary | any(test("Both practice Personal Injury"))) and (.summary | all(test("better|recommend|should hire"; "i") | not))' "$COMPARE"
+expect "shared ranking positions come from the same snapshot" '.sharedRankings[0].path == "/rankings/florida/miami/personal-injury/" and ([.sharedRankings[0].positions[].position] | length) == 2' "$COMPARE"
+expect "commercial status is never a comparison dimension" '(tostring | test("premium|commercial|placement|sponsored"; "i") | not)' "$API/compare?type=lawyer&entities=$AVERY_E,$EMERY_E"
+expect "firms compare on firm rows" '([.rows[].key] | index("lawyers") != null and index("years_experience") == null)' "$API/compare?type=law_firm&entities=$FIRM_E,$(curl -sS "$API/law-firms/bayside-sample-legal-group-demo" | jq .entityId)"
+expect_status "one entity is not a comparison" 400 "$API/compare?type=lawyer&entities=$AVERY_E"
+expect_status "the same entity twice is not a comparison" 400 "$API/compare?type=lawyer&entities=$AVERY_E,$AVERY_E"
+expect_status "types are not mixed" 404 "$API/compare?type=law_firm&entities=$AVERY_E,$FIRM_E"
+expect_status "unknown entity" 404 "$API/compare?type=lawyer&entities=$AVERY_E,999999"
+expect "profiles offer the neighbours above and below as comparisons" '.rankings[0].neighbors | length == 2 and all(.[]; .entityId > 0)' "$API/lawyers/blake-sample-demo"
+
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 RID="$(curl -sS "$RANKING" | jq .id)"
@@ -375,6 +394,18 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "each ranking entry has a Why panel" "/rankings/florida/miami/personal-injury/" "Why #1?"
   page_has "the Why panel is built from components" "/rankings/florida/miami/personal-injury/" "ranking avg"
   page_has "methodology explains evidence-only scoring" "/methodology/" "Evidence only."
+
+  echo "==> Comparison pages (Etap E)"
+  AVERY_E="$(curl -sS "$API/lawyers/avery-example-demo" | jq .entityId)"
+  BLAKE_E="$(curl -sS "$API/lawyers/blake-sample-demo" | jq .entityId)"
+  expect_status "comparison page" 200 "$WEB/compare/?lawyer=$AVERY_E&lawyer=$BLAKE_E"
+  page_has "comparison page is never indexed" "/compare/?lawyer=$AVERY_E&lawyer=$BLAKE_E" 'content="noindex, follow"'
+  page_has "comparison page shows the side-by-side table" "/compare/?lawyer=$AVERY_E&lawyer=$BLAKE_E" "Rankings they share"
+  page_has "comparison page shows sources per cell" "/compare/?lawyer=$AVERY_E&lawyer=$BLAKE_E" "Example State Bar Registry (Demo)"
+  page_has "an invalid comparison explains itself" "/compare/?lawyer=$AVERY_E" "different lawyers or law firms"
+  page_has "ranking links its top entries to a comparison" "/rankings/florida/miami/personal-injury/" "Compare #1 and #2"
+  page_has "profile links to comparisons with its neighbours" "/lawyers/blake-sample-demo/" "Compare with #"
+  if curl -sS "$WEB/sitemap.xml" | grep -q "/compare"; then fail "comparison pages are in the sitemap"; else pass "comparison pages stay out of the sitemap"; fi
 
   echo "==> Data Quality on pages (Etap C)"
   page_has "profile shows the Data Quality panel" "/lawyers/avery-example-demo/" "Data quality"

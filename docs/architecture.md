@@ -302,3 +302,12 @@ components and snapshot differences with fixed templates. An LLM may later
 rephrase them (Etap J) but cannot supply a reason that is not a stored
 difference.
 
+### ADR-037 — Comparisons are computed, noindex, and never judge
+A comparison is a pure function over the public detail DTOs of 2–4
+entities, so it cannot reveal more than a profile. It states stored
+differences with their sources and marks a "higher" value only when every
+value is on record, uncontested and (for scores) from one methodology
+version. It never names a better lawyer and never reads commercial status.
+Compare pages are built on request and are noindex until the page
+eligibility engine (Etap G) can decide which comparisons deserve an
+indexable page.

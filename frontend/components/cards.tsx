@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { ArticleSummary, LawFirmSummary, LawyerSummary, RankingEntry as RankingEntryDto, RankingSummary } from "@/types/api";
+import type { ArticleSummary, LawFirmSummary, LawyerSummary, RankingDetail, RankingEntry as RankingEntryDto, RankingSummary } from "@/types/api";
+import { compareHref } from "@/lib/content/compare";
 import { formatDate, formatLocation, pluralize } from "@/lib/format";
 import { rankingScopeLabel } from "@/lib/content/rankings";
 import { DemoBadge, Monogram, ScoreRing, StarRating, VerificationBadge } from "./ui";
@@ -232,5 +233,29 @@ export function WhyRankedHere({ entry }: { entry: RankingEntryDto }) {
         </div>
       )}
     </details>
+  );
+}
+
+/** Comparison links under a ranking: #1 vs #2, and the top three (Etap E). */
+export function CompareLinks({ ranking }: { ranking: RankingDetail }) {
+  const type = ranking.entityType === "law_firm" ? "law_firm" : "lawyer";
+  const ids = ranking.entries.map((e) => e.entity.entityId);
+  const links = [
+    { href: compareHref(type, ids.slice(0, 2)), label: "Compare #1 and #2" },
+    ...(ids.length >= 3 ? [{ href: compareHref(type, ids.slice(0, 3)), label: "Compare the top 3" }] : []),
+  ].filter((l): l is { href: string; label: string } => l.href !== null);
+  if (links.length === 0) return null;
+  return (
+    <nav aria-label="Compare entries">
+      <ul className="compare-links">
+        {links.map((l) => (
+          <li key={l.href}>
+            <Link className="link-arrow" href={l.href}>
+              {l.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }

@@ -29,7 +29,7 @@ position. Payment never enters the organic path (docs/commercial.md).
 | Raw → normalised → derived → interpretation | `"(305) 555-0101"` → `+13055550101`; `review_count = 387` → fact 387 → `review_strength = 18.7/20` → "strong review profile" | claim `value` → claim `value_normalized` / `lr_facts` → score components → AI text |
 | Score | versioned, component-based, snapshotted | `lr_ranking_snapshots` (Phase 4) |
 | Ranking | a function over entities in a context | `lr_ranking` + engine |
-| Comparison | a function over two or more entities | Etap E |
+| Comparison | a function over two or more entities | `Compare\ComparisonEngine`, `GET /compare` (Etap E ✅) |
 
 ## Status of each change (1–46)
 
@@ -45,7 +45,7 @@ position. Payment never enters the organic path (docs/commercial.md).
 | 7 | Ranking from evidence, never from AI | ✅ D | The engine reads resolved entity fields (from claims via FactResolver), never AI output. AI claims are capped at 0.6 and need review. Etap B makes the path claims → verified facts → normalised attributes explicit |
 | 8 | Score components | ✅ | 7 components with points, maximum, explanation and missing inputs, plus `score_version` and `calculated_at`, stored per snapshot |
 | 9 | "Why this ranking / why ranked here" | ✅ D | Methodology section and per-entry breakdown exist. Etap D renders a per-entity "why ranked here" from components |
-| 10, 25 | Comparison engine and pages | ○ E | `/compare?lawyer=…&lawyer=…`, noindex, structured data only |
+| 10, 25 | Comparison engine and pages | ✅ E | `GET /compare`, `/compare/?lawyer=…&lawyer=…` (noindex, not in the sitemap), structured data only; linked from rankings and profiles |
 | 11–13 | Contextual ("best for") rankings, context model, context URLs | ○ F | `case_type`, `client_type`, `language` qualifiers; `/rankings/{state}/{city}/{practice}/{context}/` only when eligible |
 | 14–15 | Page eligibility engine, no thin programmatic SEO | ◐ G | Rules exist: hubs need 3 published lawyers and 3 real ones to index; rankings need 5 entries; articles need 300 words; demo is noindex. Etap G moves this to one backend engine with verified-count, evidence-coverage and uniqueness thresholds |
 | 16–18 | Profile structure, per-fact freshness, source panel | ◐ H | Profiles show identity, firm, areas, credentials, score breakdown, rankings, verification, and evidence with source, tier and retrieval date. Etap H groups them per fact ("Bar status → Florida Bar → verified Sep 27") |
@@ -74,8 +74,8 @@ position. Payment never enters the organic path (docs/commercial.md).
 | **B** | Attributes, claims keyed by entity, source objects, fact layers, resolution identifiers, provenance | ✅ |
 | **C** | Data Quality Score | ✅ |
 | **D** | Per-entity "why ranked here", snapshot-diff explanations, methodology v1.1 on the fact layer | ✅ |
-| E | Comparison engine | next |
-| F | Contextual rankings | |
+| **E** | Comparison engine | ✅ |
+| F | Contextual rankings | next |
 | G | Unified page eligibility engine | |
 | H | AI-readable page architecture | |
 | I | Market statistics and coverage | |
@@ -205,3 +205,29 @@ A separate, published percentage of **how well a profile is documented**. It say
 - **Change explanations** from snapshot differences: methodology, own component and input deltas, competitors that moved past or dropped below, entries that joined or left. Nothing is guessed: every reason is a stored difference.
 - Demo data now carries evidence for every scored attribute, so v1.1 produces the same order as v1.0 on demo data.
 - Fixed ordering issue: when evidence is stored and a ranking calculated in the same request, pending fact rebuilds are flushed first. New evidence also schedules a recalculation.
+
+## Etap E: comparison engine (implemented)
+
+- **`Compare\ComparisonEngine`** (pure, `cmp-1.0`) compares 2–4 entities of one type. Its input is the same public detail DTOs the profiles use, so a comparison can never show more than a profile does.
+- **Lawyer rows**: LexRank score, client rating, review count, years of experience, practice areas, location, law firm, bar status, bar state, education, awards, languages, verification, data freshness and data quality.
+- **Firm rows**: LexRank score, rating, review count, practice areas, location, lawyers listed, verification, data freshness and data quality.
+- **Cells.** Each cell holds the stored value with its status (verified, unverified, conflict, directory or derived), source, tier label and check date, or "not on record". Nothing is estimated.
+- **"Higher" / "Highest"** is marked only on numeric rows, and only when:
+  - every value is on record and none is in conflict;
+  - exactly one entity is ahead (ties get no mark);
+  - for LexRank scores, all scores come from the same methodology version.
+- **Notes.** A rating from fewer than 10 reviews is flagged. Firm size and text rows never get a "highest".
+- **Shared rankings.** Rankings where every compared entity appears, with their positions from the same snapshot run.
+- **Summary** comes from fixed templates:
+  - stated differences ("has more reviews on record (900 vs 387)");
+  - shared practice areas and shared ranking positions;
+  - conflicts and gaps.
+  It never states a verdict ("better", "recommend"), and no LLM is involved.
+- **Commercial status** (claimed, premium, placements) is not a dimension and is never read. A test forbids the engine from referencing it.
+- **API 1.12**:
+  - `GET /compare?type=lawyer|law_firm&entities=12,34` takes stable entity IDs and follows merges. Unknown, unpublished or wrong-type entities return 404; fewer than 2 or more than 4 distinct IDs return 400.
+  - Profile ranking positions carry `neighbors` (the entries directly above and below).
+- **Frontend `/compare/?lawyer=…&lawyer=…` (or `firm=`)**:
+  - **noindex, follow**, never in the sitemap: any pair can be built on request, and indexing every combination would be thin programmatic SEO. Indexable `/compare/a-vs-b/` pages wait for the page eligibility engine (Etap G).
+  - Linked from ranking pages ("Compare #1 and #2", "Compare the top 3") and from profiles ("Compare with #N …").
+

@@ -5,6 +5,8 @@ import type {
   ArticleSummary,
   AttributeDto,
   CityDto,
+  ComparableType,
+  ComparisonDto,
   DataQualityModelDto,
   EntityDto,
   EntityType,
@@ -159,3 +161,13 @@ export const getAttributes = (opts?: Opts) =>
 /** The published Data Quality model (methodology page). */
 export const getDataQualityModel = (opts?: Opts) =>
   apiRequest<DataQualityModelDto>("data-quality", { revalidate: 3600, ...opts }).then((r) => r.data);
+
+/** Side-by-side comparison of 2–4 entities by stable entity ID; null when any is unknown or unpublished. */
+export async function getComparison(type: ComparableType, ids: number[], opts?: Opts): Promise<ComparisonDto | null> {
+  try {
+    return (await apiRequest<ComparisonDto>("compare", { query: { type, entities: ids.join(",") }, ...opts })).data;
+  } catch (error) {
+    if (error instanceof WordPressApiError && (error.status === 404 || error.status === 400)) return null;
+    throw error;
+  }
+}

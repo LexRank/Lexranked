@@ -218,12 +218,45 @@ final class EntityPresenter {
 				'score'        => round( (float) $row['score'], 2 ),
 				'calculatedAt' => $row['calculated_at'],
 				'isDemo'       => (bool) $record['fields']['is_demo'],
+				'neighbors'    => $this->neighbors( $row ),
 			);
 		}
 		return array(
 			'breakdown' => null === $latest ? array() : EntityMapper::breakdown( $latest['components'] ),
 			'rankings'  => $positions,
 		);
+	}
+
+	/**
+	 * The published entries directly above and below an entity in the same
+	 * ranking run: the natural "compare with" candidates (Etap E).
+	 *
+	 * @param array<string, mixed> $row Snapshot row of the entity.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function neighbors( array $row ): array {
+		$type = EntityType::tryFrom( (string) $row['entity_type'] );
+		if ( null === $type ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $this->services->snapshots->run_rows( (string) $row['run_id'] ) as $other ) {
+			if ( 1 !== abs( $other['position'] - (int) $row['position'] ) ) {
+				continue;
+			}
+			$post      = get_post( $other['entity_id'] );
+			$entity_id = $this->services->registry->id_for( $type, (int) $other['entity_id'] );
+			if ( ! $post instanceof \WP_Post || 'publish' !== $post->post_status || null === $entity_id ) {
+				continue;
+			}
+			$out[] = array(
+				'id'       => (int) $post->ID,
+				'entityId' => $entity_id,
+				'name'     => get_the_title( $post ),
+				'position' => $other['position'],
+			);
+		}
+		return $out;
 	}
 
 	/**

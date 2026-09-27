@@ -171,7 +171,7 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
             breakdown={lawyer.ranking.breakdown}
           />
 
-          <RankingPositions rankings={lawyer.rankings} />
+          <RankingPositions rankings={lawyer.rankings} self={{ type: "lawyer", entityId: lawyer.entityId }} />
 
           {lawyer.bio && (
             <section aria-labelledby="about-heading">
