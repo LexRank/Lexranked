@@ -66,6 +66,7 @@ final class CandidateRepository {
 			'payload'         => (string) json_encode( // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- WordPress-independent by design.
 				array(
 					'source_type' => $row['source_type'],
+					'identifiers' => $row['identifiers'] ?? array(),
 					'extra'       => null === $row['payload'] ? null : json_decode( (string) $row['payload'], true ),
 				),
 				JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
@@ -251,6 +252,7 @@ final class CandidateRepository {
 			'website'         => null === $row['website'] ? null : (string) $row['website'],
 			'sourceUrl'       => (string) $row['source_url'],
 			'sourceType'      => is_array( $payload ) ? (string) ( $payload['source_type'] ?? '' ) : '',
+			'identifiers'     => is_array( $payload ) && is_array( $payload['identifiers'] ?? null ) ? $payload['identifiers'] : array(),
 			'status'          => (string) $row['status'],
 			'entityId'        => null === $row['entity_id'] ? null : (int) $row['entity_id'],
 			'matchConfidence' => null === $row['match_confidence'] ? null : (float) $row['match_confidence'],

@@ -120,6 +120,8 @@ export interface EvidenceDto {
   retrievedAt: string;
   confidence: number;
   verificationStatus: string;
+  /** API 1.9: the value after normalisation (the raw value stays in `value`). */
+  normalizedValue?: unknown;
   /** How the fact was obtained (API 1.4): manual, seed, structured_data or ai (quote-checked). */
   method?: "manual" | "seed" | "structured_data" | "ai";
 }
@@ -155,6 +157,8 @@ export interface LawyerDetail extends LawyerSummary {
   /** Answer-first profile summary (API 1.5). */
   summary?: string | null;
   premiumContent?: PremiumContentDto | null;
+  /** Normalised facts with source and freshness (API 1.9). */
+  facts?: FactDto[];
   contact: { website: string | null; phone: string | null };
   address: { zipCode: string | null; country: string | null };
   professional: {
@@ -183,6 +187,7 @@ export interface LawFirmDetail extends LawFirmSummary {
   /** Answer-first profile summary (API 1.5). */
   summary?: string | null;
   premiumContent?: PremiumContentDto | null;
+  facts?: FactDto[];
   contact: { website: string | null; phone: string | null; email: string | null };
   address: { street: string | null; zipCode: string | null; country: string | null };
   lawyers: LawyerSummary[];
@@ -282,9 +287,46 @@ export interface SourceDto {
   id: number;
   name: string;
   url: string | null;
+  /** API 1.9: sources are objects with a publisher, domain, status and check dates. */
+  domain?: string | null;
+  publisher?: string | null;
   type: string | null;
   tier: number | null;
+  tierLabel?: string | null;
+  status?: "active" | "unreachable" | "moved" | "retired";
+  retrievedAt?: string | null;
+  lastCheckedAt?: string | null;
   isDemo: boolean;
+}
+
+/** A normalised fact (API 1.9): one per attribute, resolved from the evidence. */
+export interface FactDto {
+  attribute: string;
+  label: string;
+  category: string;
+  value: unknown;
+  unit: string | null;
+  status: "verified" | "unverified" | "conflict";
+  confidence: number;
+  source: { id: number | null; name: string | null; publisher: string | null; url: string | null; type: string | null; tier: number; tierLabel: string };
+  claimCount: number;
+  observedAt: string;
+  verifiedAt: string | null;
+  freshness: { category: string; maxAgeDays: number; lastVerifiedAt: string | null; isStale: boolean; staleAt: string | null };
+  method: string | null;
+}
+
+/** GET /attributes: the data dictionary (API 1.9). */
+export interface AttributeDto {
+  key: string;
+  label: string;
+  valueType: string;
+  entityTypes: string[];
+  category: string;
+  layer: "fact" | "derived";
+  freshness: string;
+  unit: string | null;
+  description: string;
 }
 
 export interface ApiErrorBody {

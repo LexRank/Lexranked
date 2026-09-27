@@ -18,7 +18,7 @@ namespace LexRanked\Core\Database;
 final class Schema {
 
 	/** Bump when the DDL below changes; triggers dbDelta on next load. */
-	public const VERSION = '7';
+	public const VERSION = '8';
 
 	public const CLAIMS         = 'lr_claims';
 	public const AUDIT_LOG      = 'lr_audit_log';
@@ -29,6 +29,7 @@ final class Schema {
 	public const PLACEMENTS     = 'lr_placements';
 	public const ENTITIES       = 'lr_entities';
 	public const ENTITY_ALIASES = 'lr_entity_aliases';
+	public const FACTS          = 'lr_facts';
 
 	/**
 	 * CREATE TABLE statements.
@@ -47,6 +48,7 @@ final class Schema {
 		$place  = $prefix . self::PLACEMENTS;
 		$ents   = $prefix . self::ENTITIES;
 		$alias  = $prefix . self::ENTITY_ALIASES;
+		$facts  = $prefix . self::FACTS;
 
 		return array(
 			$claims => "CREATE TABLE {$claims} (
@@ -65,12 +67,15 @@ final class Schema {
   job_id bigint(20) unsigned NOT NULL DEFAULT 0,
   review_status varchar(20) NOT NULL DEFAULT 'approved',
   method varchar(20) NOT NULL DEFAULT 'manual',
+  lr_entity_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  value_normalized longtext NULL,
   created_at datetime NOT NULL,
   PRIMARY KEY  (claim_id),
   UNIQUE KEY claim_hash (claim_hash),
   KEY review_status (review_status),
   KEY entity (entity_type,entity_id),
   KEY entity_field (entity_id,field_name),
+  KEY lr_entity (lr_entity_id,field_name),
   KEY source_id (source_id)
 ) {$charset_collate};",
 			$audit  => "CREATE TABLE {$audit} (
@@ -219,6 +224,27 @@ final class Schema {
   PRIMARY KEY  (alias_id),
   UNIQUE KEY entity_alias (entity_id,alias_type,normalized(150)),
   KEY lookup (entity_type,alias_type,normalized(150))
+) {$charset_collate};",
+			$facts  => "CREATE TABLE {$facts} (
+  fact_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  lr_entity_id bigint(20) unsigned NOT NULL,
+  entity_type varchar(32) NOT NULL,
+  wp_id bigint(20) unsigned NOT NULL,
+  attribute varchar(64) NOT NULL,
+  value longtext NOT NULL,
+  status varchar(20) NOT NULL,
+  confidence decimal(4,3) NOT NULL DEFAULT 0.000,
+  source_tier tinyint(3) unsigned NOT NULL DEFAULT 5,
+  claim_id bigint(20) unsigned NOT NULL,
+  source_id bigint(20) unsigned DEFAULT NULL,
+  claim_count int(10) unsigned NOT NULL DEFAULT 1,
+  observed_at datetime NOT NULL,
+  verified_at datetime DEFAULT NULL,
+  computed_at datetime NOT NULL,
+  PRIMARY KEY  (fact_id),
+  UNIQUE KEY entity_attribute (lr_entity_id,attribute),
+  KEY wp_ref (entity_type,wp_id),
+  KEY attribute_status (attribute,status)
 ) {$charset_collate};",
 		);
 	}

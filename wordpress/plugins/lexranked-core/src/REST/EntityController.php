@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Attribute\Attributes;
 use LexRanked\Core\Entity\EntityNames;
 use LexRanked\Core\Entity\EntityType;
 use LexRanked\Core\Plugin;
@@ -18,6 +19,9 @@ use LexRanked\Core\Services;
  * GET /entities/{entity_id}       — a public entity by its stable ID.
  * GET /entities/resolve?type&slug — the current entity for a current or
  *   former slug (renames, merges). Used by the frontend to redirect old URLs.
+ *
+ * GET /attributes                — the data dictionary: every fact and derived
+ *   metric an entity can have, its type, unit, layer and freshness rule.
  *
  * Only active (published) entities are returned; drafts and archived
  * entities are 404, merged entities resolve to the surviving one.
@@ -36,6 +40,16 @@ final class EntityController extends RestController {
 	 * {@inheritDoc}
 	 */
 	public function register_routes(): void {
+		register_rest_route(
+			Plugin::REST_NAMESPACE,
+			'/attributes',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => fn(): \WP_REST_Response => $this->item_response( array( 'attributes' => Attributes::dictionary() ) ),
+				'permission_callback' => '__return_true',
+				'args'                => array(),
+			)
+		);
 		register_rest_route(
 			Plugin::REST_NAMESPACE,
 			'/entities/resolve',

@@ -115,6 +115,7 @@ export async function runDiscovery(ctx: JobContext): Promise<PipelineResult> {
           ...(r.state ? { state: r.state } : {}),
           ...(r.practice_area ? { practice_area: r.practice_area } : {}),
           ...(r.website ? { website: r.website } : {}),
+          ...withIdentifiers(r),
           payload: { dataset: String(params.dataset), line: r.line },
         })),
       );
@@ -169,4 +170,20 @@ export async function runDiscovery(ctx: JobContext): Promise<PipelineResult> {
 
   ctx.log('info', 'summary', `Processed ${parsed.length} dataset rows.`, stats);
   return { cursor: `row:${position}`, processed, stats };
+}
+
+/** Entity-resolution hints (phone, bar number); the CMS normalises and weighs them. */
+function withIdentifiers(r: { phone?: string; bar_state?: string; bar_number?: string }): { identifiers?: Record<string, string> } {
+  const ids = identifiersOf(r);
+  return ids ? { identifiers: ids } : {};
+}
+
+function identifiersOf(r: { phone?: string; bar_state?: string; bar_number?: string }): Record<string, string> | undefined {
+  const ids: Record<string, string> = {};
+  if (r.phone) ids.phone = r.phone;
+  if (r.bar_state && r.bar_number) {
+    ids.bar_state = r.bar_state;
+    ids.bar_number = r.bar_number;
+  }
+  return Object.keys(ids).length > 0 ? ids : undefined;
 }

@@ -78,6 +78,8 @@ export interface CandidateInput {
   website?: string;
   source_url: string;
   source_type: string;
+  /** Resolution hints: phone, email, bar_state + bar_number, address + zip_code. */
+  identifiers?: Record<string, string>;
   payload?: Record<string, unknown>;
 }
 

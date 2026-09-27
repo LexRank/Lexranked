@@ -14,6 +14,7 @@ use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\PostTypes\Source;
 use LexRanked\Core\REST\DTO\EntityMapper;
+use LexRanked\Core\REST\DTO\FactMapper;
 use LexRanked\Core\REST\DTO\LocationMapper;
 use LexRanked\Core\REST\DTO\RankingMapper;
 use LexRanked\Core\REST\DTO\SourceMapper;
@@ -92,6 +93,7 @@ final class EntityPresenter {
 			$include_private
 		);
 		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
+		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		return $this->with_scoring( $dto, (int) $post->ID );
 	}
 
@@ -137,6 +139,7 @@ final class EntityPresenter {
 			(string) wp_kses_post( wpautop( $post->post_content ) )
 		);
 		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
+		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		return $this->with_scoring( $dto, (int) $post->ID );
 	}
 
@@ -279,26 +282,49 @@ final class EntityPresenter {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function evidence( string $entity_type, int $entity_id ): array {
+		$claims = $this->services->claims->for_entity( $entity_type, $entity_id );
+		return SourceMapper::evidence( $claims, $this->source_dtos( $claims ), $this->services->settings->source_tiers() );
+	}
+
+	/**
+	 * Normalised facts with their source and freshness (Etap B).
+	 *
+	 * @param string $entity_type lawyer|law_firm.
+	 * @param int    $entity_id   ID.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function facts( string $entity_type, int $entity_id ): array {
+		$s      = $this->services;
+		$claims = $s->claims->for_entity( $entity_type, $entity_id );
+		return FactMapper::facts( $s->facts->for_entity( $entity_type, $entity_id ), array_column( $claims, null, 'claim_id' ), $this->source_dtos( $claims ), $s->settings->freshness(), $this->now() );
+	}
+
+	/**
+	 * Published source DTOs referenced by claims, keyed by ID.
+	 *
+	 * @param array<int, array<string, mixed>> $claims Claims.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function source_dtos( array $claims ): array {
 		$s       = $this->services;
-		$claims  = $s->claims->for_entity( $entity_type, $entity_id );
-		$tiers   = $s->settings->source_tiers();
 		$ids     = array_values( array_unique( array_filter( array_column( $claims, 'source_id' ) ) ) );
 		$sources = array();
-		if ( array() !== $ids ) {
-			foreach ( get_posts(
-				array(
-					'post_type'        => Source::SLUG,
-					'post_status'      => 'publish',
-					'post__in'         => $ids,
-					'posts_per_page'   => count( $ids ),
-					'no_found_rows'    => true,
-					'suppress_filters' => false,
-				)
-			) as $post ) {
-				$sources[ $post->ID ] = SourceMapper::source( $s->entities->record( $post, $s->source ), $tiers );
-			}
+		if ( array() === $ids ) {
+			return $sources;
 		}
-		return SourceMapper::evidence( $claims, $sources, $tiers );
+		foreach ( get_posts(
+			array(
+				'post_type'        => Source::SLUG,
+				'post_status'      => 'publish',
+				'post__in'         => $ids,
+				'posts_per_page'   => count( $ids ),
+				'no_found_rows'    => true,
+				'suppress_filters' => false,
+			)
+		) as $post ) {
+			$sources[ $post->ID ] = SourceMapper::source( $s->entities->record( $post, $s->source ), $s->settings->source_tiers() );
+		}
+		return $sources;
 	}
 
 	/**

@@ -28,8 +28,8 @@ final class CandidateMatcher {
 	/**
 	 * Decide.
 	 *
-	 * @param array{entity_type: string, normalized_name: string, city: string|null, state: string|null, domain: string|null}                                                $candidate Candidate.
-	 * @param array<int, array{id: int, normalized_name: string, cities: array<int, string>, states: array<int, string>, domain: string|null, aliases?: array<int, string>}> $entities Existing entities of the same type
+	 * @param array{entity_type: string, normalized_name: string, city: string|null, state: string|null, domain: string|null, identifiers?: array<string, string>}                                                $candidate Candidate (identifiers from Identifiers::from()).
+	 * @param array<int, array{id: int, normalized_name: string, cities: array<int, string>, states: array<int, string>, domain: string|null, aliases?: array<int, string>, identifiers?: array<string, string>}> $entities Existing entities of the same type
 	 *        whose name, name key or domain could match (pre-filtered by the index).
 	 * @return array{decision: string, entity_id: int|null, confidence: float|null, reason: string}
 	 */
@@ -39,7 +39,64 @@ final class CandidateMatcher {
 		$city    = null === $candidate['city'] ? null : strtolower( $candidate['city'] );
 		$state   = $candidate['state'];
 		$domain  = $candidate['domain'];
+		$ids     = $candidate['identifiers'] ?? array();
+		$has     = static fn( array $e, string $key ): bool => isset( $ids[ $key ], $e['identifiers'][ $key ] ) && $ids[ $key ] === $e['identifiers'][ $key ];
 
+		// 0. Identifiers: official and unique ones are strong signals, a name alone is weak.
+		$by_bar = array_values( array_filter( $entities, static fn( array $e ): bool => $has( $e, 'bar' ) ) );
+		if ( 1 === count( $by_bar ) ) {
+			return self::result( self::MATCH, $by_bar[0]['id'], 0.99, 'same state bar number (official identifier)' );
+		}
+		if ( count( $by_bar ) > 1 ) {
+			return self::result( self::REVIEW, null, null, 'several profiles share this state bar number' );
+		}
+		$by_email = array_values( array_filter( $entities, static fn( array $e ): bool => $has( $e, 'email' ) ) );
+		if ( 1 === count( $by_email ) ) {
+			return self::result( self::MATCH, $by_email[0]['id'], 0.95, 'same email address' );
+		}
+		if ( $is_firm ) {
+			foreach ( array(
+				'phone'   => 'same phone number',
+				'address' => 'same street address',
+			) as $key => $reason ) {
+				$found = array_values( array_filter( $entities, static fn( array $e ): bool => $has( $e, $key ) && ( null === $state || array() === $e['states'] || in_array( $state, $e['states'], true ) ) ) );
+				if ( 1 === count( $found ) ) {
+					return self::result( self::MATCH, $found[0]['id'], 0.9, $reason . ' in the same state' );
+				}
+			}
+		}
+		// Two lawyers with the same name but different bar numbers are different people.
+		if ( ! $is_firm && isset( $ids['bar'] ) ) {
+			$entities = array_values( array_filter( $entities, static fn( array $e ): bool => ! isset( $e['identifiers']['bar'] ) || $e['identifiers']['bar'] === $ids['bar'] ) );
+		}
+		$shared_phone = ! $is_firm ? array_values( array_filter( $entities, static fn( array $e ): bool => $has( $e, 'phone' ) ) ) : array();
+		foreach ( $shared_phone as $e ) {
+			if ( $e['normalized_name'] === $candidate['normalized_name'] || self::name_key( $e['normalized_name'] ) === self::name_key( $candidate['normalized_name'] ) ) {
+				return self::result( self::MATCH, $e['id'], 0.95, 'same name and phone number' );
+			}
+		}
+		$decision = self::by_name( $candidate, $entities, $is_firm, $city, $state, $domain );
+		if ( self::CREATE === $decision['decision'] && array() !== $shared_phone ) {
+			return self::result( self::REVIEW, $shared_phone[0]['id'], 0.5, 'possible duplicate: same phone number (lawyers often share a firm line)' );
+		}
+		if ( self::CREATE === $decision['decision'] && ! $is_firm && isset( $ids['bar'] ) ) {
+			return self::result( self::CREATE, null, null, 'no profile with this bar number' );
+		}
+		return $decision;
+	}
+
+	/**
+	 * Name, domain and city rules (steps 1–3).
+	 *
+	 * @param array<string, mixed>             $candidate Candidate.
+	 * @param array<int, array<string, mixed>> $entities  Entities.
+	 * @param bool                             $is_firm   Firm candidate.
+	 * @param string|null                      $city      Lowercase city.
+	 * @param string|null                      $state     State code.
+	 * @param string|null                      $domain    Website domain.
+	 * @return array{decision: string, entity_id: int|null, confidence: float|null, reason: string}
+	 */
+	private static function by_name( array $candidate, array $entities, bool $is_firm, ?string $city, ?string $state, ?string $domain ): array {
 		$same_state = static fn( array $e ): bool => null === $state || array() === $e['states'] || in_array( $state, $e['states'], true );
 		$same_city  = static fn( array $e ): bool => null !== $city && in_array( $city, array_map( 'strtolower', $e['cities'] ), true );
 		$same_dom   = static fn( array $e ): bool => null !== $domain && $domain === $e['domain'];

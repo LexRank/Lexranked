@@ -98,6 +98,8 @@ final class ResearchIngest {
 			}
 			$existing = $this->find_source( $url );
 			if ( null !== $existing ) {
+				// Re-reading a known source refreshes when it was last checked.
+				$this->services->entities->save_fields( $existing, $this->services->source, array( 'last_checked_at' => gmdate( 'Y-m-d\TH:i:s\Z' ) ) );
 				$out[] = array(
 					'index'    => $i,
 					'sourceId' => $existing,
@@ -123,9 +125,12 @@ final class ResearchIngest {
 				(int) $id,
 				$this->services->source,
 				array(
-					'url'         => $url,
-					'source_type' => $type,
-					'notes'       => 'Added by research job #' . $job_id . '.',
+					'url'             => $url,
+					'source_type'     => $type,
+					'retrieved_at'    => gmdate( 'Y-m-d\TH:i:s\Z' ),
+					'last_checked_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
+					'status'          => 'active',
+					'notes'           => 'Added by research job #' . $job_id . '.',
 				)
 			);
 			update_post_meta( (int) $id, self::META_JOB, $job_id );
@@ -215,6 +220,7 @@ final class ResearchIngest {
 			'city'            => $candidate['city'],
 			'state'           => $candidate['state'],
 			'domain'          => CandidateNormalizer::domain( $candidate['website'] ),
+			'identifiers'     => $candidate['identifiers'] ?? array(),
 		);
 		$decision = CandidateMatcher::decide( $probe, $this->index->candidates_for( $probe ) );
 
@@ -502,6 +508,8 @@ final class ResearchIngest {
 				unset( $fields[ $field ] );
 			}
 			$written = array_keys( $fields );
+			// Keep the matching index (website domain, phone, bar number …) in step with the new facts.
+			$this->index->index( $post->ID );
 		}
 
 		$ok = static fn( string $f ): bool => isset( $resolved[ $f ] ) && ! $resolved[ $f ]['conflict'];

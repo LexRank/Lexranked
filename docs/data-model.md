@@ -28,6 +28,7 @@
 | Ranking snapshot | Custom table `{prefix}lr_ranking_snapshots` | Append-only runs with components + inputs (implemented) |
 | Audit log | Custom table `{prefix}lr_audit_log` | Append-only (implemented) |
 | Editorial article | Core `post` | |
+| Fact layer | Custom table `{prefix}lr_facts` | One normalised value per entity × attribute (Etap B) |
 | Entity registry | Custom tables `{prefix}lr_entities`, `{prefix}lr_entity_aliases` | Stable IDs, names and slug history (Etap A) |
 | Profile claim | Custom table `{prefix}lr_profile_claims` | Private claimant data (Phase 9) |
 | Placement | Custom table `{prefix}lr_placements` | Paid products (Phase 9) |
@@ -203,6 +204,15 @@ registry holds identity. Renames keep the ID and add the former name and slug
 to `lr_entity_aliases` (`alias_type: name|slug, value, normalized,
 is_current, first_seen, last_seen`). IDs are never reused. See
 `docs/knowledge-base.md`.
+
+## Facts and attributes (Etap B)
+
+- `lr_claims` also stores `lr_entity_id` (registry ID) and `value_normalized` (the raw value stays in `value`).
+- `lr_facts`: `lr_entity_id, entity_type, wp_id, attribute, value (normalised JSON), status (verified|unverified|conflict), confidence, source_tier, claim_id, source_id, claim_count, observed_at, verified_at, computed_at`, unique per entity and attribute.
+- Attributes are defined in code (`Attribute\Attributes`) and published at `GET /attributes`.
+- Sources gain `publisher, retrieved_at, last_checked_at, status`.
+
+See `docs/knowledge-base.md`.
 
 ## Commercial data (Phase 9)
 

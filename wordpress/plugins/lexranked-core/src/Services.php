@@ -13,6 +13,7 @@ use LexRanked\Core\Commercial\CommercialService;
 use LexRanked\Core\Commercial\PlacementRepository;
 use LexRanked\Core\Commercial\ProfileClaimRepository;
 use LexRanked\Core\Entity\EntityRegistry;
+use LexRanked\Core\Fact\FactService;
 use LexRanked\Core\Integration\Revalidator;
 use LexRanked\Core\Monitoring\HealthService;
 use LexRanked\Core\PostTypes\Article;
@@ -113,6 +114,13 @@ final class Services {
 	 * @var EntityRegistry
 	 */
 	public readonly EntityRegistry $registry;
+
+	/**
+	 * Normalised fact layer (lr_facts).
+	 *
+	 * @var FactService
+	 */
+	public readonly FactService $facts;
 
 	/**
 	 * Entities.
@@ -244,8 +252,10 @@ final class Services {
 					'law_firm' => self::traceable_fields( $this->law_firm ),
 				),
 				$this->settings->source_tiers()
-			)
+			),
+			$this->registry
 		);
+		$this->facts         = new FactService( $this );
 		$this->snapshots     = new SnapshotRepository();
 		$this->versions      = new ScoreVersions();
 		$this->presenter     = new EntityPresenter( $this );

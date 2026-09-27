@@ -142,6 +142,15 @@ check "former and current names are both stored" '. == 2' "$(wp db query "SELECT
 expect_status "unknown slugs do not resolve" 404 "$API/entities/resolve?type=lawyer&slug=nobody-at-all"
 expect_status "resolve validates the type" 400 "$API/entities/resolve?type=ranking&slug=x"
 
+echo "==> Attributes, claims, facts, sources (Etap B)"
+expect "data dictionary separates facts from derived metrics" '(.attributes | map(select(.key == "bar_status"))[0].layer == "fact") and (.attributes | map(select(.key == "review_strength"))[0].layer == "derived") and (.attributes | map(select(.key == "years_experience"))[0].unit == "years")' "$API/attributes"
+check "every claim is keyed by its entity" '. == 0' "$(wp db query "SELECT COUNT(*) FROM wp_lr_claims WHERE lr_entity_id = 0" --skip-column-names | tr -dc 0-9)"
+check "raw and normalised values are stored side by side" '. > 0' "$(wp db query "SELECT COUNT(*) FROM wp_lr_claims WHERE field_name = 'rating' AND value_normalized IS NOT NULL" --skip-column-names | tr -dc 0-9)"
+expect "profile facts: one per attribute, with source, tier and freshness" '(.facts | map(.attribute) | index("bar_status") != null) and ((.facts[] | select(.attribute == "bar_status")) | .status == "verified" and .value == "active" and .source.tier == 1 and .source.tierLabel == "Official / regulatory" and .freshness.category == "bar_status" and .verifiedAt != null) and ((.facts[] | select(.attribute == "review_count")) | .value == 387 and .freshness.category == "review_data")' "$API/lawyers/avery-example-demo"
+expect "evidence keeps the raw value and the normalised one" '[.sources[] | select(.field == "website")][0] | (.normalizedValue | type) == "string"' "$API/lawyers/avery-example-demo"
+expect "sources are objects: domain, tier label, status" 'all(.[]; .domain != null and .tierLabel != null and .status != null)' "$API/sources"
+check "provenance traces fact → claim → source → ranking input" '.[0].attribute == "bar_status" and (.[0].claim | test("raw=")) and (.[0].source | test("tier 1")) and (.[0].ranking_input != "—")' "$(wp lexranked provenance lawyer:avery-example-demo --attribute=bar_status --format=json)"
+
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 RID="$(curl -sS "$RANKING" | jq .id)"
@@ -234,6 +243,12 @@ kill "$SITE_PID" >/dev/null 2>&1 || true
 SITE_PID=""
 wp lexranked research-job verification >/dev/null
 check "internal jobs run in WordPress" 'test("Processed 1 internal")' "\"$(wp lexranked research-run)\""
+
+echo "==> Entity resolution identifiers (Etap B)"
+check "research drafts are indexed by bar number" '. >= 1' "$(wp db query "SELECT COUNT(*) FROM wp_postmeta WHERE meta_key = '_lr_id_bar' AND meta_value = 'FL:1001'" --skip-column-names | tr -dc 0-9)"
+DUP_ID="$(wp post create --post_type=lr_lawyer --post_status=draft --post_title="J. Sample Duplicate" --meta_input='{"_lr_bar_state":"FL","_lr_bar_number":"01001"}' --porcelain | tail -1)"
+check "duplicates report finds two profiles sharing an official identifier" 'test("bar number.*likely same entity.*FL:1001")' "$(wp lexranked duplicates | grep "FL:1001" | jq -Rs .)"
+wp post delete "$DUP_ID" --force >/dev/null
 
 echo "==> AI assistance (worker against a FAKE local OpenAI endpoint)"
 AI_PORT="${AI_PORT:-8097}"

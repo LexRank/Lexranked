@@ -278,3 +278,11 @@ entities; deletions archive; merges point at the survivor. This is the
 foundation of the knowledge-base direction (docs/knowledge-base.md):
 evidence, scores, rankings and comparisons are functions over entities.
 
+### ADR-034 — Raw, normalised, derived and interpreted data are stored apart
+A claim keeps the value exactly as its source published it, next to its
+normalised form. The fact layer (`lr_facts`) holds one resolved value per
+entity and attribute with its status and provenance. Score components are
+derived metrics, and AI text is interpretation. Each layer can be traced to
+the one below it (`wp lexranked provenance`). Nothing in a higher layer can
+create or overwrite a fact.
+

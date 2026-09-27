@@ -81,7 +81,12 @@ final class CandidateInput {
 			}
 		}
 
+		// Optional resolution identifiers (phone, email, bar_state + bar_number, address + zip_code).
+		// Unusable values are dropped: they are matching hints, never stored as facts.
+		$identifiers = isset( $input['identifiers'] ) && is_array( $input['identifiers'] ) ? Identifiers::from( $input['identifiers'] ) : array();
+
 		return array(
+			'identifiers'     => $identifiers,
 			'dedupe_key'      => CandidateNormalizer::dedupe_key( $type, $name, '' === $city ? null : strtolower( $city ), $state ),
 			'entity_type'     => $type,
 			'name'            => $name,

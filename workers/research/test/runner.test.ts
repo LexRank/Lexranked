@@ -68,6 +68,9 @@ describe('runOnce — candidate discovery', () => {
     expect(job.stats).toMatchObject({ candidates_created: 4, candidates_needs_review: 1, rows_invalid: 1 });
     expect(wp.requests.filter((r) => r.endsWith('/heartbeat'))).toHaveLength(3);
     expect(wp.verifications.size).toBe(4); // license + bar_status for the two active bar-sourced lawyers.
+    // Resolution identifiers travel with candidates (the CMS weighs them; a bar number is strong).
+    const jordan = wp.candidateItems.find((c) => String(c.name).startsWith('Jordan'));
+    expect(jordan?.identifiers).toEqual({ phone: '+1 305 555 0101', bar_state: 'FL', bar_number: '1001' });
     expect(await runOnce(deps)).toBe('idle');
   });
 

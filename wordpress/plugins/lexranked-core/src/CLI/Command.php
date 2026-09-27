@@ -584,6 +584,106 @@ final class Command {
 	}
 
 	/**
+	 * Rebuild the normalised fact layer from approved evidence.
+	 *
+	 * @subcommand facts-rebuild
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function facts_rebuild( array $args, array $assoc_args ): void {
+		unset( $args, $assoc_args );
+		$s = $this->services;
+		\WP_CLI::log( sprintf( 'Claims keyed: %d.', $s->claims->backfill_entity_keys() ) );
+		\WP_CLI::success( sprintf( 'Facts rebuilt for %d entities: %s.', $s->facts->rebuild_all(), (string) wp_json_encode( $s->facts->summary() ) ) );
+	}
+
+	/**
+	 * Possible duplicate lawyers and firms (shared identifiers). Nothing is merged.
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function duplicates( array $args, array $assoc_args ): void {
+		unset( $args, $assoc_args );
+		$rows = array_map(
+			static fn( array $d ): array => array(
+				'type'     => $d['entity_type'],
+				'signal'   => $d['signal'],
+				'strength' => $d['strength'],
+				'value'    => $d['value'],
+				'profiles' => implode( ' · ', array_map( static fn( int $id ): string => get_the_title( $id ) . ' (#' . $id . ')', $d['ids'] ) ),
+			),
+			$this->services->entity_index->duplicates()
+		);
+		if ( array() === $rows ) {
+			\WP_CLI::success( 'No shared identifiers found.' );
+			return;
+		}
+		\WP_CLI\Utils\format_items( 'table', $rows, array( 'type', 'signal', 'strength', 'value', 'profiles' ) );
+	}
+
+	/**
+	 * Research provenance of an entity's facts: job → source → claim → fact → ranking input.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <entity>
+	 * : Entity ID or type:slug (e.g. lawyer:avery-example-demo).
+	 *
+	 * [--attribute=<key>]
+	 * : Only this attribute.
+	 *
+	 * [--format=<format>]
+	 * : table or json.
+	 * ---
+	 * default: table
+	 * ---
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function provenance( array $args, array $assoc_args ): void {
+		$s   = $this->services;
+		$row = ctype_digit( $args[0] ?? '' ) ? $s->registry->find( (int) $args[0] ) : null;
+		if ( null === $row && str_contains( $args[0] ?? '', ':' ) ) {
+			[ $type, $slug ] = explode( ':', $args[0], 2 );
+			$entity_type     = \LexRanked\Core\Entity\EntityType::tryFrom( $type );
+			$row             = null === $entity_type ? null : $s->registry->resolve( $entity_type, $slug );
+		}
+		if ( null === $row || 'post' !== $row['wp_object'] ) {
+			\WP_CLI::error( 'Lawyer or firm entity not found.' );
+		}
+		$type     = (string) $row['entity_type'];
+		$wp_id    = (int) $row['wp_id'];
+		$snapshot = $s->snapshots->latest_for_entity( $wp_id );
+		$items    = array();
+		foreach ( $s->facts->for_entity( $type, $wp_id ) as $attribute => $fact ) {
+			if ( isset( $assoc_args['attribute'] ) && $assoc_args['attribute'] !== $attribute ) {
+				continue;
+			}
+			$claim   = $s->claims->find( (int) $fact['claim_id'] );
+			$source  = null === $fact['source_id'] ? null : get_post( (int) $fact['source_id'] );
+			$job     = null === $claim || 0 === $claim['job_id'] ? null : get_post( $claim['job_id'] );
+			$items[] = array(
+				'attribute'     => $attribute,
+				'fact'          => wp_json_encode( $fact['value'] ),
+				'status'        => $fact['status'],
+				'claim'         => null === $claim ? '—' : sprintf( '#%d raw=%s via %s (%s, conf %.2f, %s)', $claim['claim_id'], wp_json_encode( $claim['value'] ), $claim['method'], $claim['verification_status'], $claim['confidence'], substr( $claim['retrieved_at'], 0, 10 ) ),
+				'source'        => null === $source ? ( $claim['source_url'] ?? '—' ) : sprintf( '#%d %s (%s, tier %d)', $source->ID, get_the_title( $source ), $claim['source_type'] ?? '', (int) $fact['source_tier'] ),
+				'research_job'  => null === $job ? 'editor / seed' : sprintf( '#%d %s', $job->ID, get_the_title( $job ) ),
+				'ranking_input' => null === $snapshot || ! array_key_exists( $attribute, (array) $snapshot['inputs'] ) ? '—' : sprintf( '%s in run %s (%s)', wp_json_encode( $snapshot['inputs'][ $attribute ] ), substr( (string) $snapshot['run_id'], 0, 8 ), $snapshot['calculated_at'] ),
+			);
+		}
+		if ( 'json' === ( $assoc_args['format'] ?? 'table' ) ) {
+			\WP_CLI::line( (string) wp_json_encode( $items, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
+			return;
+		}
+		\WP_CLI::log( sprintf( 'Entity #%d %s (%s:%d)', (int) $row['entity_id'], $row['canonical_name'], $type, $wp_id ) );
+		\WP_CLI\Utils\format_items( 'table', $items, array( 'attribute', 'fact', 'status', 'claim', 'source', 'research_job', 'ranking_input' ) );
+	}
+
+	/**
 	 * Recalculate scores and rankings with the deterministic engine.
 	 *
 	 * ## OPTIONS

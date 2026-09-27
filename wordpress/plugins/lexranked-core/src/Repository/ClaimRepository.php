@@ -9,7 +9,11 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\Repository;
 
+use LexRanked\Core\Attribute\Attributes;
+use LexRanked\Core\Attribute\Normalizer;
 use LexRanked\Core\Database\Schema;
+use LexRanked\Core\Entity\EntityRegistry;
+use LexRanked\Core\Entity\EntityType;
 use LexRanked\Core\Sources\ClaimValidator;
 
 /**
@@ -20,9 +24,10 @@ final class ClaimRepository {
 	/**
 	 * Constructor.
 	 *
-	 * @param ClaimValidator $validator Claim validator.
+	 * @param ClaimValidator      $validator Claim validator.
+	 * @param EntityRegistry|null $registry Entity registry (claims are keyed by entity_id too).
 	 */
-	public function __construct( private readonly ClaimValidator $validator ) {
+	public function __construct( private readonly ClaimValidator $validator, private readonly ?EntityRegistry $registry = null ) {
 	}
 
 	/**
@@ -87,6 +92,7 @@ final class ClaimRepository {
 			if ( $row['retrieved_at'] > (string) $existing['retrieved_at'] ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
 				$wpdb->update( $table, array( 'retrieved_at' => $row['retrieved_at'] ), array( 'claim_id' => (int) $existing['claim_id'] ), array( '%s' ), array( '%d' ) );
+				self::changed( (string) $row['entity_type'], (int) $row['entity_id'] );
 			}
 			return array(
 				'claim_id'  => (int) $existing['claim_id'],
@@ -100,11 +106,15 @@ final class ClaimRepository {
 		$row['review_status'] = in_array( $review_status, self::REVIEW_STATUSES, true ) ? $review_status : self::REVIEW_PENDING;
 		$row['method']        = in_array( $method, self::METHODS, true ) ? $method : 'manual';
 		$row['created_at']    = gmdate( 'Y-m-d H:i:s' );
+		// Entity-keyed evidence (Etap B) and RAW → NORMALIZED: the raw value stays in `value`.
+		$row['lr_entity_id']     = $this->lr_entity_id( (string) $row['entity_type'], (int) $row['entity_id'] );
+		$row['value_normalized'] = self::normalized_json( (string) $row['field_name'], (string) $row['value'] );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table.
-		$ok = $wpdb->insert( $table, $row, array( '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%f', '%s', '%s', '%d', '%s', '%s', '%s' ) );
+		$ok = $wpdb->insert( $table, $row, array( '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%f', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s' ) );
 		if ( false === $ok ) {
 			throw new \RuntimeException( 'Could not store claim.' );
 		}
+		self::changed( (string) $row['entity_type'], (int) $row['entity_id'] );
 		return array(
 			'claim_id'  => (int) $wpdb->insert_id,
 			'duplicate' => false,
@@ -206,6 +216,76 @@ final class ClaimRepository {
 		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
 		$wpdb->update( $this->table(), array( 'review_status' => $status ), array( 'claim_id' => $claim_id ), array( '%s' ), array( '%d' ) );
+		$claim = $this->find( $claim_id );
+		if ( null !== $claim ) {
+			self::changed( $claim['entity_type'], $claim['entity_id'] );
+		}
+	}
+
+	/**
+	 * Registry entity ID for a claim subject (0 when unregistered).
+	 *
+	 * @param string $entity_type Entity type.
+	 * @param int    $wp_id       WordPress ID.
+	 */
+	private function lr_entity_id( string $entity_type, int $wp_id ): int {
+		$type = EntityType::tryFrom( $entity_type );
+		return null === $type || null === $this->registry ? 0 : (int) $this->registry->id_for( $type, $wp_id );
+	}
+
+	/**
+	 * JSON of the normalised value, or null when it cannot be normalised.
+	 *
+	 * @param string $field Field / attribute key.
+	 * @param string $json  Raw value (JSON).
+	 */
+	public static function normalized_json( string $field, string $json ): ?string {
+		$attribute = Attributes::fact( $field );
+		if ( null === $attribute ) {
+			return null;
+		}
+		$value = Normalizer::normalize( $attribute, json_decode( $json, true ) );
+		return null === $value ? null : (string) json_encode( $value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- WordPress-independent by design.
+	}
+
+	/**
+	 * Tell listeners (the fact layer) that an entity's evidence changed.
+	 *
+	 * @param string $entity_type Entity type.
+	 * @param int    $wp_id       WordPress ID.
+	 */
+	private static function changed( string $entity_type, int $wp_id ): void {
+		if ( function_exists( 'do_action' ) ) {
+			do_action( 'lexranked_claims_changed', $entity_type, $wp_id );
+		}
+	}
+
+	/**
+	 * Fill lr_entity_id and value_normalized for claims stored before schema v8.
+	 *
+	 * @return int Rows updated.
+	 */
+	public function backfill_entity_keys(): int {
+		global $wpdb;
+		$table    = $this->table();
+		$entities = $wpdb->prefix . Schema::ENTITIES;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Internal tables, no user input.
+		$updated = (int) $wpdb->query( "UPDATE {$table} c JOIN {$entities} e ON e.wp_object = 'post' AND e.wp_id = c.entity_id AND e.entity_type = c.entity_type SET c.lr_entity_id = e.entity_id WHERE c.lr_entity_id = 0" );
+		do {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Internal table.
+			$rows = $wpdb->get_results( "SELECT claim_id, field_name, value FROM {$table} WHERE value_normalized IS NULL AND claim_id > 0 ORDER BY claim_id ASC LIMIT 500", ARRAY_A );
+			$rows = is_array( $rows ) ? $rows : array();
+			$done = 0;
+			foreach ( $rows as $row ) {
+				// "null" (JSON) marks values that cannot be normalised, so the loop ends.
+				$json = self::normalized_json( (string) $row['field_name'], (string) $row['value'] ) ?? 'null';
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
+				$wpdb->update( $table, array( 'value_normalized' => $json ), array( 'claim_id' => (int) $row['claim_id'] ), array( '%s' ), array( '%d' ) );
+				++$done;
+			}
+			$updated += $done;
+		} while ( 500 === $done );
+		return $updated;
 	}
 
 	/**
@@ -273,6 +353,8 @@ final class ClaimRepository {
 			'job_id'              => (int) ( $row['job_id'] ?? 0 ),
 			'review_status'       => (string) ( $row['review_status'] ?? self::REVIEW_APPROVED ),
 			'method'              => (string) ( $row['method'] ?? 'manual' ),
+			'lr_entity_id'        => (int) ( $row['lr_entity_id'] ?? 0 ),
+			'value_normalized'    => isset( $row['value_normalized'] ) ? json_decode( (string) $row['value_normalized'], true ) : null,
 		);
 	}
 }

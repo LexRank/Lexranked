@@ -48,6 +48,9 @@ final class Installer {
 		$services->entity_index->reindex_all();
 		// Schema v7: stable entity IDs for every lawyer, firm, location and practice area.
 		$services->registry->backfill();
+		// Schema v8: evidence keyed by entity, normalised values, the fact layer.
+		$services->claims->backfill_entity_keys();
+		$services->facts->rebuild_all();
 		// Schema v6: commercial status is derived from claims and placements.
 		$services->commercial->sync_all();
 		// DTO shapes may have changed: drop cached API responses.

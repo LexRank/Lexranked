@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.8.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.9.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -121,6 +121,10 @@ status: "active", path, createdAt, updatedAt }`. `resolve` accepts a current
 city and practice-area DTOs carry `entityId` (the `id` field stays the CMS
 record ID).
 
+### `GET /attributes` (API 1.9)
+The data dictionary: `{ attributes: [{ key, label, valueType, entityTypes[],
+category, layer: fact|derived, freshness, unit, description }] }`.
+
 ### `GET /placements` (API 1.7)
 Labelled paid placements for **one page**, delivered separately from organic
 data. `product=sponsored&ranking=<id>` (a published ranking) or
@@ -177,7 +181,11 @@ on profiles; featured and sponsored placements come from `GET /placements`.
 entity's position in the latest run of each ranking).
 
 ### Lawyer (detail) adds
-`summary` (API 1.5, plain text), `premiumContent {label, message, ctaUrl,
+`summary` (API 1.5, plain text), `facts[]` (API 1.9: `{ attribute, label,
+category, value (normalised), unit, status: verified|unverified|conflict,
+confidence, source {id, name, publisher, url, type, tier, tierLabel},
+claimCount, observedAt, verifiedAt, freshness {category, maxAgeDays,
+lastVerifiedAt, isStale, staleAt}, method }`), `premiumContent {label, message, ctaUrl,
 disclosure} | null` (API 1.7; paid, labelled, never evidence), `contact {website, phone}`, `address {zipCode, country}`, `professional
 {yearsExperience, barState, barNumber, barStatus, education[], awards[],
 languages[]}`, `bio` (sanitized HTML), `freshness {category, maxAgeDays,
@@ -190,6 +198,7 @@ lastVerifiedAt, isStale, staleAt}`, `sources[]` (evidence), `createdAt`.
   "retrievedAt": "2026-09-24T07:46:24Z", "confidence": 0.99, "verificationStatus": "verified", "method": "seed" }
 ```
 Sorted by field, then source tier (most authoritative first), then newest.
+`normalizedValue` (API 1.9) is the value after normalisation; `value` stays raw.
 `method` (API 1.4): `manual`, `seed`, `structured_data` or `ai` (quote-checked
 extraction; see [ai.md](ai.md)). Only editor-approved evidence is public.
 

@@ -21,17 +21,26 @@ final class SourceMapper {
 	 *
 	 * @param array<string, mixed> $record Source record.
 	 * @param SourceTiers          $tiers  Tier configuration.
-	 * @return array{id: int, name: string, url: string|null, type: string|null, tier: int|null, isDemo: bool}
+	 * @return array<string, mixed>
 	 */
 	public static function source( array $record, SourceTiers $tiers ): array {
-		$type = $record['fields']['source_type'];
+		$f    = $record['fields'];
+		$type = $f['source_type'];
+		$tier = null === $type ? null : $tiers->tier_for( $type );
+		$host = null === $f['url'] ? '' : strtolower( (string) parse_url( (string) $f['url'], PHP_URL_HOST ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- WordPress-independent by design.
 		return array(
-			'id'     => $record['id'],
-			'name'   => $record['title'],
-			'url'    => $record['fields']['url'],
-			'type'   => $type,
-			'tier'   => null === $type ? null : $tiers->tier_for( $type ),
-			'isDemo' => (bool) $record['fields']['is_demo'],
+			'id'            => $record['id'],
+			'name'          => $record['title'],
+			'url'           => $f['url'],
+			'domain'        => '' === $host ? null : (string) preg_replace( '/^www\./', '', $host ),
+			'publisher'     => $f['publisher'] ?? null,
+			'type'          => $type,
+			'tier'          => $tier,
+			'tierLabel'     => null === $tier ? null : SourceTiers::label( $tier ),
+			'status'        => $f['status'] ?? 'active',
+			'retrievedAt'   => $f['retrieved_at'] ?? null,
+			'lastCheckedAt' => $f['last_checked_at'] ?? null,
+			'isDemo'        => (bool) $f['is_demo'],
 		);
 	}
 
@@ -50,6 +59,7 @@ final class SourceMapper {
 			$items[] = array(
 				'field'              => $claim['field_name'],
 				'value'              => $claim['value'],
+				'normalizedValue'    => $claim['value_normalized'] ?? null,
 				'source'             => array(
 					'id'   => $source['id'] ?? null,
 					'name' => $source['name'] ?? null,

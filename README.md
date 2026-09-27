@@ -86,7 +86,8 @@ Adding cities, rankings, lawyers and articles: [`docs/editor-guide.md`](docs/edi
 ### Knowledge base (docs/knowledge-base.md)
 
 A. ✅ **Entity model**: stable entity IDs for lawyers, firms, locations and practice areas; renames keep identity and redirect old URLs
-B. Attributes, claims keyed by entity, source objects, fact layers · C. Data Quality Score · D. Ranking explanations · E. Comparison engine · F. Contextual rankings · G. Page eligibility engine · H. AI-readable pages · I. Market statistics · J. AI interpretation layer
+B. ✅ **Evidence layers**: attribute registry, entity-keyed claims with raw + normalised values, fact layer with per-fact source and freshness, source objects, identifier-based entity resolution, provenance
+C. Data Quality Score · D. Ranking explanations · E. Comparison engine · F. Contextual rankings · G. Page eligibility engine · H. AI-readable pages · I. Market statistics · J. AI interpretation layer
 
 ## Security
 

@@ -27,6 +27,14 @@ final class EntityIndex {
 	public const META_KEY    = '_lr_name_key';
 	public const META_DOMAIN = '_lr_domain';
 
+	/** Identifier index: Identifiers key => meta key. */
+	public const META_IDS = array(
+		'bar'     => '_lr_id_bar',
+		'email'   => '_lr_id_email',
+		'phone'   => '_lr_id_phone',
+		'address' => '_lr_id_address',
+	);
+
 	/** Statuses a candidate may match (trash excluded). */
 	public const STATUSES = array( 'publish', 'draft', 'pending', 'private', 'future' );
 
@@ -81,6 +89,42 @@ final class EntityIndex {
 		} else {
 			update_post_meta( $post_id, self::META_DOMAIN, $domain );
 		}
+
+		$fields = $this->entities->record( $post, $definition )['fields'];
+		$ids    = Identifiers::from(
+			array(
+				'phone'      => $fields['phone'] ?? null,
+				'email'      => $fields['email'] ?? null,
+				'bar_state'  => $fields['bar_state'] ?? '',
+				'bar_number' => $fields['bar_number'] ?? '',
+				'address'    => 'law_firm' === $type ? ( $fields['address'] ?? '' ) : '',
+				'zip_code'   => $fields['zip_code'] ?? '',
+			)
+		);
+		foreach ( self::META_IDS as $key => $meta ) {
+			if ( isset( $ids[ $key ] ) ) {
+				update_post_meta( $post_id, $meta, $ids[ $key ] );
+			} else {
+				delete_post_meta( $post_id, $meta );
+			}
+		}
+	}
+
+	/**
+	 * Identifiers indexed for a post.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return array<string, string>
+	 */
+	private function identifiers( int $post_id ): array {
+		$out = array();
+		foreach ( self::META_IDS as $key => $meta ) {
+			$value = (string) get_post_meta( $post_id, $meta, true );
+			if ( '' !== $value ) {
+				$out[ $key ] = $value;
+			}
+		}
+		return $out;
 	}
 
 	/**
@@ -117,7 +161,7 @@ final class EntityIndex {
 	/**
 	 * Existing entities that could match a candidate, in the matcher's shape.
 	 *
-	 * @param array{entity_type: string, normalized_name: string, domain: string|null} $candidate Candidate.
+	 * @param array{entity_type: string, normalized_name: string, domain: string|null, identifiers?: array<string, string>} $candidate Candidate.
 	 * @return array<int, array{id: int, status: string, normalized_name: string, cities: array<int, string>, states: array<int, string>, domain: string|null, aliases: array<int, string>}>
 	 */
 	public function candidates_for( array $candidate ): array {
@@ -137,6 +181,14 @@ final class EntityIndex {
 				'key'   => self::META_DOMAIN,
 				'value' => $candidate['domain'],
 			);
+		}
+		foreach ( (array) ( $candidate['identifiers'] ?? array() ) as $key => $value ) {
+			if ( isset( self::META_IDS[ $key ] ) ) {
+				$or[] = array(
+					'key'   => self::META_IDS[ $key ],
+					'value' => (string) $value,
+				);
+			}
 		}
 		$type  = 'law_firm' === $candidate['entity_type'] ? EntityType::LawFirm : EntityType::Lawyer;
 		$posts = get_posts(
@@ -181,8 +233,56 @@ final class EntityIndex {
 				'states'          => array_values( array_unique( $states ) ),
 				'domain'          => ( '' === (string) get_post_meta( $post->ID, self::META_DOMAIN, true ) ) ? null : (string) get_post_meta( $post->ID, self::META_DOMAIN, true ),
 				'aliases'         => array_values( array_unique( $aliases[ (int) $post->ID ] ?? array() ) ),
+				'identifiers'     => $this->identifiers( (int) $post->ID ),
 			);
-		}
+		}//end foreach
+		return $out;
+	}
+
+	/**
+	 * Possible duplicates: lawyers or firms sharing an identifier (ENTITY RESOLUTION report).
+	 *
+	 * Strength: bar number and email → likely the same entity; firm phone,
+	 * firm address, firm website domain → possible duplicate; the same
+	 * normalised name → needs review. Nothing is merged automatically.
+	 *
+	 * @return array<int, array{entity_type: string, signal: string, strength: string, value: string, ids: array<int, int>}>
+	 */
+	public function duplicates(): array {
+		global $wpdb;
+		$checks = array(
+			array( self::META_IDS['bar'], 'bar number', 'likely same entity', array( Lawyer::SLUG ) ),
+			array( self::META_IDS['email'], 'email', 'likely same entity', array( Lawyer::SLUG, LawFirm::SLUG ) ),
+			array( self::META_IDS['phone'], 'phone', 'possible duplicate', array( LawFirm::SLUG ) ),
+			array( self::META_IDS['address'], 'address', 'possible duplicate', array( LawFirm::SLUG ) ),
+			array( self::META_DOMAIN, 'website domain', 'possible duplicate', array( LawFirm::SLUG ) ),
+			array( self::META_NAME, 'name', 'needs review', array( Lawyer::SLUG, LawFirm::SLUG ) ),
+		);
+		$out    = array();
+		foreach ( $checks as [ $meta, $signal, $strength, $types ] ) {
+			foreach ( $types as $post_type ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Maintenance report over indexed meta.
+				$rows = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT pm.meta_value AS v, GROUP_CONCAT(p.ID ORDER BY p.ID) AS ids FROM {$wpdb->postmeta} pm JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+						 WHERE pm.meta_key = %s AND p.post_type = %s AND p.post_status IN ('publish','draft','pending','private','future')
+						 GROUP BY pm.meta_value HAVING COUNT(*) > 1 LIMIT 200",
+						$meta,
+						$post_type
+					),
+					ARRAY_A
+				);
+				foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+					$out[] = array(
+						'entity_type' => Lawyer::SLUG === $post_type ? 'lawyer' : 'law_firm',
+						'signal'      => $signal,
+						'strength'    => $strength,
+						'value'       => (string) $row['v'],
+						'ids'         => array_map( 'intval', explode( ',', (string) $row['ids'] ) ),
+					);
+				}
+			}//end foreach
+		}//end foreach
 		return $out;
 	}
 

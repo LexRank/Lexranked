@@ -18,16 +18,38 @@ namespace LexRanked\Core\Sources;
 final class SourceTiers {
 
 	public const DEFAULT_TIERS = array(
-		'official_registry'      => 1,
-		'government'             => 1,
-		'bar_association'        => 1,
-		'official_website'       => 2,
-		'professional_directory' => 3,
-		'review_platform'        => 4,
-		'secondary'              => 5,
+		'official_registry'        => 1,
+		'government'               => 1,
+		'bar_association'          => 1,
+		'official_website'         => 2,
+		'professional_association' => 2,
+		'professional_directory'   => 3,
+		'review_platform'          => 4,
+		'editorial'                => 4,
+		'secondary'                => 5,
+		'social'                   => 5,
+		'other'                    => 5,
+	);
+
+	/** What each tier means (docs/knowledge-base.md). */
+	public const TIER_LABELS = array(
+		1 => 'Official / regulatory',
+		2 => 'Official business / professional',
+		3 => 'Reputable third-party directory',
+		4 => 'Review platform / editorial',
+		5 => 'Secondary / unclassified',
 	);
 
 	public const LOWEST_TIER = 5;
+
+	/**
+	 * Label of a tier.
+	 *
+	 * @param int $tier Tier.
+	 */
+	public static function label( int $tier ): string {
+		return self::TIER_LABELS[ $tier ] ?? self::TIER_LABELS[ self::LOWEST_TIER ];
+	}
 
 	/**
 	 * Constructor.

@@ -3,6 +3,7 @@ import "server-only";
 import type {
   ArticleDetail,
   ArticleSummary,
+  AttributeDto,
   CityDto,
   EntityDto,
   EntityType,
@@ -149,3 +150,7 @@ export async function resolveEntity(type: EntityType, slug: string, opts?: Opts)
     throw error;
   }
 }
+
+/** The data dictionary: facts and derived metrics an entity can have. */
+export const getAttributes = (opts?: Opts) =>
+  apiRequest<{ attributes: AttributeDto[] }>("attributes", { revalidate: 3600, ...opts }).then((r) => r.data.attributes);

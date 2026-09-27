@@ -64,7 +64,8 @@ final class FactResolver {
 			);
 			$values = array();
 			foreach ( $peers as $peer ) {
-				$values[ self::fingerprint( $peer['value'] ) ] = $peer['value'];
+				// Compare normalised values: "(305) 555-0101" and "+1 305 555 0101" agree.
+				$values[ self::fingerprint( $peer['value_normalized'] ?? $peer['value'] ) ] = $peer['value'];
 			}
 
 			$out[ $field ] = array(

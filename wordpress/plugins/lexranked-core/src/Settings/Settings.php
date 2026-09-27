@@ -178,7 +178,8 @@ final class Settings {
 	 * Configured source tiers.
 	 */
 	public function source_tiers(): SourceTiers {
-		return new SourceTiers( $this->get( 'source_tiers' ) );
+		// Types added in later versions appear with their default tier; configured tiers win.
+		return new SourceTiers( (array) $this->get( 'source_tiers' ) + SourceTiers::DEFAULT_TIERS );
 	}
 
 	/**

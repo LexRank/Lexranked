@@ -24,6 +24,8 @@ export interface FakeJob {
 export class FakeWordPress {
   jobs: FakeJob[] = [];
   candidates = new Map<string, { id: number; entityId: number | null; status: string }>();
+  /** Every candidate item received (to inspect what the worker sends). */
+  candidateItems: Record<string, unknown>[] = [];
   sources = new Map<string, number>();
   claims = new Map<string, number>();
   verifications = new Map<string, number>();
@@ -122,6 +124,7 @@ export class FakeWordPress {
           }),
         });
       case 'candidates':
+        this.candidateItems.push(...items);
         return json({
           results: items.map((it, index) => {
             const name = normalizeName(String(it.name), it.entity_type as 'lawyer');
