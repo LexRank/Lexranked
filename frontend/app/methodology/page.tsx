@@ -66,6 +66,19 @@ export default async function MethodologyPage() {
               Weights belong to a versioned configuration. Changing them creates a new methodology version instead of silently
               altering published scores.
             </p>
+            {active?.input === "facts" && (
+              <p>
+                <strong>Evidence only.</strong> Since {versionLabel}, the engine reads each value from the evidence layer: sources →
+                claims → verified or sourced facts. A value on a profile without a source, or one where equally authoritative sources
+                disagree, counts as missing until it is resolved. Earlier rankings keep the version that produced them.
+              </p>
+            )}
+            <p>
+              <strong>Every position is explained.</strong> Each ranking entry has a &ldquo;Why #N?&rdquo; panel built from its score
+              components — its strongest and weakest factors against the ranking average and what separates it from the entry above
+              — and, after a recalculation, what changed: its own data, its components, competitors that moved past it, or a new
+              methodology version. These explanations are computed from stored snapshots, never written by AI.
+            </p>
           </section>
 
           <section>

@@ -29,11 +29,17 @@ final class InputBuilder {
 	/**
 	 * Inputs for a batch of posts of one type.
 	 *
-	 * @param array<int, \WP_Post> $posts Posts (all lawyers or all firms).
-	 * @param \DateTimeImmutable   $as_of Calculation time (verification expiry is evaluated at this instant).
+	 * Methodology v1.0 reads the profile fields; v1.1+ reads the evidence-backed
+	 * fact layer (SOURCES → CLAIMS → FACTS → INPUT): values without a source,
+	 * and facts whose best sources conflict, count as missing. Membership
+	 * (location, practice areas) always comes from the editorial taxonomy.
+	 *
+	 * @param array<int, \WP_Post> $posts   Posts (all lawyers or all firms).
+	 * @param \DateTimeImmutable   $as_of   Calculation time (verification expiry is evaluated at this instant).
+	 * @param ScoreVersion|null    $version Methodology version (null = profile input).
 	 * @return array<int, EntityInput>
 	 */
-	public function build( array $posts, \DateTimeImmutable $as_of ): array {
+	public function build( array $posts, \DateTimeImmutable $as_of, ?ScoreVersion $version = null ): array {
 		if ( array() === $posts ) {
 			return array();
 		}
@@ -42,11 +48,16 @@ final class InputBuilder {
 		$type    = $is_firm ? $s->law_firm : $s->lawyer;
 		$policy  = $s->settings->verification_policy( $is_firm ? 'law_firm' : 'lawyer' );
 		$ver_map = $s->verifications->for_entities( array_map( static fn( \WP_Post $p ): int => (int) $p->ID, $posts ) );
+		$facts   = null !== $version && ScoreVersion::INPUT_FACTS === $version->input;
 		$inputs  = array();
+		if ( $facts ) {
+			// Evidence stored earlier in this request must be in the fact layer before scoring.
+			$s->facts->flush();
+		}
 
 		foreach ( $posts as $post ) {
 			$record           = $s->entities->record( $post, $type );
-			$f                = $record['fields'];
+			$f                = $facts ? self::fact_fields( $s->facts->for_entity( $is_firm ? 'law_firm' : 'lawyer', (int) $post->ID ) ) : $record['fields'];
 			$verification     = $policy->evaluate( $ver_map[ $post->ID ] ?? array(), $as_of );
 			$claims           = $s->claims->for_entity( $is_firm ? 'law_firm' : 'lawyer', (int) $post->ID );
 			[ $city, $state ] = self::location( $record['locations'] );
@@ -71,7 +82,7 @@ final class InputBuilder {
 				$sourced[] = $field;
 			}
 
-			$years        = $is_firm ? $this->firm_max_years( (int) $post->ID ) : $f['years_experience'];
+			$years        = $is_firm ? $this->firm_max_years( (int) $post->ID, $facts ) : $f['years_experience'];
 			$lawyer_count = $is_firm ? count( $s->presenter->firm_lawyer_posts( (int) $post->ID ) ) : 0;
 
 			$inputs[] = new EntityInput(
@@ -80,8 +91,8 @@ final class InputBuilder {
 				rating: $f['rating'],
 				review_count: $f['review_count'],
 				years_experience: $years,
-				awards_count: $is_firm ? 0 : count( $f['awards'] ),
-				education_count: $is_firm ? 0 : count( $f['education'] ),
+				awards_count: $is_firm ? 0 : count( (array) $f['awards'] ),
+				education_count: $is_firm ? 0 : count( (array) $f['education'] ),
 				bar_status: $is_firm ? null : $f['bar_status'],
 				practice_areas: $practice,
 				city: $city,
@@ -95,6 +106,33 @@ final class InputBuilder {
 			);
 		}//end foreach
 		return $inputs;
+	}
+
+	/**
+	 * Engine inputs from facts: conflicting facts are left out (missing), the rest
+	 * use their normalised value.
+	 *
+	 * @param array<string, array<string, mixed>> $facts Fact rows keyed by attribute.
+	 * @return array<string, mixed>
+	 */
+	public static function fact_fields( array $facts ): array {
+		$value  = static function ( string $key ) use ( $facts ): mixed {
+			$fact = $facts[ $key ] ?? null;
+			return null === $fact || 'conflict' === $fact['status'] ? null : $fact['value'];
+		};
+		$rating = $value( 'rating' );
+		$count  = $value( 'review_count' );
+		$years  = $value( 'years_experience' );
+		$bar    = $value( 'bar_status' );
+		return array(
+			'rating'           => is_numeric( $rating ) ? (float) $rating : null,
+			'review_count'     => is_numeric( $count ) ? (int) $count : null,
+			'years_experience' => is_numeric( $years ) ? (int) $years : null,
+			'bar_status'       => is_string( $bar ) ? $bar : null,
+			'website'          => $value( 'website' ),
+			'awards'           => is_array( $value( 'awards' ) ) ? $value( 'awards' ) : array(),
+			'education'        => is_array( $value( 'education' ) ) ? $value( 'education' ) : array(),
+		);
 	}
 
 	/**
@@ -120,12 +158,15 @@ final class InputBuilder {
 	/**
 	 * Firm experience: the longest-practising profiled lawyer (null if unknown).
 	 *
-	 * @param int $firm_id Firm ID.
+	 * @param int  $firm_id Firm ID.
+	 * @param bool $facts   Read the fact layer (v1.1+) instead of profile fields.
 	 */
-	private function firm_max_years( int $firm_id ): ?int {
+	private function firm_max_years( int $firm_id, bool $facts = false ): ?int {
 		$years = array();
 		foreach ( $this->services->presenter->firm_lawyer_posts( $firm_id ) as $lawyer ) {
-			$value = get_post_meta( $lawyer->ID, (string) $this->services->lawyer->field( 'years_experience' )?->meta_key(), true );
+			$value = $facts
+				? ( self::fact_fields( $this->services->facts->for_entity( 'lawyer', (int) $lawyer->ID ) )['years_experience'] ?? '' )
+				: get_post_meta( $lawyer->ID, (string) $this->services->lawyer->field( 'years_experience' )?->meta_key(), true );
 			if ( '' !== $value ) {
 				$years[] = (int) $value;
 			}

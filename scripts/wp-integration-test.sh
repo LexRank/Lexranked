@@ -122,7 +122,7 @@ expect "ranking comes from engine snapshots with breakdowns" '(.calculatedAt != 
 expect "second calculation reports movement" 'all(.entries[]; .movement == 0 and .isNew == false)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 expect "ranking history has both runs" '(.runs | length) == 2 and ((.runs[0].entries | length) == 8)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo/history"
 expect "profile has breakdown summing to the score" '((.ranking.breakdown | map(.points) | add) * 100 | round) == ((.ranking.score) * 100 | round) and ((.rankings | length) == 1)' "$API/lawyers/avery-example-demo"
-expect "score versions endpoint" '.active == "v1.0" and ([.versions[0].weights[].weight] | add) == 100' "$API/score-versions"
+expect "score versions endpoint: v1.1 reads the fact layer, v1.0 kept" '.active == "v1.1" and ([.versions[0].weights[].weight] | add) == 100 and ([.versions[] | select(.id == "v1.1")][0].input == "facts") and ([.versions[] | select(.id == "v1.0")][0].input == "profile")' "$API/score-versions"
 if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "all snapshots reproduce exactly from stored inputs"; else fail "snapshot reproduction"; fi
 
 echo "==> Entity layer (Etap A)"
@@ -153,10 +153,21 @@ check "provenance traces fact → claim → source → ranking input" '.[0].attr
 
 echo "==> Data Quality Score (Etap C)"
 expect "the Data Quality model is published (weights sum to 100)" '.version == "dq-1.0" and ([.dimensions[].weight] | add) == 100 and .summary.count >= 11' "$API/data-quality"
-expect "profiles carry a Data Quality score with five dimensions" '.dataQuality.score > 0 and .dataQuality.score <= 100 and (.dataQuality.dimensions | length) == 5 and (.dataQuality.missing | index("languages") != null) and .dataQuality.version == "dq-1.0"' "$API/lawyers/avery-example-demo"
+expect "profiles carry a Data Quality score with five dimensions" '.dataQuality.score > 0 and .dataQuality.score <= 100 and (.dataQuality.dimensions | length) == 5 and ([.dataQuality.dimensions[] | select(.key == "completeness")][0].score == 100) and .dataQuality.missing == [] and .dataQuality.version == "dq-1.0"' "$API/lawyers/avery-example-demo"
 expect "a lawyer with failed verification scores lower on verification" '[.dataQuality.dimensions[] | select(.key == "verification")][0].score < 100' "$API/lawyers/harper-exemplar-demo"
 check "CLI explains the score" 'test("Data Quality [0-9.]+% \\(dq-1.0\\)")' "$(wp lexranked quality lawyer:avery-example-demo | sed -n 1p | jq -Rs .)"
 expect "Data Quality is not part of the ranking entries" '(.entries | tostring | test("dataQuality|quality_score") | not)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+
+echo "==> Ranking explanations and methodology v1.1 (Etap D)"
+RANKING_URL="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+expect "entries were calculated with v1.1 from the fact layer" 'all(.entries[]; .scoreVersion == "v1.1")' "$RANKING_URL"
+expect "every entry explains its position from its components" 'all(.entries[]; (.why.summary | startswith("Ranks #")) and (.why.strengths | type) == "array") and .entries[0].why.behind == null and .entries[1].why.behind.position == 1' "$RANKING_URL"
+BLAKE_WP="$(curl -sS "$API/lawyers/blake-sample-demo" | jq .id)"
+wp eval "\\LexRanked\\Core\\Plugin::services()->claims->insert( array( 'entity_id' => $BLAKE_WP, 'entity_type' => 'lawyer', 'field_name' => 'review_count', 'value' => 900, 'source_url' => 'https://example.com/demo/reviews', 'source_type' => 'review_platform', 'retrieved_at' => gmdate( 'c' ), 'confidence' => 0.8, 'verification_status' => 'verified' ) );" >/dev/null
+expect "new evidence reaches the fact layer" '(.facts[] | select(.attribute == "review_count")) | .value == 900 and .status == "verified"' "$API/lawyers/blake-sample-demo"
+wp lexranked recalculate >/dev/null
+expect "the change is explained from the snapshot difference" '(.entries[] | select(.entity.slug == "blake-sample-demo")) | .change != null and ([.change.reasons[].text] | any(test("review count 154 → 900"))) and ([.change.reasons[].type] | index("component") != null)' "$RANKING_URL"
+if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "v1.0 and v1.1 snapshots all reproduce from their stored inputs"; else fail "snapshot reproduction after v1.1"; fi
 
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
@@ -359,6 +370,11 @@ if [[ -n "$FRONTEND" ]]; then
   loc="$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$WEB/lawyers/drew-specimen-demo/")"
   if [[ "$loc" == 308*"/lawyers/drew-specimen-renamed-demo/" ]]; then pass "former profile URL redirects permanently to the renamed profile"; else fail "former URL: $loc"; fi
   expect_status "renamed profile page" 200 "$WEB/lawyers/drew-specimen-renamed-demo/"
+
+  echo "==> Ranking explanations on pages (Etap D)"
+  page_has "each ranking entry has a Why panel" "/rankings/florida/miami/personal-injury/" "Why #1?"
+  page_has "the Why panel is built from components" "/rankings/florida/miami/personal-injury/" "ranking avg"
+  page_has "methodology explains evidence-only scoring" "/methodology/" "Evidence only."
 
   echo "==> Data Quality on pages (Etap C)"
   page_has "profile shows the Data Quality panel" "/lawyers/avery-example-demo/" "Data quality"

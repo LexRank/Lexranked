@@ -160,12 +160,14 @@ final class EntityPresenter {
 				'calculated_at' => null,
 			);
 		}
-		$rows     = $snapshots->run_rows( $runs[0] );
-		$previous = null;
+		$rows          = $snapshots->run_rows( $runs[0] );
+		$previous      = null;
+		$previous_rows = array();
 		if ( isset( $runs[1] ) ) {
 			$previous = array();
 			foreach ( $snapshots->run_rows( $runs[1] ) as $row ) {
-				$previous[ $row['entity_id'] ] = $row['position'];
+				$previous[ $row['entity_id'] ]      = $row['position'];
+				$previous_rows[ $row['entity_id'] ] = $row;
 			}
 		}
 		$is_firm   = 'law_firm' === ( $rows[0]['entity_type'] ?? 'lawyer' );
@@ -185,7 +187,7 @@ final class EntityPresenter {
 			$summaries[ $summary['id'] ] = $summary;
 		}
 		return array(
-			'entries'       => RankingMapper::entries_from_snapshots( $rows, $summaries, $previous ),
+			'entries'       => RankingMapper::entries_from_snapshots( $rows, $summaries, $previous, $previous_rows ),
 			'calculated_at' => $rows[0]['calculated_at'] ?? null,
 		);
 	}

@@ -172,30 +172,47 @@ final class Command {
 				);
 			}
 
+			// Evidence for every scored fact, so the fact layer (methodology v1.1) sees what the profile shows.
 			$claims = array(
+				array( 'name', $lawyer['title'], 'registry', 'official_registry', 0.99 ),
+				array( 'bar_state', $lawyer['bar_state'], 'registry', 'official_registry', 0.99 ),
+				array( 'bar_number', $lawyer['bar_number'], 'registry', 'official_registry', 0.99 ),
 				array( 'bar_status', $lawyer['bar_status'], 'registry', 'official_registry', 0.99 ),
 				array( 'years_experience', $lawyer['years_experience'], 'registry', 'official_registry', 0.95 ),
+				array( 'city', DemoData::CITY['name'], 'registry', 'official_registry', 0.95 ),
+				array( 'state', DemoData::STATE['code'], 'registry', 'official_registry', 0.95 ),
+				array( 'practice_areas', array( DemoData::PRACTICE['slug'] ), 'website', 'official_website', 0.9 ),
 				array( 'website', $lawyer['website'], 'website', 'official_website', 0.9 ),
+				array( 'phone', $lawyer['phone'], 'website', 'official_website', 0.9 ),
+				array( 'education', $lawyer['education'], 'website', 'official_website', 0.9 ),
+				array( 'awards', $lawyer['awards'], 'website', 'official_website', 0.9 ),
+				array( 'languages', $lawyer['languages'], 'website', 'official_website', 0.9 ),
 				array( 'rating', $lawyer['rating'], 'reviews', 'review_platform', 0.8 ),
 				array( 'review_count', $lawyer['review_count'], 'reviews', 'review_platform', 0.8 ),
 			);
-			foreach ( $claims as [ $field, $value, $source, $source_type, $confidence ] ) {
-				$s->claims->insert(
-					array(
-						'entity_id'           => $id,
-						'entity_type'         => 'lawyer',
-						'field_name'          => $field,
-						'value'               => $value,
-						'source_id'           => $sources[ $source ],
-						'source_url'          => DemoData::sources()[ $source ]['url'],
-						'source_type'         => $source_type,
-						'retrieved_at'        => $verified_at,
-						'confidence'          => $confidence,
-						'verification_status' => 'official_registry' === $source_type ? 'verified' : 'pending',
-					)
-				);
-			}
+			$this->demo_claims( 'lawyer', $id, $claims, $sources, $verified_at );
 		}//end foreach
+
+		foreach ( DemoData::firms() as $key => $firm ) {
+			$this->demo_claims(
+				'law_firm',
+				$firms[ $key ],
+				array(
+					array( 'name', $firm['title'], 'website', 'official_website', 0.9 ),
+					array( 'city', DemoData::CITY['name'], 'website', 'official_website', 0.9 ),
+					array( 'state', DemoData::STATE['code'], 'website', 'official_website', 0.9 ),
+					array( 'practice_areas', array( DemoData::PRACTICE['slug'] ), 'website', 'official_website', 0.9 ),
+					array( 'website', $firm['website'], 'website', 'official_website', 0.9 ),
+					array( 'phone', $firm['phone'], 'website', 'official_website', 0.9 ),
+					array( 'address', $firm['address'], 'website', 'official_website', 0.9 ),
+					array( 'zip_code', $firm['zip_code'], 'website', 'official_website', 0.9 ),
+					array( 'rating', $firm['rating'], 'reviews', 'review_platform', 0.8 ),
+					array( 'review_count', $firm['review_count'], 'reviews', 'review_platform', 0.8 ),
+				),
+				$sources,
+				$verified_at
+			);
+		}
 
 		$ranking = $this->create(
 			$s->ranking,
@@ -251,6 +268,37 @@ final class Command {
 				$result['rankings']
 			)
 		);
+	}
+
+	/**
+	 * Store demo evidence (empty values are skipped).
+	 *
+	 * @param string                        $type        lawyer|law_firm.
+	 * @param int                           $id          Entity post ID.
+	 * @param array<int, array<int, mixed>> $claims      [field, value, source key, source type, confidence].
+	 * @param array<string, int>            $sources     Source post IDs by key.
+	 * @param string                        $retrieved   Retrieval time.
+	 */
+	private function demo_claims( string $type, int $id, array $claims, array $sources, string $retrieved ): void {
+		foreach ( $claims as [ $field, $value, $source, $source_type, $confidence ] ) {
+			if ( null === $value || '' === $value || array() === $value ) {
+				continue;
+			}
+			$this->services->claims->insert(
+				array(
+					'entity_id'           => $id,
+					'entity_type'         => $type,
+					'field_name'          => $field,
+					'value'               => $value,
+					'source_id'           => $sources[ $source ],
+					'source_url'          => DemoData::sources()[ $source ]['url'],
+					'source_type'         => $source_type,
+					'retrieved_at'        => $retrieved,
+					'confidence'          => $confidence,
+					'verification_status' => 'official_registry' === $source_type ? 'verified' : 'pending',
+				)
+			);
+		}
 	}
 
 	/**

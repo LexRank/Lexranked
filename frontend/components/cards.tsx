@@ -165,6 +165,72 @@ export function RankingEntry({ entry }: { entry: RankingEntryDto }) {
           View profile
         </Link>
       </div>
+      <WhyRankedHere entry={entry} />
     </li>
+  );
+}
+
+const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+
+/**
+ * "Why #N?": a native disclosure (no JavaScript) built only from the stored
+ * score components and snapshot differences — never generated text.
+ */
+export function WhyRankedHere({ entry }: { entry: RankingEntryDto }) {
+  const why = entry.why;
+  const change = entry.change;
+  if (!why) return null;
+  return (
+    <details className="entry__why">
+      <summary>{`Why #${entry.position}?`}</summary>
+      <p>{why.summary}</p>
+      <div className="entry__why-grid">
+        {why.strengths.length > 0 && (
+          <div>
+            <p className="panel-title">Strongest</p>
+            <ul>
+              {why.strengths.map((c) => (
+                <li key={c.key}>
+                  {c.label} <strong>{fmt(c.points)}</strong>/{fmt(c.max)} <span className="muted">(ranking avg {fmt(c.average)})</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {why.gaps.length > 0 && (
+          <div>
+            <p className="panel-title">Held back by</p>
+            <ul>
+              {why.gaps.map((c) => (
+                <li key={c.key}>
+                  {c.label} <strong>{fmt(c.points)}</strong>/{fmt(c.max)} <span className="muted">(ranking avg {fmt(c.average)})</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      {why.behind && why.behind.components.length > 0 && (
+        <p className="muted">
+          {why.behind.scoreGap.toFixed(2)} points behind #{why.behind.position}
+          {why.behind.name ? ` (${why.behind.name})` : ""}:{" "}
+          {why.behind.components.map((c) => `${c.label} −${fmt(c.delta)}`).join(", ")}.
+        </p>
+      )}
+      {why.missing.length > 0 && <p className="muted">Not on record (scores 0, never estimated): {why.missing.map((m) => m.replace(/_/g, " ")).join(", ")}.</p>}
+      {change && change.reasons.length > 0 && (
+        <div>
+          <p className="panel-title">
+            Since the previous calculation
+            {change.previousPosition !== null ? ` (was #${change.previousPosition})` : ""}
+          </p>
+          <ul>
+            {change.reasons.slice(0, 6).map((r, i) => (
+              <li key={i}>{r.text}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </details>
   );
 }

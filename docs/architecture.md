@@ -294,3 +294,11 @@ If data quality ever influences positions, it will be through a published
 score component in a new methodology version, as the existing 5-point
 component already is.
 
+### ADR-036 — Scores come from evidence, and every position is explained from data
+Methodology v1.1 reads the fact layer instead of profile fields. A value
+without a source, or with conflicting sources, is missing, not assumed.
+Explanations ("why ranked here", "why it moved") are computed from stored
+components and snapshot differences with fixed templates. An LLM may later
+rephrase them (Etap J) but cannot supply a reason that is not a stored
+difference.
+

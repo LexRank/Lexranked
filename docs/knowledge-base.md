@@ -42,9 +42,9 @@ position. Payment never enters the organic path (docs/commercial.md).
 | 4 | Claim / evidence layer | ✅ B | `lr_claims` already stores entity, field, value, source, `retrieved_at`, confidence, verification and review status, method and research job. Etap B keys claims by `entity_id` and covers term entities |
 | 5 | Sources as objects with tiers | ✅ B | Source posts have URL, type and tier (1–5, configurable). Etap B adds domain, publisher, `last_checked_at`, status and the requested source types (directory, editorial, social, other) |
 | 6 | Data vs interpretation | ✅ B / ◐ J | Raw claims and derived components are already separate, and AI text cites facts. Etap B makes the four layers explicit |
-| 7 | Ranking from evidence, never from AI | ◐ B | The engine reads resolved entity fields (from claims via FactResolver), never AI output. AI claims are capped at 0.6 and need review. Etap B makes the path claims → verified facts → normalised attributes explicit |
+| 7 | Ranking from evidence, never from AI | ✅ D | The engine reads resolved entity fields (from claims via FactResolver), never AI output. AI claims are capped at 0.6 and need review. Etap B makes the path claims → verified facts → normalised attributes explicit |
 | 8 | Score components | ✅ | 7 components with points, maximum, explanation and missing inputs, plus `score_version` and `calculated_at`, stored per snapshot |
-| 9 | "Why this ranking / why ranked here" | ◐ D | Methodology section and per-entry breakdown exist. Etap D renders a per-entity "why ranked here" from components |
+| 9 | "Why this ranking / why ranked here" | ✅ D | Methodology section and per-entry breakdown exist. Etap D renders a per-entity "why ranked here" from components |
 | 10, 25 | Comparison engine and pages | ○ E | `/compare?lawyer=…&lawyer=…`, noindex, structured data only |
 | 11–13 | Contextual ("best for") rankings, context model, context URLs | ○ F | `case_type`, `client_type`, `language` qualifiers; `/rankings/{state}/{city}/{practice}/{context}/` only when eligible |
 | 14–15 | Page eligibility engine, no thin programmatic SEO | ◐ G | Rules exist: hubs need 3 published lawyers and 3 real ones to index; rankings need 5 entries; articles need 300 words; demo is noindex. Etap G moves this to one backend engine with verified-count, evidence-coverage and uniqueness thresholds |
@@ -53,7 +53,7 @@ position. Payment never enters the organic path (docs/commercial.md).
 | 20 | Schema.org from entity data only | ✅ / ◐ H | Person, Organization / LegalService, ItemList, BreadcrumbList and FAQPage are emitted only when their data exists. There is no review markup |
 | 21–24 | Directory-grade ranking layout, key attributes on cards, `ContextualAttributes`, data-driven related questions | ◐ H | The layout already follows answer → methodology → ranking → FAQ → related. Contextual attributes and generated questions depend on Etap F |
 | 26 | Ranking snapshots | ✅ | Every calculation is an immutable run; `/rankings/{id}/history` |
-| 27 | Explaining position changes from snapshot diffs | ◐ D | Movement is known. Etap D diffs components between runs ("review data changed, competitor gained") |
+| 27 | Explaining position changes from snapshot diffs | ✅ D | Movement is known. Etap D diffs components between runs ("review data changed, competitor gained") |
 | 28 | Research pipeline discover → … → update rankings | ◐ B | Discover, match, sources, extract, claims, verify, resolve into drafts and recalculate all exist (Phase 5). Normalisation and metrics become explicit in B |
 | 29–30 | Entity resolution with identifiers; AI only advisory | ✅ A/B | The deterministic matcher uses name, name key, domain and city, and now **former names** (A). Etap B adds phone, address, email and bar-number signals. AI stays a note to the reviewer |
 | 31–32 | Data Quality Score, never a hidden boost | ✅ C | Today "data quality" is an open 5-point component. Etap C adds a separate, displayed Data Quality % (completeness, freshness, source quality, verification coverage, consistency) that is not a ranking |
@@ -73,8 +73,8 @@ position. Payment never enters the organic path (docs/commercial.md).
 | **A** | Entity model | ✅ |
 | **B** | Attributes, claims keyed by entity, source objects, fact layers, resolution identifiers, provenance | ✅ |
 | **C** | Data Quality Score | ✅ |
-| D | Per-entity "why ranked here", snapshot-diff explanations, methodology v1.1 on the fact layer | next |
-| E | Comparison engine | |
+| **D** | Per-entity "why ranked here", snapshot-diff explanations, methodology v1.1 on the fact layer | ✅ |
+| E | Comparison engine | next |
 | F | Contextual rankings | |
 | G | Unified page eligibility engine | |
 | H | AI-readable page architecture | |
@@ -197,3 +197,11 @@ A separate, published percentage of **how well a profile is documented**. It say
 - The ranking engine cannot read the Data Quality Score; a token-level test enforces this.
 - The LexRank score keeps its own, separately published 5-point "data quality" component. That component is a disclosed part of the methodology.
 - The two numbers are never combined or multiplied.
+
+## Etap D: explanations and evidence-based scoring (implemented)
+
+- **Methodology v1.1** (now active): same weights as v1.0, inputs read from the fact layer. Unsourced or conflicting values count as missing. Old snapshots keep v1.0. Details: docs/ranking-methodology.md.
+- **Why ranked here** on every entry: strongest and weakest components against the ranking average, the gap to the entry above, missing inputs.
+- **Change explanations** from snapshot differences: methodology, own component and input deltas, competitors that moved past or dropped below, entries that joined or left. Nothing is guessed: every reason is a stored difference.
+- Demo data now carries evidence for every scored attribute, so v1.1 produces the same order as v1.0 on demo data.
+- Fixed ordering issue: when evidence is stored and a ranking calculated in the same request, pending fact rebuilds are flushed first. New evidence also schedules a recalculation.

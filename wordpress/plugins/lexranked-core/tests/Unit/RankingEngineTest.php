@@ -190,10 +190,17 @@ final class RankingEngineTest extends TestCase {
 					'weights' => $weights,
 					'params'  => ScoreVersions::builtin()['v1.0']['params'],
 				),
+				'v1.2' => array(
+					'weights' => $weights,
+					'params'  => ScoreVersions::builtin()['v1.0']['params'],
+				),
 			)
 		);
 		$this->assertSame( 30, $versions->get( 'v1.0' )->weights['reputation'] );
-		$this->assertSame( 25, $versions->get( 'v1.1' )->weights['reputation'] );
-		$this->assertSame( array( 'v1.0', 'v1.1' ), array_keys( $versions->all() ) );
+		$this->assertSame( 30, $versions->get( 'v1.1' )->weights['reputation'], 'v1.1 is built in too' );
+		$this->assertSame( 'facts', $versions->get( 'v1.1' )->input );
+		$this->assertSame( 25, $versions->get( 'v1.2' )->weights['reputation'] );
+		$this->assertSame( 'profile', $versions->get( 'v1.2' )->input, 'Configured versions default to profile input' );
+		$this->assertSame( array( 'v1.0', 'v1.1', 'v1.2' ), array_keys( $versions->all() ) );
 	}
 }

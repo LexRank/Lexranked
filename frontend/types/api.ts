@@ -208,7 +208,34 @@ export interface RankingEntry {
   movement: number | null;
   isNew: boolean;
   breakdown: ScoreComponent[];
+  /** Why this entry ranks here, from its score components (API 1.11). */
+  why?: RankingWhy | null;
+  /** What changed since the previous calculation, from snapshot diffs (API 1.11); null when nothing changed. */
+  change?: RankingChange | null;
   entity: LawyerSummary | LawFirmSummary;
+}
+
+export interface WhyComponent {
+  key: string;
+  label: string;
+  points: number;
+  max: number;
+  average: number;
+}
+
+export interface RankingWhy {
+  summary: string;
+  strengths: WhyComponent[];
+  gaps: WhyComponent[];
+  behind: { position: number; entityId: number; name: string | null; scoreGap: number; components: { key: string; label: string; delta: number }[] } | null;
+  missing: string[];
+}
+
+export interface RankingChange {
+  previousPosition: number | null;
+  previousScore: number | null;
+  scoreDelta: number | null;
+  reasons: { type: "entered" | "methodology" | "component" | "input" | "competitor" | "left"; text: string }[];
 }
 
 export interface RankingSummary {
@@ -339,6 +366,8 @@ export interface ApiErrorBody {
 
 export interface ScoreVersionDto {
   id: string;
+  /** Where the engine reads data (API 1.11): profile fields (v1.0) or evidence-backed facts (v1.1+). */
+  input?: "profile" | "facts";
   weights: Array<{ key: string; label: string; weight: number }>;
   params: Record<string, number>;
 }

@@ -27,9 +27,43 @@ sum to 100) and parameters:
 - Built-in versions live in code (`ScoreVersions::builtin()`), so any change
   is reviewed and versioned in git.
 - A built-in id can never be redefined.
-- Changing weights means adding a new version, e.g. `v1.1`.
+- Changing weights or the input source means adding a new version (v1.1 changed the input source).
 - The active version is selected in **LexRanked › Settings**.
 - A ranking may pin its own version.
+
+## v1.1 (active): scores from evidence
+
+v1.1 uses exactly the v1.0 weights and formulas below. The only change is
+**where the inputs come from**: the evidence-backed fact layer
+(SOURCES → CLAIMS → FACTS → NORMALISED ATTRIBUTES → COMPONENTS → SCORE,
+docs/knowledge-base.md).
+
+- Rating, review count, years of experience, bar status, website, awards and education are read from `lr_facts`, not from profile fields.
+- A value filled in on a profile **without a source counts as missing**.
+- A fact whose equally authoritative sources disagree (`conflict`) also counts as missing until an editor resolves it.
+- Membership in a ranking (location and practice areas) comes from the editorial taxonomy, as before.
+- Before scoring, the engine flushes pending fact rebuilds, so evidence stored earlier in the same request counts.
+- A change in evidence schedules a recalculation.
+- Snapshots record the version that produced them: v1.0 runs stay v1.0, and `verify-snapshots` reproduces both.
+- `ScoreVersion::$input` is `profile` (v1.0) or `facts` (v1.1). `GET /score-versions` publishes it.
+
+## Explanations (Etap D)
+
+Every ranking entry carries two explanations, computed from stored snapshots by `RankingExplainer`. There is no AI and no free text: fixed templates are filled with numbers.
+
+**`why`: why the entry ranks where it does**
+- Its **strongest** components: the largest edge over the ranking's average, measured relative to the component's maximum.
+- The components that **hold it back** (below 75 % of their maximum; never the same as a strength).
+- What separates it from the entry **above**: the points gap and the components with the largest differences.
+- **Missing** inputs, which score 0 and are never estimated.
+
+**`change`: what changed since the previous run**
+- The methodology version, if it changed.
+- Its own component deltas.
+- Its own input changes, e.g. "review count 154 → 900".
+- **Competitors** that moved past it (with their score change), dropped below it, joined above it, or left the ranking.
+
+The frontend shows both in a "Why #N?" disclosure on every entry.
 
 ## v1.0
 

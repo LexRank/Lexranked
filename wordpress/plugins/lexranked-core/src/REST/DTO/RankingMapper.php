@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST\DTO;
 
+use LexRanked\Core\Ranking\RankingExplainer;
+
 /**
  * Maps ranking definitions and ordered entries.
  */
@@ -26,11 +28,22 @@ final class RankingMapper {
 	 * @param array<int, array<string, mixed>> $rows      Snapshot rows ordered by position.
 	 * @param array<int, array<string, mixed>> $summaries Entity summary DTOs keyed by entity ID.
 	 * @param array<int, int>|null             $previous  Previous run: entity ID => position, or null.
+	 * @param array<int, array<string, mixed>> $previous_rows Previous run's rows keyed by entity ID (for change explanations).
 	 * @return array<int, array<string, mixed>>
 	 */
-	public static function entries_from_snapshots( array $rows, array $summaries, ?array $previous ): array {
+	public static function entries_from_snapshots( array $rows, array $summaries, ?array $previous, array $previous_rows = array() ): array {
 		$entries  = array();
 		$position = 0;
+		// Explanations are computed on the published entries only, with compacted positions.
+		$visible = array();
+		foreach ( $rows as $row ) {
+			if ( isset( $summaries[ $row['entity_id'] ] ) ) {
+				$visible[] = array( 'position' => count( $visible ) + 1 ) + $row;
+			}
+		}
+		$names   = array_map( static fn( array $s ): string => (string) $s['name'], $summaries );
+		$why     = RankingExplainer::why( $visible, $names );
+		$current = array_column( $visible, null, 'entity_id' );
 		foreach ( $rows as $row ) {
 			$summary = $summaries[ $row['entity_id'] ] ?? null;
 			if ( null === $summary ) {
@@ -45,6 +58,8 @@ final class RankingMapper {
 				'movement'     => null === $before ? null : $before - $position,
 				'isNew'        => null !== $previous && null === $before,
 				'breakdown'    => EntityMapper::breakdown( $row['components'] ),
+				'why'          => $why[ $row['entity_id'] ] ?? null,
+				'change'       => null === $previous || array() === $previous_rows ? null : RankingExplainer::change( $current[ $row['entity_id'] ], $previous_rows[ $row['entity_id'] ] ?? null, $current, $previous_rows, $names ),
 				'entity'       => $summary,
 			);
 		}

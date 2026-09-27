@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.10.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.11.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -219,7 +219,16 @@ Summary fields + `lawyerCount`, `contact {website, phone, email}`, `address
 ### Ranking (detail)
 `id, slug, path, title, entityType, location, practiceArea, scoreVersion,
 entryCount, minEntities, isThin, indexable, isDemo, updatedAt,
-methodologyUrl, intro, entries[{ position, score, scoreVersion, entity }]`.
+methodologyUrl, intro, entries[{ position, score, scoreVersion, movement, isNew,
+breakdown, why, change, entity }]`.
+
+`why` (API 1.11): `{ summary, strengths[{key, label, points, max, average}],
+gaps[…], behind {position, entityId, name, scoreGap, components[{key, label,
+delta}]} | null, missing[] }`. `change` (API 1.11, null when nothing changed):
+`{ previousPosition, previousScore, scoreDelta, reasons[{type:
+entered|methodology|component|input|competitor|left, text, …}] }`. Both are
+computed from stored snapshots, never by AI. `GET /score-versions` versions
+carry `input: profile|facts`.
 
 TypeScript definitions: `frontend/types/api.ts`.
 

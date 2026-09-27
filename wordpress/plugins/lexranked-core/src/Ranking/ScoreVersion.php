@@ -26,6 +26,10 @@ final class ScoreVersion {
 		'data_quality'       => 'Data quality',
 	);
 
+	/** Where the engine reads entity data: profile fields (v1.0) or the evidence-backed fact layer (v1.1+). */
+	public const INPUT_PROFILE = 'profile';
+	public const INPUT_FACTS   = 'facts';
+
 	public const REQUIRED_PARAMS = array(
 		'review_prior_mean',
 		'review_prior_weight',
@@ -41,13 +45,18 @@ final class ScoreVersion {
 	 * @param string               $id      Version id, e.g. "v1.0".
 	 * @param array<string, float> $weights Component key => weight (sum 100).
 	 * @param array<string, float> $params  Calculation parameters.
+	 * @param string               $input   Input source: INPUT_PROFILE or INPUT_FACTS.
 	 * @throws \InvalidArgumentException When the definition is invalid.
 	 */
 	public function __construct(
 		public readonly string $id,
 		public readonly array $weights,
-		public readonly array $params
+		public readonly array $params,
+		public readonly string $input = self::INPUT_PROFILE
 	) {
+		if ( ! in_array( $input, array( self::INPUT_PROFILE, self::INPUT_FACTS ), true ) ) {
+			throw new \InvalidArgumentException( 'Input source must be profile or facts.' );
+		}
 		if ( ! preg_match( '/^v\d+\.\d+(-[a-z0-9]+)?$/', $id ) ) {
 			throw new \InvalidArgumentException( 'Score version ids look like v1.0.' );
 		}
@@ -81,7 +90,7 @@ final class ScoreVersion {
 	/**
 	 * Public description.
 	 *
-	 * @return array{id: string, weights: array<int, array{key: string, label: string, weight: float}>, params: array<string, float>}
+	 * @return array{id: string, input: string, weights: array<int, array{key: string, label: string, weight: float}>, params: array<string, float>}
 	 */
 	public function to_array(): array {
 		$weights = array();
@@ -94,6 +103,7 @@ final class ScoreVersion {
 		}
 		return array(
 			'id'      => $this->id,
+			'input'   => $this->input,
 			'weights' => $weights,
 			'params'  => array_map( 'floatval', $this->params ),
 		);

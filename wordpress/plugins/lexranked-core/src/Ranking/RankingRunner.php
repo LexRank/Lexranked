@@ -55,6 +55,8 @@ final class RankingRunner {
 		foreach ( array( Lawyer::SLUG, LawFirm::SLUG, Ranking::SLUG, 'lr_verification' ) as $post_type ) {
 			add_action( 'save_post_' . $post_type, array( $this, 'schedule_soon' ) );
 		}
+		// v1.1+ scores are built from the fact layer: new or re-reviewed evidence recalculates too.
+		add_action( 'lexranked_facts_changed', array( $this, 'schedule_soon' ) );
 	}
 
 	/**
@@ -121,7 +123,7 @@ final class RankingRunner {
 		$posts   = $this->published( $post_type );
 		$version = $this->active_version();
 		$now     = new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) );
-		$inputs  = ( new InputBuilder( $this->services ) )->build( $posts, $now );
+		$inputs  = ( new InputBuilder( $this->services ) )->build( $posts, $now, $version );
 		$calc    = new ScoreCalculator();
 		$run_id  = wp_generate_uuid4();
 		$stamp   = $now->format( 'Y-m-d H:i:s' );
@@ -171,7 +173,7 @@ final class RankingRunner {
 
 		$candidates = $this->candidates( $record );
 		$now        = new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) );
-		$inputs     = ( new InputBuilder( $this->services ) )->build( $candidates, $now );
+		$inputs     = ( new InputBuilder( $this->services ) )->build( $candidates, $now, $version );
 		$ranked     = ( new RankingEngine() )->rank( $inputs, $context, $version );
 
 		$run_id = wp_generate_uuid4();
