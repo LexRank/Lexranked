@@ -481,7 +481,7 @@ if [[ -n "$FRONTEND" ]]; then
 
   # Signed revalidation: a title change in WordPress reaches the page without waiting for ISR.
   wp option update lexranked_settings "{\"frontend_url\":\"http://host.docker.internal:${FRONTEND_PORT}\"}" --format=json >/dev/null
-  RANKING_ID="$(wp post list --post_type=lr_ranking --field=ID --posts_per_page=1 | tail -1)"
+  RANKING_ID="$(wp post list --post_type=lr_ranking --name=best-personal-injury-lawyers-in-miami-florida-demo --field=ID | tail -1)"
   curl -sS -o /dev/null "$WEB/rankings/florida/miami/personal-injury/"
   wp post update "$RANKING_ID" --post_title="Best Personal Injury Lawyers in Miami, Florida (Demo) Updated" >/dev/null
   check "WordPress reports the frontend refresh" '.state == "ok"' "$(wp option get lexranked_revalidation_status --format=json)"
