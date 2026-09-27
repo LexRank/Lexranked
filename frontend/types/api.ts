@@ -159,6 +159,7 @@ export interface LawyerDetail extends LawyerSummary {
   premiumContent?: PremiumContentDto | null;
   /** Normalised facts with source and freshness (API 1.9). */
   facts?: FactDto[];
+  dataQuality?: DataQualityDto | null;
   contact: { website: string | null; phone: string | null };
   address: { zipCode: string | null; country: string | null };
   professional: {
@@ -188,6 +189,7 @@ export interface LawFirmDetail extends LawFirmSummary {
   summary?: string | null;
   premiumContent?: PremiumContentDto | null;
   facts?: FactDto[];
+  dataQuality?: DataQualityDto | null;
   contact: { website: string | null; phone: string | null; email: string | null };
   address: { street: string | null; zipCode: string | null; country: string | null };
   lawyers: LawyerSummary[];
@@ -395,4 +397,25 @@ export interface EntityDto {
   path: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Data Quality Score of a profile (API 1.10). Documentation quality, NOT a ranking. */
+export interface DataQualityDto {
+  score: number;
+  version: string;
+  dimensions: { key: string; label: string; weight: number; score: number; detail: string }[];
+  missing: string[];
+  unsourced: string[];
+  stale: string[];
+  conflicts: string[];
+  calculatedAt: string;
+}
+
+/** GET /data-quality: the published model and a site-wide summary (API 1.10). */
+export interface DataQualityModelDto {
+  version: string;
+  dimensions: { key: string; label: string; weight: number; description: string }[];
+  expected: Record<string, Record<string, number>>;
+  sourceTierScores: Record<string, number>;
+  summary: { count: number; average: number | null; bands: Record<string, number> };
 }

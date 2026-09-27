@@ -211,6 +211,7 @@ is_current, first_seen, last_seen`). IDs are never reused. See
 - `lr_facts`: `lr_entity_id, entity_type, wp_id, attribute, value (normalised JSON), status (verified|unverified|conflict), confidence, source_tier, claim_id, source_id, claim_count, observed_at, verified_at, computed_at`, unique per entity and attribute.
 - Attributes are defined in code (`Attribute\Attributes`) and published at `GET /attributes`.
 - Sources gain `publisher, retrieved_at, last_checked_at, status`.
+- Etap C: `lr_entities` also stores `quality_score, quality_json, quality_at` (the Data Quality Score; not a ranking input).
 
 See `docs/knowledge-base.md`.
 

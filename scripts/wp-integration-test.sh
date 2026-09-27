@@ -151,6 +151,13 @@ expect "evidence keeps the raw value and the normalised one" '[.sources[] | sele
 expect "sources are objects: domain, tier label, status" 'all(.[]; .domain != null and .tierLabel != null and .status != null)' "$API/sources"
 check "provenance traces fact → claim → source → ranking input" '.[0].attribute == "bar_status" and (.[0].claim | test("raw=")) and (.[0].source | test("tier 1")) and (.[0].ranking_input != "—")' "$(wp lexranked provenance lawyer:avery-example-demo --attribute=bar_status --format=json)"
 
+echo "==> Data Quality Score (Etap C)"
+expect "the Data Quality model is published (weights sum to 100)" '.version == "dq-1.0" and ([.dimensions[].weight] | add) == 100 and .summary.count >= 11' "$API/data-quality"
+expect "profiles carry a Data Quality score with five dimensions" '.dataQuality.score > 0 and .dataQuality.score <= 100 and (.dataQuality.dimensions | length) == 5 and (.dataQuality.missing | index("languages") != null) and .dataQuality.version == "dq-1.0"' "$API/lawyers/avery-example-demo"
+expect "a lawyer with failed verification scores lower on verification" '[.dataQuality.dimensions[] | select(.key == "verification")][0].score < 100' "$API/lawyers/harper-exemplar-demo"
+check "CLI explains the score" 'test("Data Quality [0-9.]+% \\(dq-1.0\\)")' "$(wp lexranked quality lawyer:avery-example-demo | sed -n 1p | jq -Rs .)"
+expect "Data Quality is not part of the ranking entries" '(.entries | tostring | test("dataQuality|quality_score") | not)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 RID="$(curl -sS "$RANKING" | jq .id)"
@@ -352,6 +359,12 @@ if [[ -n "$FRONTEND" ]]; then
   loc="$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$WEB/lawyers/drew-specimen-demo/")"
   if [[ "$loc" == 308*"/lawyers/drew-specimen-renamed-demo/" ]]; then pass "former profile URL redirects permanently to the renamed profile"; else fail "former URL: $loc"; fi
   expect_status "renamed profile page" 200 "$WEB/lawyers/drew-specimen-renamed-demo/"
+
+  echo "==> Data Quality on pages (Etap C)"
+  page_has "profile shows the Data Quality panel" "/lawyers/avery-example-demo/" "Data quality"
+  page_has "the panel says it is not a ranking" "/lawyers/avery-example-demo/" "not part of the ranking"
+  page_has "methodology publishes the model live" "/methodology/" 'id="data-quality"'
+  page_has "methodology lists the dimensions" "/methodology/" "Verification coverage"
 
   echo "==> Commercial pages (Phase 9)"
   page_has "sponsored block on the ranking page" "/rankings/florida/miami/personal-injury/" 'data-placements="sponsored"'

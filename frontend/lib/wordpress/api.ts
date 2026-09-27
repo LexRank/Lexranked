@@ -5,6 +5,7 @@ import type {
   ArticleSummary,
   AttributeDto,
   CityDto,
+  DataQualityModelDto,
   EntityDto,
   EntityType,
   LawFirmDetail,
@@ -154,3 +155,7 @@ export async function resolveEntity(type: EntityType, slug: string, opts?: Opts)
 /** The data dictionary: facts and derived metrics an entity can have. */
 export const getAttributes = (opts?: Opts) =>
   apiRequest<{ attributes: AttributeDto[] }>("attributes", { revalidate: 3600, ...opts }).then((r) => r.data.attributes);
+
+/** The published Data Quality model (methodology page). */
+export const getDataQualityModel = (opts?: Opts) =>
+  apiRequest<DataQualityModelDto>("data-quality", { revalidate: 3600, ...opts }).then((r) => r.data);

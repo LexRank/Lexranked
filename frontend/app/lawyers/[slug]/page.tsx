@@ -1,3 +1,4 @@
+import { DataQualityPanel } from "@/components/profile/DataQuality";
 import { redirectIfMoved } from "@/lib/content/moved";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -326,6 +327,7 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
             Rankings are based on the LexRank methodology and publicly available, verified information. They are not an endorsement
             and not legal advice.
           </p>
+          <DataQualityPanel quality={lawyer.dataQuality} />
           <ClaimPanel commercial={lawyer.commercial} entityType="lawyer" slug={lawyer.slug} />
         </aside>
       </div>

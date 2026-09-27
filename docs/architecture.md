@@ -286,3 +286,11 @@ derived metrics, and AI text is interpretation. Each layer can be traced to
 the one below it (`wp lexranked provenance`). Nothing in a higher layer can
 create or overwrite a fact.
 
+### ADR-035 — Data quality is measured and shown, never used as a hidden boost
+Documentation quality (completeness, freshness, source quality,
+verification coverage, consistency) gets its own versioned score, shown
+next to the LexRank score with a label. The ranking engine cannot read it.
+If data quality ever influences positions, it will be through a published
+score component in a new methodology version, as the existing 5-point
+component already is.
+

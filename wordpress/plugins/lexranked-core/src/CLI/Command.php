@@ -599,6 +599,48 @@ final class Command {
 	}
 
 	/**
+	 * Data Quality Score: site summary, or one entity's dimensions (not a ranking).
+	 *
+	 * ## OPTIONS
+	 *
+	 * [<entity>]
+	 * : Entity ID or type:slug.
+	 *
+	 * [--recompute]
+	 * : Recompute every lawyer and firm first.
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function quality( array $args, array $assoc_args ): void {
+		$s = $this->services;
+		if ( isset( $assoc_args['recompute'] ) ) {
+			\WP_CLI::log( sprintf( 'Recomputed %d entities.', $s->quality->compute_all() ) );
+		}
+		if ( ! isset( $args[0] ) ) {
+			\WP_CLI::line( (string) wp_json_encode( $s->quality->summary(), JSON_PRETTY_PRINT ) );
+			return;
+		}
+		$row = ctype_digit( $args[0] ) ? $s->registry->find( (int) $args[0] ) : null;
+		if ( null === $row && str_contains( $args[0], ':' ) ) {
+			[ $type, $slug ] = explode( ':', $args[0], 2 );
+			$entity_type     = \LexRanked\Core\Entity\EntityType::tryFrom( $type );
+			$row             = null === $entity_type ? null : $s->registry->resolve( $entity_type, $slug );
+		}
+		if ( null === $row || 'post' !== $row['wp_object'] ) {
+			\WP_CLI::error( 'Lawyer or firm entity not found.' );
+		}
+		$result = $s->quality->compute( (string) $row['entity_type'], (int) $row['wp_id'] );
+		\WP_CLI::log( sprintf( '%s — Data Quality %s%% (%s)', $row['canonical_name'], $result['score'], $result['version'] ) );
+		\WP_CLI\Utils\format_items( 'table', $result['dimensions'], array( 'label', 'weight', 'score', 'detail' ) );
+		foreach ( array( 'missing', 'unsourced', 'stale', 'conflicts' ) as $key ) {
+			if ( array() !== $result[ $key ] ) {
+				\WP_CLI::log( ucfirst( $key ) . ': ' . implode( ', ', $result[ $key ] ) );
+			}
+		}
+	}
+
+	/**
 	 * Possible duplicate lawyers and firms (shared identifiers). Nothing is merged.
 	 *
 	 * @param array<int, string>    $args       Positional args.

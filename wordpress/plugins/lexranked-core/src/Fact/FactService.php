@@ -123,6 +123,7 @@ final class FactService {
 			$in = implode( ',', array_fill( 0, count( $keep ), '%s' ) );
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$this->table()} WHERE lr_entity_id = %d AND attribute NOT IN ({$in})", array_merge( array( $eid ), $keep ) ) ); // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Placeholders built above.
 		}
+		do_action( 'lexranked_facts_changed', $entity_type, $wp_id );
 		return count( $facts );
 	}
 

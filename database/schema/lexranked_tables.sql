@@ -1,6 +1,6 @@
 -- Reference DDL for LexRanked custom tables (MySQL/MariaDB, prefix wp_).
 -- Source of truth: wordpress/plugins/lexranked-core/src/Database/Schema.php (applied with dbDelta).
--- Schema version: 8
+-- Schema version: 9
 
 CREATE TABLE wp_lr_claims (
   claim_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -162,6 +162,9 @@ CREATE TABLE wp_lr_entities (
   wp_object varchar(10) NOT NULL,
   wp_id bigint(20) unsigned NOT NULL,
   merged_into bigint(20) unsigned DEFAULT NULL,
+  quality_score decimal(5,1) DEFAULT NULL,
+  quality_json longtext NULL,
+  quality_at datetime DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   PRIMARY KEY  (entity_id),

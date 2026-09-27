@@ -56,7 +56,7 @@ position. Payment never enters the organic path (docs/commercial.md).
 | 27 | Explaining position changes from snapshot diffs | ◐ D | Movement is known. Etap D diffs components between runs ("review data changed, competitor gained") |
 | 28 | Research pipeline discover → … → update rankings | ◐ B | Discover, match, sources, extract, claims, verify, resolve into drafts and recalculate all exist (Phase 5). Normalisation and metrics become explicit in B |
 | 29–30 | Entity resolution with identifiers; AI only advisory | ✅ A/B | The deterministic matcher uses name, name key, domain and city, and now **former names** (A). Etap B adds phone, address, email and bar-number signals. AI stays a note to the reviewer |
-| 31–32 | Data Quality Score, never a hidden boost | ◐ C | Today "data quality" is an open 5-point component. Etap C adds a separate, displayed Data Quality % (completeness, freshness, source quality, verification coverage, consistency) that is not a ranking |
+| 31–32 | Data Quality Score, never a hidden boost | ✅ C | Today "data quality" is an open 5-point component. Etap C adds a separate, displayed Data Quality % (completeness, freshness, source quality, verification coverage, consistency) that is not a ranking |
 | 33 | Coverage statistics | ◐ I | Hubs show counts. Verified-profile counts come in Etap I |
 | 34–35 | Market statistics computed by the backend | ○ I | Average rating, median reviews, counts and most common practice, computed and timestamped |
 | 36 | Research provenance | ✅ B | Claims and candidates carry `job_id`; the job log exists; snapshots store the exact inputs. Etap B links fact → claim → source → job end-to-end |
@@ -72,8 +72,8 @@ position. Payment never enters the organic path (docs/commercial.md).
 |---|---|---|
 | **A** | Entity model | ✅ |
 | **B** | Attributes, claims keyed by entity, source objects, fact layers, resolution identifiers, provenance | ✅ |
-| C | Data Quality Score | next |
-| D | Per-entity "why ranked here", snapshot-diff explanations | |
+| **C** | Data Quality Score | ✅ |
+| D | Per-entity "why ranked here", snapshot-diff explanations, methodology v1.1 on the fact layer | next |
 | E | Comparison engine | |
 | F | Contextual rankings | |
 | G | Unified page eligibility engine | |
@@ -162,3 +162,38 @@ That is research job → source → claim → fact → entity → ranking input.
 **The engine is unchanged in Etap B**
 - It still reads the resolved entity fields, which research fills from the same evidence.
 - Switching it to read `lr_facts` directly (point 7) changes scores. It therefore comes as methodology **v1.1** in Etap D, and old snapshots keep v1.0 (point 42).
+
+## Etap C: Data Quality Score (implemented)
+
+A separate, published percentage of **how well a profile is documented**. It says nothing about how good the lawyer is.
+
+| Dimension | Weight | Measures |
+|---|---|---|
+| Completeness | 30 % | expected facts on record **with a source**; core facts (city, state, practice areas, bar status; website for firms) count double |
+| Freshness | 20 % | facts checked within their freshness window (bar status 30 days, review data 7, website 30, other 90) |
+| Source quality | 20 % | tier of the source behind each fact: tier 1 = 100 … tier 5 = 20 |
+| Verification coverage | 20 % | half verified facts, half the required verification checks (identity, license, bar status for lawyers) |
+| Consistency | 10 % | facts whose best sources agree (no unresolved conflicts) |
+
+**Method**
+- `Quality\DataQuality` is pure and versioned (`dq-1.0`); weights sum to 100.
+- It is computed from the fact layer, the profile and verification records.
+- It is stored on the entity registry (`quality_score`, `quality_json`, `quality_at`).
+- It is recomputed when facts, the profile or its verification records change, and **daily**, because data ages.
+
+**What editors get**
+- The result lists what is missing.
+- It flags what is filled in on the profile but **not backed by evidence** (`unsourced`); an unsourced value never counts as complete.
+- It also lists stale facts and conflicts.
+
+**Where it appears**
+- Profile API: `dataQuality`.
+- `GET /data-quality`: the model plus a site-wide summary.
+- The profile page shows a panel labelled "not part of the ranking".
+- The methodology page shows the live model.
+- `wp lexranked quality [<entity>] [--recompute]`.
+
+**Not a hidden ranking (point 32)**
+- The ranking engine cannot read the Data Quality Score; a token-level test enforces this.
+- The LexRank score keeps its own, separately published 5-point "data quality" component. That component is a disclosed part of the methodology.
+- The two numbers are never combined or multiplied.

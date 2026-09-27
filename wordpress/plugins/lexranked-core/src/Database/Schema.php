@@ -18,7 +18,7 @@ namespace LexRanked\Core\Database;
 final class Schema {
 
 	/** Bump when the DDL below changes; triggers dbDelta on next load. */
-	public const VERSION = '8';
+	public const VERSION = '9';
 
 	public const CLAIMS         = 'lr_claims';
 	public const AUDIT_LOG      = 'lr_audit_log';
@@ -204,6 +204,9 @@ final class Schema {
   wp_object varchar(10) NOT NULL,
   wp_id bigint(20) unsigned NOT NULL,
   merged_into bigint(20) unsigned DEFAULT NULL,
+  quality_score decimal(5,1) DEFAULT NULL,
+  quality_json longtext NULL,
+  quality_at datetime DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   PRIMARY KEY  (entity_id),

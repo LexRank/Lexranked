@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.9.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.10.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -121,6 +121,12 @@ status: "active", path, createdAt, updatedAt }`. `resolve` accepts a current
 city and practice-area DTOs carry `entityId` (the `id` field stays the CMS
 record ID).
 
+### `GET /data-quality` (API 1.10)
+The published Data Quality model: `{ version, dimensions[{key, label, weight,
+description}], expected{lawyer: {attribute: weight}, law_firm: …},
+sourceTierScores, summary{count, average, bands} }`. See
+[knowledge-base.md](knowledge-base.md#etap-c-data-quality-score-implemented).
+
 ### `GET /attributes` (API 1.9)
 The data dictionary: `{ attributes: [{ key, label, valueType, entityTypes[],
 category, layer: fact|derived, freshness, unit, description }] }`.
@@ -181,7 +187,10 @@ on profiles; featured and sponsored placements come from `GET /placements`.
 entity's position in the latest run of each ranking).
 
 ### Lawyer (detail) adds
-`summary` (API 1.5, plain text), `facts[]` (API 1.9: `{ attribute, label,
+`summary` (API 1.5, plain text), `dataQuality` (API 1.10: `{ score (0–100),
+version, dimensions[{key, label, weight, score, detail}], missing[],
+unsourced[], stale[], conflicts[], calculatedAt } | null`. It describes the
+documentation and is **not** a ranking input), `facts[]` (API 1.9: `{ attribute, label,
 category, value (normalised), unit, status: verified|unverified|conflict,
 confidence, source {id, name, publisher, url, type, tier, tierLabel},
 claimCount, observedAt, verifiedAt, freshness {category, maxAgeDays,

@@ -1,3 +1,4 @@
+import { DataQualityPanel } from "@/components/profile/DataQuality";
 import { redirectIfMoved } from "@/lib/content/moved";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -208,6 +209,7 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
               </ul>
             </div>
           )}
+          <DataQualityPanel quality={firm.dataQuality} />
           <ClaimPanel commercial={firm.commercial} entityType="law_firm" slug={firm.slug} />
         </aside>
       </div>

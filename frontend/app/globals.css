@@ -1923,3 +1923,55 @@ main {
   display: grid;
   gap: 0.5rem;
 }
+
+/* ---------- Data quality (Etap C): documentation, not merit ---------- */
+
+.dq__score {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.dq__score strong {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  color: var(--navy-900);
+}
+
+.dq__bars {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+}
+
+.dq__bars li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem 2rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dq__track {
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--neutral-bg);
+  overflow: hidden;
+}
+
+.dq__fill {
+  display: block;
+  height: 100%;
+  background: var(--navy-700);
+}
+
+.dq__value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dq__note {
+  font-size: 0.8rem;
+  margin: 0.5rem 0 0;
+}

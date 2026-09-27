@@ -32,6 +32,7 @@ src/
   Research/          Research execution (Phase 5)
   Attribute/         Attribute registry (data dictionary) and value normalisation (Etap B)
   Fact/              Fact layer: claims → one normalised fact per attribute (Etap B)
+  Quality/           Data Quality Score (Etap C; never read by Ranking/)
   Entity/            Entity registry: stable entity IDs, name/slug aliases, resolve (Etap A)
   Commercial/        Profile claims, placements (premium/featured/sponsored), status derivation (Phase 9; never read by Ranking/)
 tests/Unit/          PHPUnit (no WordPress runtime)
@@ -41,7 +42,7 @@ tests/Unit/          PHPUnit (no WordPress runtime)
 
 See [docs/api.md](../../../docs/api.md): `status`, `lawyers`, `law-firms`,
 `rankings`, `states`, `cities`, `practice-areas`, `sources`,
-`verifications`, `search`, `placements`, `claims` (POST, frontend server only), `entities`, `attributes`.
+`verifications`, `search`, `placements`, `claims` (POST, frontend server only), `entities`, `attributes`, `data-quality`.
 
 ## Roles and capabilities
 

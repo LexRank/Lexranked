@@ -4,7 +4,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { PageHeader } from "@/components/PageHeader";
 import { componentsWithWeights, METHODOLOGY_PRINCIPLES } from "@/lib/methodology";
 import { load } from "@/lib/data/loaders";
-import { getScoreVersions } from "@/lib/wordpress/api";
+import { getDataQualityModel, getScoreVersions } from "@/lib/wordpress/api";
 import { collectionPageJsonLd } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 
@@ -27,7 +27,7 @@ const TIERS = [
 export const revalidate = 3600;
 
 export default async function MethodologyPage() {
-  const versions = await load(async () => (await getScoreVersions()).data);
+  const [versions, quality] = await Promise.all([load(async () => (await getScoreVersions()).data), load(() => getDataQualityModel())]);
   const active = versions.ok ? versions.data.versions.find((v) => v.id === versions.data.active) : undefined;
   const components = componentsWithWeights(active?.weights ?? null);
   const params = active?.params;
@@ -125,6 +125,45 @@ export default async function MethodologyPage() {
               status and 7 days for review data), and profiles show when their data was last verified.{" "}
               <Link href="/verified/">Read more about verification</Link>.
             </p>
+          </section>
+
+          <section id="data-quality">
+            <h2>Data quality (not a ranking)</h2>
+            <p>
+              Every profile also shows a <strong>Data Quality</strong> percentage. It measures how well the profile is documented —
+              not how good the lawyer is — and it is <strong>not an input to the LexRank score</strong>. It is recalculated whenever
+              the evidence changes and daily, because data ages.
+            </p>
+            {quality.ok && (
+              <>
+                <div className="table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Dimension</th>
+                      <th scope="col">Weight</th>
+                      <th scope="col">What it measures</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quality.data.dimensions.map((d) => (
+                      <tr key={d.key}>
+                        <td>{d.label}</td>
+                        <td>{d.weight}%</td>
+                        <td>{d.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                </div>
+                <p className="muted" style={{ fontSize: "0.85rem" }}>
+                  Model {quality.data.version}.
+                  {quality.data.summary.average !== null &&
+                    ` Across ${quality.data.summary.count} published profiles the average is ${quality.data.summary.average}%.`}{" "}
+                  The ranking has its own, separately published “data quality” factor above; the two are not combined.
+                </p>
+              </>
+            )}
           </section>
 
           <section>

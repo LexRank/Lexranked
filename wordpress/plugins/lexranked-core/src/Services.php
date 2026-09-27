@@ -14,6 +14,7 @@ use LexRanked\Core\Commercial\PlacementRepository;
 use LexRanked\Core\Commercial\ProfileClaimRepository;
 use LexRanked\Core\Entity\EntityRegistry;
 use LexRanked\Core\Fact\FactService;
+use LexRanked\Core\Quality\QualityService;
 use LexRanked\Core\Integration\Revalidator;
 use LexRanked\Core\Monitoring\HealthService;
 use LexRanked\Core\PostTypes\Article;
@@ -121,6 +122,13 @@ final class Services {
 	 * @var FactService
 	 */
 	public readonly FactService $facts;
+
+	/**
+	 * Data Quality Score (not a ranking input).
+	 *
+	 * @var QualityService
+	 */
+	public readonly QualityService $quality;
 
 	/**
 	 * Entities.
@@ -256,6 +264,7 @@ final class Services {
 			$this->registry
 		);
 		$this->facts         = new FactService( $this );
+		$this->quality       = new QualityService( $this );
 		$this->snapshots     = new SnapshotRepository();
 		$this->versions      = new ScoreVersions();
 		$this->presenter     = new EntityPresenter( $this );

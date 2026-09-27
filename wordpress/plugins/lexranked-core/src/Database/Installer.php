@@ -51,6 +51,8 @@ final class Installer {
 		// Schema v8: evidence keyed by entity, normalised values, the fact layer.
 		$services->claims->backfill_entity_keys();
 		$services->facts->rebuild_all();
+		// Schema v9: the Data Quality Score of every lawyer and firm.
+		$services->quality->compute_all();
 		// Schema v6: commercial status is derived from claims and placements.
 		$services->commercial->sync_all();
 		// DTO shapes may have changed: drop cached API responses.

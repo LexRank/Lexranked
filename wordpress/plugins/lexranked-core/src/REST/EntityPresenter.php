@@ -94,6 +94,7 @@ final class EntityPresenter {
 		);
 		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
 		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
+		$dto['dataQuality']    = $s->quality->stored( (int) $post->ID );
 		return $this->with_scoring( $dto, (int) $post->ID );
 	}
 
@@ -140,6 +141,7 @@ final class EntityPresenter {
 		);
 		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
 		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
+		$dto['dataQuality']    = $s->quality->stored( (int) $post->ID );
 		return $this->with_scoring( $dto, (int) $post->ID );
 	}
 
