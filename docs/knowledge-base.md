@@ -46,12 +46,12 @@ position. Payment never enters the organic path (docs/commercial.md).
 | 8 | Score components | ✅ | 7 components with points, maximum, explanation and missing inputs, plus `score_version` and `calculated_at`, stored per snapshot |
 | 9 | "Why this ranking / why ranked here" | ✅ D | Methodology section and per-entry breakdown exist. Etap D renders a per-entity "why ranked here" from components |
 | 10, 25 | Comparison engine and pages | ✅ E | `GET /compare`, `/compare/?lawyer=…&lawyer=…` (noindex, not in the sitemap), structured data only; linked from rankings and profiles |
-| 11–13 | Contextual ("best for") rankings, context model, context URLs | ○ F | `case_type`, `client_type`, `language` qualifiers; `/rankings/{state}/{city}/{practice}/{context}/` only when eligible |
+| 11–13 | Contextual ("best for") rankings, context model, context URLs | ✅ F | `case_type`, `client_type`, `language` qualifiers proven by facts; `/rankings/{state}/{city}/{practice}/{context}/` only above the data threshold; `wp lexranked contexts` reports what the data supports, never creates pages |
 | 14–15 | Page eligibility engine, no thin programmatic SEO | ◐ G | Rules exist: hubs need 3 published lawyers and 3 real ones to index; rankings need 5 entries; articles need 300 words; demo is noindex. Etap G moves this to one backend engine with verified-count, evidence-coverage and uniqueness thresholds |
 | 16–18 | Profile structure, per-fact freshness, source panel | ◐ H | Profiles show identity, firm, areas, credentials, score breakdown, rankings, verification, and evidence with source, tier and retrieval date. Etap H groups them per fact ("Bar status → Florida Bar → verified Sep 27") |
 | 19 | AI-readable structured summary | ◐ H | Ranking pages have an answer-first summary built from data. Profiles and hubs get one in Etap H |
 | 20 | Schema.org from entity data only | ✅ / ◐ H | Person, Organization / LegalService, ItemList, BreadcrumbList and FAQPage are emitted only when their data exists. There is no review markup |
-| 21–24 | Directory-grade ranking layout, key attributes on cards, `ContextualAttributes`, data-driven related questions | ◐ H | The layout already follows answer → methodology → ranking → FAQ → related. Contextual attributes and generated questions depend on Etap F |
+| 21–24 | Directory-grade ranking layout, key attributes on cards, `ContextualAttributes`, data-driven related questions | ◐ F/H | The layout follows answer → methodology → ranking → FAQ → related. `ContextualAttributes` picks card attributes by context (F ✅). Data-generated related questions come in Etap H |
 | 26 | Ranking snapshots | ✅ | Every calculation is an immutable run; `/rankings/{id}/history` |
 | 27 | Explaining position changes from snapshot diffs | ✅ D | Movement is known. Etap D diffs components between runs ("review data changed, competitor gained") |
 | 28 | Research pipeline discover → … → update rankings | ◐ B | Discover, match, sources, extract, claims, verify, resolve into drafts and recalculate all exist (Phase 5). Normalisation and metrics become explicit in B |
@@ -75,8 +75,8 @@ position. Payment never enters the organic path (docs/commercial.md).
 | **C** | Data Quality Score | ✅ |
 | **D** | Per-entity "why ranked here", snapshot-diff explanations, methodology v1.1 on the fact layer | ✅ |
 | **E** | Comparison engine | ✅ |
-| F | Contextual rankings | next |
-| G | Unified page eligibility engine | |
+| **F** | Contextual rankings | ✅ |
+| G | Unified page eligibility engine | next |
 | H | AI-readable page architecture | |
 | I | Market statistics and coverage | |
 | J | AI interpretation layer | |
@@ -230,4 +230,32 @@ A separate, published percentage of **how well a profile is documented**. It say
 - **Frontend `/compare/?lawyer=…&lawyer=…` (or `firm=`)**:
   - **noindex, follow**, never in the sitemap: any pair can be built on request, and indexing every combination would be thin programmatic SEO. Indexable `/compare/a-vs-b/` pages wait for the page eligibility engine (Etap G).
   - Linked from ranking pages ("Compare #1 and #2", "Compare the top 3") and from profiles ("Compare with #N …").
+
+
+## Etap F: contextual rankings (implemented)
+
+- **Context model.** A ranking may add a qualifier to its location and practice area: `context_type` (`case_type` | `client_type` | `language`) and `context_value`. For example `{ location: Miami, practice_area: Personal Injury, case_type: car-accidents }`.
+  - Case types are sub-areas of the practice area in the taxonomy.
+  - Client types come from a fixed list: individuals, businesses, families, seniors, veterans, immigrants, employees.
+  - There are no free-form keyword contexts.
+- **Evidence.** Qualification reads the fact layer: new facts `case_types` and `client_types` (lawyers and firms), plus the existing `languages`. Only a sourced, non-conflicting fact qualifies. Snapshots store the qualifier and each entry's evidence, and entries expose `qualification` (value, status, source).
+- **Scores unchanged.** The context selects entities and never changes a score (enforced by a token test). Case types are their own fact, so they never dilute practice-area relevance.
+- **Threshold.** `ContextEligibility` requires:
+  - at least `min_entities` qualified (default 5);
+  - at least `min_verified` qualified by verified facts (default 3);
+  - fewer than the broader ranking, so the page cannot duplicate it.
+
+  Below the threshold the page is a 404 and stays out of the sitemap; the API explains why. Etap G generalises this into the page eligibility engine.
+- **URLs**: `/rankings/florida/miami/personal-injury/car-accidents/`, `…/spanish-speaking/`, `…/for-businesses/`. Breadcrumbs lead to the broader ranking, which lists its eligible "Narrower rankings".
+- **No keyword-driven pages.** `wp lexranked contexts` lists, for every ranking, the contexts the data could support, with counts and reasons. It only reports; an editor decides whether to create a ranking.
+- **`ContextualAttributes`** (spec §22–23) chooses card attributes by context:
+  - ordinary ranking: experience, practice area, bar status verified;
+  - contextual ranking: the context with its evidence status, then practice area and experience.
+
+  Entries carry `keyFacts` (the inputs they were scored on). Missing values are omitted.
+- **Fix.** Ranking pages showed "LexRank v1.0" while entries used v1.1. The label now comes from the entries' stored score version.
+- **Demo data**:
+  - "Best Car Accident Lawyers in Miami" passes the threshold: 5 of 8 qualify, 4 verified.
+  - "Best Spanish-speaking Personal Injury Lawyers in Miami" does not (3 of 8, 0 verified), so it has no page.
+- **API 1.13**: `context` on rankings; `keyFacts` and `qualification` on entries; `caseTypes` and `clientTypes` on profiles; ranking `path` includes the context segment.
 

@@ -144,7 +144,7 @@ final class RankingsController extends RestController {
 		foreach ( $posts as $post ) {
 			$record = $this->services->entities->record( $post, $this->services->ranking );
 			$run    = $this->services->presenter->ranking_entries( $record );
-			$dto    = RankingMapper::ranking( $record, $run['entries'], (int) $this->services->settings->get( 'min_ranking_entities' ), '', false, $run['calculated_at'] );
+			$dto    = RankingMapper::ranking( $record, $run['entries'], (int) $this->services->settings->get( 'min_ranking_entities' ), '', false, $run['calculated_at'], $this->services->presenter->ranking_context( $record ) );
 			if ( null !== $request['indexable'] && (bool) $request['indexable'] !== $dto['indexable'] ) {
 				continue;
 			}
@@ -221,7 +221,8 @@ final class RankingsController extends RestController {
 				(int) $this->services->settings->get( 'min_ranking_entities' ),
 				$this->html( $post->post_content ),
 				true,
-				$run['calculated_at']
+				$run['calculated_at'],
+				$this->services->presenter->ranking_context( $record )
 			)
 		);
 	}

@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.12.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.13.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -126,6 +126,23 @@ The published Data Quality model: `{ version, dimensions[{key, label, weight,
 description}], expected{lawyer: {attribute: weight}, law_firm: …},
 sourceTierScores, summary{count, average, bands} }`. See
 [knowledge-base.md](knowledge-base.md#etap-c-data-quality-score-implemented).
+
+### Contextual rankings (API 1.13)
+Rankings carry `context`: `null` for an ordinary ranking, otherwise:
+- `type`: `case_type` | `client_type` | `language`;
+- `value`, `segment`, `label`;
+- `attribute`: `case_types` | `client_types` | `languages`;
+- `eligibility{eligible, reasons[], qualified, verified, parentCount, minEntities, minVerified}`;
+- `calculatedAt`;
+- `parent{id, title, path}`.
+
+The `path` includes the segment, e.g. `/rankings/florida/miami/personal-injury/car-accidents/`. A context below its threshold has `isThin: true` and no entries.
+
+Entries carry:
+- `keyFacts{yearsExperience, barStatus, practiceAreas[], awards}`: the scored inputs;
+- in contextual rankings, `qualification{attribute, value, status: verified|unverified, sourceId, claimId, observedAt, verifiedAt, source{name, url, tierLabel}}`.
+
+Lawyer `professional` and firm detail add `caseTypes[]` and `clientTypes[]`.
 
 ### `GET /compare?type=lawyer|law_firm&entities=12,34` (API 1.12)
 Side-by-side comparison of 2–4 published entities of one type, by stable

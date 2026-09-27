@@ -1,6 +1,6 @@
 import type { RankingDetail } from "@/types/api";
 import { formatDate, formatScore } from "@/lib/format";
-import { METHODOLOGY_VERSION } from "@/lib/methodology";
+import { methodologyLabel } from "@/lib/methodology";
 
 /**
  * Facts and the "answer-first" summary for ranking pages (SEO + GEO).
@@ -40,13 +40,19 @@ function joinNames(items: string[]): string {
 }
 
 /** Scope phrase: "personal injury lawyers in Miami, Florida". */
-export function rankingScopePhrase(ranking: Pick<RankingDetail, "entityType" | "practiceArea" | "location">): string {
+export function rankingScopePhrase(ranking: Pick<RankingDetail, "entityType" | "practiceArea" | "location" | "context">): string {
   const noun = ranking.entityType === "law_firm" ? "law firms" : "lawyers";
   const practice = ranking.practiceArea ? `${ranking.practiceArea.name.toLowerCase()} ` : "";
   const where = ranking.location?.city
     ? `${ranking.location.city}${ranking.location.state ? `, ${ranking.location.state}` : ""}`
     : ranking.location?.state;
-  return `${practice}${noun}${where ? ` in ${where}` : ""}`;
+  const base = `${practice}${noun}${where ? ` in ${where}` : ""}`;
+  const c = ranking.context;
+  if (!c) return base;
+  // Contextual rankings (Etap F): the scope names the qualifier the data confirms.
+  if (c.type === "language") return `${c.label} ${base}`;
+  if (c.type === "client_type") return `${base} serving ${c.value}`;
+  return `${base} who list ${c.label.toLowerCase()} among their case types`;
 }
 
 /**
@@ -63,7 +69,7 @@ export function rankingAnswer(ranking: RankingDetail, facts: RankingFacts = rank
   const lead = `${asOf ? `As of ${asOf}, the` : "The"} top-ranked ${scope} ${top.length === 1 ? "is" : "are"} ${joinNames(top)}.`;
   const noun = ranking.entityType === "law_firm" ? (facts.count === 1 ? "law firm" : "law firms") : facts.count === 1 ? "lawyer" : "lawyers";
   const verified = facts.verifiedCount > 0 ? `; ${facts.verifiedCount} of them ${facts.verifiedCount === 1 ? "has a" : "have"} fully verified ${facts.verifiedCount === 1 ? "profile" : "profiles"}` : "";
-  const method = `LexRanked ranked ${facts.count} ${noun} with the ${METHODOLOGY_VERSION} methodology${verified}.`;
+  const method = `LexRanked ranked ${facts.count} ${noun} with the ${methodologyLabel(ranking.entries[0]?.scoreVersion)} methodology${verified}.`;
   const ratings =
     facts.averageRating !== null && facts.totalReviews > 0
       ? ` Their average client rating is ${facts.averageRating.toFixed(1)} out of 5 across ${facts.totalReviews.toLocaleString("en-US")} reviews.`

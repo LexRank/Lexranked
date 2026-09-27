@@ -26,6 +26,9 @@ final class RankingRunner {
 	public const CRON_HOOK  = 'lexranked_recalculate';
 	public const DEBOUNCE_S = 60;
 
+	/** Ranking post meta: counts behind a contextual ranking's eligibility (Etap F). */
+	public const CONTEXT_STATS_META = '_lr_context_stats';
+
 	/** Option holding the time of the last full recalculation (health checks). */
 	public const LAST_RUN_OPTION = 'lexranked_last_calculation';
 
@@ -168,19 +171,56 @@ final class RankingRunner {
 		}
 		$record           = $this->services->entities->record( $post, $this->services->ranking );
 		$version          = $this->version_for( $record['fields']['score_version'] ?? null );
+		$qualifier        = RankingQualifier::for_record( $record );
+		$practice         = RankingQualifier::primary_practice( $record['practice_areas'], $qualifier );
 		[ $city, $state ] = InputBuilder::location( $record['locations'] );
-		$context          = new RankingContext( $record['practice_areas'][0]['slug'] ?? null, $city, $state );
+		$context          = new RankingContext( $practice['slug'] ?? null, $city, $state );
 
-		$candidates = $this->candidates( $record );
-		$now        = new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) );
-		$inputs     = ( new InputBuilder( $this->services ) )->build( $candidates, $now, $version );
-		$ranked     = ( new RankingEngine() )->rank( $inputs, $context, $version );
+		$candidates     = $this->candidates( $record, $practice );
+		$qualifications = array();
+		if ( null !== $qualifier ) {
+			// Contextual ranking: only entities whose stored facts confirm the context.
+			$parent_count = count( $candidates );
+			$type         = 'law_firm' === $record['fields']['entity_type'] ? 'law_firm' : 'lawyer';
+			$candidates   = array_values(
+				array_filter(
+					$candidates,
+					function ( \WP_Post $candidate ) use ( $qualifier, $type, &$qualifications ): bool {
+						$evidence = $qualifier->qualify( $this->services->facts->for_entity( $type, (int) $candidate->ID ) );
+						if ( null !== $evidence ) {
+							$qualifications[ (int) $candidate->ID ] = $evidence;
+						}
+						return null !== $evidence;
+					}
+				)
+			);
+			update_post_meta(
+				$ranking_id,
+				self::CONTEXT_STATS_META,
+				wp_json_encode(
+					array(
+						'parent'        => $parent_count,
+						'qualified'     => count( $qualifications ),
+						'verified'      => count( array_filter( $qualifications, static fn( array $q ): bool => 'verified' === $q['status'] ) ),
+						'qualifier'     => $qualifier->to_array(),
+						'calculated_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
+					)
+				)
+			);
+		}//end if
+		$now    = new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) );
+		$inputs = ( new InputBuilder( $this->services ) )->build( $candidates, $now, $version );
+		$ranked = ( new RankingEngine() )->rank( $inputs, $context, $version );
 
 		$run_id = wp_generate_uuid4();
 		$stamp  = $now->format( 'Y-m-d H:i:s' );
 		$rows   = array();
 		foreach ( $ranked as $entry ) {
-			$rows[] = $this->row( $run_id, $ranking_id, $entry['position'], $entry['input'], $context, $entry['result'], $stamp );
+			$extra  = null === $qualifier ? array() : array(
+				'qualifier'     => $qualifier->to_array(),
+				'qualification' => $qualifications[ $entry['input']->entity_id ] ?? null,
+			);
+			$rows[] = $this->row( $run_id, $ranking_id, $entry['position'], $entry['input'], $context, $entry['result'], $stamp, $extra );
 		}
 		if ( array() !== $rows ) {
 			$this->snapshots->insert_run( $rows );
@@ -244,11 +284,12 @@ final class RankingRunner {
 	/**
 	 * Published entities matching a ranking's location and practice area.
 	 *
-	 * @param array<string, mixed> $record Ranking record.
+	 * @param array<string, mixed>      $record        Ranking record.
+	 * @param array<string, mixed>|null $practice_term The ranking's practice area.
 	 * @return array<int, \WP_Post>
 	 */
-	private function candidates( array $record ): array {
-		$practice = $record['practice_areas'][0]['id'] ?? null;
+	public function candidates( array $record, ?array $practice_term ): array {
+		$practice = $practice_term['id'] ?? null;
 		if ( array() === $record['locations'] ) {
 			return array();
 		}
@@ -317,9 +358,10 @@ final class RankingRunner {
 	 * @param RankingContext $context    Context.
 	 * @param ScoreResult    $result     Result.
 	 * @param string         $stamp      MySQL UTC datetime.
+	 * @param array          $extra      Extra context (contextual rankings: qualifier and the entity's qualifying evidence).
 	 * @return array<string, mixed>
 	 */
-	private function row( string $run_id, int $ranking_id, int $position, EntityInput $input, RankingContext $context, ScoreResult $result, string $stamp ): array {
+	private function row( string $run_id, int $ranking_id, int $position, EntityInput $input, RankingContext $context, ScoreResult $result, string $stamp, array $extra = array() ): array {
 		return array(
 			'run_id'        => $run_id,
 			'ranking_id'    => $ranking_id,
@@ -328,7 +370,7 @@ final class RankingRunner {
 			'position'      => $position,
 			'score'         => $result->total,
 			'score_version' => $result->version,
-			'context'       => $context->to_array(),
+			'context'       => $context->to_array() + $extra,
 			'components'    => $result->components,
 			'inputs'        => $input->to_array(),
 			'calculated_at' => $stamp,

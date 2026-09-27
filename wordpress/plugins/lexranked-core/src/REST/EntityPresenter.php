@@ -12,12 +12,16 @@ namespace LexRanked\Core\REST;
 use LexRanked\Core\Entity\EntityType;
 use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
+use LexRanked\Core\PostTypes\Ranking;
 use LexRanked\Core\PostTypes\Source;
 use LexRanked\Core\REST\DTO\EntityMapper;
 use LexRanked\Core\REST\DTO\FactMapper;
 use LexRanked\Core\REST\DTO\LocationMapper;
 use LexRanked\Core\REST\DTO\RankingMapper;
 use LexRanked\Core\REST\DTO\SourceMapper;
+use LexRanked\Core\Ranking\ContextEligibility;
+use LexRanked\Core\Ranking\RankingQualifier;
+use LexRanked\Core\Ranking\RankingRunner;
 use LexRanked\Core\Services;
 use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
@@ -186,8 +190,22 @@ final class EntityPresenter {
 		foreach ( $is_firm ? $this->firm_summaries( $posts ) : $this->lawyer_summaries( $posts ) as $summary ) {
 			$summaries[ $summary['id'] ] = $summary;
 		}
+		$entries = RankingMapper::entries_from_snapshots( $rows, $summaries, $previous, $previous_rows );
+		// Contextual rankings: name the source behind each entry's qualifying fact.
+		$sources = $this->source_dtos( array_map( static fn( array $e ): array => array( 'source_id' => $e['qualification']['sourceId'] ?? null ), $entries ) );
+		foreach ( $entries as &$entry ) {
+			if ( null !== $entry['qualification'] ) {
+				$source                           = $sources[ (int) ( $entry['qualification']['sourceId'] ?? 0 ) ] ?? null;
+				$entry['qualification']['source'] = null === $source ? null : array(
+					'name'      => $source['name'] ?? null,
+					'url'       => $source['url'] ?? null,
+					'tierLabel' => $source['tierLabel'] ?? null,
+				);
+			}
+		}
+		unset( $entry );
 		return array(
-			'entries'       => RankingMapper::entries_from_snapshots( $rows, $summaries, $previous, $previous_rows ),
+			'entries'       => $entries,
 			'calculated_at' => $rows[0]['calculated_at'] ?? null,
 		);
 	}
@@ -207,24 +225,132 @@ final class EntityPresenter {
 			if ( ! $post instanceof \WP_Post || 'publish' !== $post->post_status ) {
 				continue;
 			}
-			$record      = $this->services->entities->record( $post, $this->services->ranking );
-			$location    = LocationMapper::from_terms( $record['locations'] );
-			$practice    = EntityMapper::practice_areas( $record['practice_areas'] )[0] ?? null;
+			$record  = $this->services->entities->record( $post, $this->services->ranking );
+			$context = $this->ranking_context( $record );
+			if ( null !== $context && ! $context['eligibility']['eligible'] ) {
+				continue;
+				// A contextual ranking below its data threshold has no page.
+			}
 			$positions[] = array(
 				'id'           => (int) $post->ID,
 				'title'        => $record['title'],
-				'path'         => RankingMapper::path( $location, $practice ),
+				'path'         => RankingMapper::record_path( $record ),
 				'position'     => $row['position'],
 				'score'        => round( (float) $row['score'], 2 ),
 				'calculatedAt' => $row['calculated_at'],
 				'isDemo'       => (bool) $record['fields']['is_demo'],
 				'neighbors'    => $this->neighbors( $row ),
 			);
-		}
+		}//end foreach
 		return array(
 			'breakdown' => null === $latest ? array() : EntityMapper::breakdown( $latest['components'] ),
 			'rankings'  => $positions,
 		);
+	}
+
+	/**
+	 * Context DTO of a contextual ranking (Etap F), or null for an ordinary one:
+	 * the qualifier, its label, the counts from the latest calculation and
+	 * whether the page may exist, plus the broader ranking it narrows.
+	 *
+	 * @param array<string, mixed> $record Ranking record.
+	 * @return array<string, mixed>|null
+	 */
+	public function ranking_context( array $record ): ?array {
+		$qualifier = RankingQualifier::for_record( $record );
+		if ( null === $qualifier ) {
+			return null;
+		}
+		$practice = RankingQualifier::primary_practice( $record['practice_areas'], $qualifier );
+		$problem  = null;
+		$name     = null;
+		if ( RankingQualifier::CASE_TYPE === $qualifier->type ) {
+			$term = get_term_by( 'slug', $qualifier->value, PracticeArea::SLUG );
+			if ( ! $term instanceof \WP_Term ) {
+				$problem = 'The case type is not a practice area in the taxonomy.';
+			} elseif ( null === $practice || (int) $term->parent !== (int) $practice['id'] ) {
+				$problem = sprintf( '%s is not a sub-area of the ranking\'s practice area.', $term->name );
+			} else {
+				$name = $term->name;
+			}
+		}
+
+		$stats = json_decode( (string) get_post_meta( (int) $record['id'], RankingRunner::CONTEXT_STATS_META, true ), true );
+		if ( ! is_array( $stats ) || ( $stats['qualifier'] ?? null ) !== $qualifier->to_array() ) {
+			$stats = null;
+			// Never calculated, or the context changed since.
+		}
+		$f = $record['fields'];
+		return array(
+			'type'         => $qualifier->type,
+			'value'        => $qualifier->value,
+			'segment'      => $qualifier->segment(),
+			'label'        => $qualifier->label( $name ),
+			'attribute'    => $qualifier->attribute(),
+			'eligibility'  => ContextEligibility::evaluate(
+				$stats,
+				(int) ( $f['min_entities'] ?? $this->services->settings->get( 'min_ranking_entities' ) ),
+				(int) ( $f['min_verified'] ?? ContextEligibility::MIN_VERIFIED ),
+				$problem
+			),
+			'calculatedAt' => $stats['calculated_at'] ?? null,
+			'parent'       => $this->parent_ranking( $record, $practice ),
+		);
+	}
+
+	/**
+	 * The published ordinary ranking with the same location and practice area.
+	 *
+	 * @param array<string, mixed>      $record   Contextual ranking record.
+	 * @param array<string, mixed>|null $practice Its practice-area term.
+	 * @return array{id: int, title: string, path: string|null}|null
+	 */
+	private function parent_ranking( array $record, ?array $practice ): ?array {
+		$location = array_column( $record['locations'], 'id' );
+		if ( array() === $location ) {
+			return null;
+		}
+		$tax = array(
+			'relation' => 'AND',
+			array(
+				'taxonomy'         => Location::SLUG,
+				'field'            => 'term_id',
+				'terms'            => $location,
+				'include_children' => false,
+			),
+		);
+		if ( null !== $practice ) {
+			$tax[] = array(
+				'taxonomy'         => PracticeArea::SLUG,
+				'field'            => 'term_id',
+				'terms'            => array( (int) $practice['id'] ),
+				'include_children' => false,
+			);
+		}
+		$want = RankingMapper::path( LocationMapper::from_terms( $record['locations'] ), null === $practice ? null : array( 'slug' => $practice['slug'] ) );
+		foreach ( get_posts(
+			array(
+				'post_type'        => Ranking::SLUG,
+				'post_status'      => 'publish',
+				'posts_per_page'   => 50,
+				'no_found_rows'    => true,
+				'orderby'          => 'ID',
+				'order'            => 'ASC',
+				'suppress_filters' => false,
+				'post__not_in'     => array( (int) $record['id'] ),
+				'tax_query'        => $tax,
+			)
+		) as $post ) {
+			$candidate = $this->services->entities->record( $post, $this->services->ranking );
+			if ( null === RankingQualifier::for_record( $candidate ) && $candidate['fields']['entity_type'] === $record['fields']['entity_type'] && RankingMapper::record_path( $candidate ) === $want ) {
+				return array(
+					'id'    => (int) $post->ID,
+					'title' => $candidate['title'],
+					'path'  => $want,
+				);
+			}
+		}
+		return null;
 	}
 
 	/**

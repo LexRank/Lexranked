@@ -28,7 +28,7 @@ src/
   Admin/             Menu + dashboard, settings screen, schema-driven meta boxes, list columns
   Database/          Custom tables (claims, audit log) + installer/migrations
   CLI/               wp lexranked status | seed-demo | purge-demo
-  Ranking/           ScoreVersion(s), ScoreCalculator, BayesianReviewScorer, RankingEngine, InputBuilder, RankingRunner
+  Ranking/           ScoreVersion(s), ScoreCalculator, BayesianReviewScorer, RankingEngine, InputBuilder, RankingRunner, RankingQualifier/ContextEligibility/ContextDiscovery (Etap F)
   Research/          Research execution (Phase 5)
   Attribute/         Attribute registry (data dictionary) and value normalisation (Etap B)
   Fact/              Fact layer: claims → one normalised fact per attribute (Etap B)

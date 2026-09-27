@@ -311,3 +311,14 @@ version. It never names a better lawyer and never reads commercial status.
 Compare pages are built on request and are noindex until the page
 eligibility engine (Etap G) can decide which comparisons deserve an
 indexable page.
+
+### ADR-038 — Contextual rankings select by evidence and exist only above a data threshold
+A "best for" ranking is an ordinary ranking plus one qualifier (case type,
+client type or language). An entity qualifies only through a sourced,
+non-conflicting fact; the qualifier never enters the score, so an entity has
+the same score in every ranking for its practice area and location. A
+contextual page exists only when enough entities qualify, enough of them by
+verified facts, and the result differs from the broader ranking. Contexts
+come from editors, informed by `wp lexranked contexts`, which reports what the
+data supports. They never come from keyword lists, and pages are never
+created automatically.

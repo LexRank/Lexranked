@@ -50,6 +50,8 @@ final class Attributes {
 			new Attribute( 'awards', 'Awards and recognition', 'object_list', self::L, 'credentials' ),
 			new Attribute( 'years_experience', 'Years of experience', 'integer', self::L, 'experience', unit: 'years' ),
 			new Attribute( 'languages', 'Languages', 'list', self::L, 'language' ),
+			new Attribute( 'case_types', 'Case types handled', 'list', self::LF, 'practice', description: 'Sub-areas of a practice area (e.g. car-accidents under personal injury), as stated by a source. Selects contextual rankings; never scored.' ),
+			new Attribute( 'client_types', 'Client types served', 'list', self::LF, 'practice', description: 'Who the lawyer or firm works for (individuals, businesses, …), as stated by a source.' ),
 			new Attribute( 'rating', 'Client rating', 'number', self::LF, 'reviews', freshness: 'review_data', unit: 'stars (0–5)', description: 'Average rating on the cited review platform.' ),
 			new Attribute( 'review_count', 'Review count', 'integer', self::LF, 'reviews', freshness: 'review_data', unit: 'reviews' ),
 		);

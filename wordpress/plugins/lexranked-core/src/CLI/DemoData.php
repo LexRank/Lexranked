@@ -40,6 +40,27 @@ final class DemoData {
 		'slug' => 'personal-injury',
 	);
 
+	/** Case types: sub-areas of the practice area (contextual rankings, Etap F). */
+	public const CASE_TYPES = array(
+		'car-accidents'  => 'Car Accidents',
+		'wrongful-death' => 'Wrongful Death',
+	);
+
+	/**
+	 * Case types per demo lawyer index: [slugs, verified]. Five lawyers list car
+	 * accidents (four verified), so the car-accident ranking passes its data
+	 * threshold; three speak Spanish, so a Spanish-speaking ranking does not.
+	 */
+	private const LAWYER_CASE_TYPES = array(
+		0 => array( array( 'car-accidents' ), true ),
+		1 => array( array( 'car-accidents' ), true ),
+		2 => array( array( 'car-accidents' ), true ),
+		3 => array( array( 'wrongful-death' ), true ),
+		4 => array( array( 'car-accidents' ), true ),
+		5 => array( array( 'car-accidents' ), false ),
+		7 => array( array( 'wrongful-death' ), false ),
+	);
+
 	public const RANKING_SUMMARY = 'Demo content: this sample ranking compares eight fictional personal injury lawyers in Miami using mock data, to show how LexRanked pages present rankings, sources and verification.';
 
 	public const ARTICLE_TITLE = 'How to Read a Lawyer Ranking (Demo)';
@@ -182,6 +203,28 @@ final class DemoData {
 	}
 
 	/**
+	 * Demo contextual rankings.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	public static function context_rankings(): array {
+		return array(
+			array(
+				'title'   => 'Best Car Accident Lawyers in Miami, Florida (Demo)',
+				'type'    => 'case_type',
+				'value'   => 'car-accidents',
+				'summary' => 'Demo content: personal injury lawyers in Miami whose records list car-accident cases, ordered by the same LexRank score as the broader ranking.',
+			),
+			array(
+				'title'   => 'Best Spanish-speaking Personal Injury Lawyers in Miami, Florida (Demo)',
+				'type'    => 'language',
+				'value'   => 'spanish',
+				'summary' => 'Demo content: this ranking stays unpublished until enough Spanish-speaking lawyers are confirmed.',
+			),
+		);
+	}
+
+	/**
 	 * Demo lawyers. `verified` controls the demo verification records.
 	 *
 	 * @return array<int, array<string, mixed>>
@@ -231,6 +274,8 @@ final class DemoData {
 					),
 				) : array(),
 				'verified'         => $verified,
+				'case_types'       => self::LAWYER_CASE_TYPES[ $i ][0] ?? array(),
+				'case_verified'    => self::LAWYER_CASE_TYPES[ $i ][1] ?? false,
 			);
 		}//end foreach
 		return $out;

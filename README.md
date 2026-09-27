@@ -90,7 +90,8 @@ B. ✅ **Evidence layers**: attribute registry, entity-keyed claims with raw + n
 C. ✅ **Data Quality Score**: separate, published documentation score (completeness, freshness, source quality, verification coverage, consistency), shown on profiles, never a ranking input
 D. ✅ **Ranking explanations + methodology v1.1**: scores from evidence-backed facts; "Why #N?" on every entry; position changes explained from snapshot differences
 E. ✅ **Comparison engine**: `/compare/?lawyer=…&lawyer=…` (noindex) compares 2–4 lawyers or firms from stored facts, each cell with its source and check date; differences stated, never a verdict; linked from rankings and profiles
-F. Contextual rankings · G. Page eligibility engine · H. AI-readable pages · I. Market statistics · J. AI interpretation layer
+F. ✅ **Contextual rankings**: "best for" rankings by case type, client type or language, e.g. `/rankings/florida/miami/personal-injury/car-accidents/`. Entities qualify only through sourced facts, and a page exists only above a verified-data threshold. The context never changes a score, and key card attributes follow the context
+G. Page eligibility engine · H. AI-readable pages · I. Market statistics · J. AI interpretation layer
 
 ## Security
 

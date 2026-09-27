@@ -110,21 +110,11 @@ final class ArticlesController extends RestController {
 		$record  = $this->services->entities->record( $post, $this->services->article );
 		$ranking = null === $record['fields']['related_ranking'] ? null : get_post( (int) $record['fields']['related_ranking'] );
 		if ( $ranking instanceof \WP_Post && Ranking::SLUG === $ranking->post_type && 'publish' === $ranking->post_status ) {
-			$rrec     = $this->services->entities->record( $ranking, $this->services->ranking );
-			$practice = null;
-			foreach ( $rrec['practice_areas'] as $area ) {
-				$practice = $area;
-			}
-			$states   = array_values( array_filter( $rrec['locations'], static fn( array $t ): bool => 0 === $t['parent'] ) );
-			$cities   = array_values( array_filter( $rrec['locations'], static fn( array $t ): bool => 0 !== $t['parent'] ) );
-			$location = array(
-				'stateSlug' => $states[0]['slug'] ?? null,
-				'citySlug'  => $cities[0]['slug'] ?? null,
-			);
-			$related  = array(
+			$rrec    = $this->services->entities->record( $ranking, $this->services->ranking );
+			$related = array(
 				'id'    => (int) $ranking->ID,
 				'title' => $rrec['title'],
-				'path'  => RankingMapper::path( $location, null === $practice ? null : array( 'slug' => $practice['slug'] ) ),
+				'path'  => RankingMapper::record_path( $rrec ),
 			);
 		}
 		return $this->item_response( ArticleMapper::detail( $summary, $this->body( $post ), $related ) );

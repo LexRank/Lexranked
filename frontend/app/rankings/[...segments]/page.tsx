@@ -13,10 +13,11 @@ import { rankingAnswer, rankingFacts } from "@/lib/content/rankingFacts";
 import { AboutRanking, EditorialBody, FaqSection, OnThisPage, RankingOverview } from "@/components/ranking/RankingContent";
 import { allRankings } from "@/lib/data/loaders";
 import { formatDate, isoDate, pluralize } from "@/lib/format";
-import { METHODOLOGY_VERSION } from "@/lib/methodology";
+import { methodologyLabel } from "@/lib/methodology";
 import { rankingJsonLd, rankingPageJsonLd, type Crumb } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getPlacements, getRanking } from "@/lib/wordpress/api";
+import type { RankingContextDto } from "@/types/api";
 import { PlacementBlock } from "@/components/commercial/Commercial";
 
 export const revalidate = 300;
@@ -33,13 +34,19 @@ const loadRanking = cache(async (segments: string[]) => {
   return ranking ? { kind: "found" as const, ranking } : { kind: "none" as const };
 });
 
-function crumbsFor(title: string, path: string, location: { state: string | null; stateSlug: string | null; city: string | null; citySlug: string | null } | null): Crumb[] {
+function crumbsFor(
+  title: string,
+  path: string,
+  location: { state: string | null; stateSlug: string | null; city: string | null; citySlug: string | null } | null,
+  parent?: { title: string; path: string | null } | null,
+): Crumb[] {
   const crumbs: Crumb[] = [
     { name: "Home", path: "/" },
     { name: "Rankings", path: "/rankings/" },
   ];
   if (location?.state && location.stateSlug) crumbs.push({ name: location.state, path: `/states/${location.stateSlug}/` });
   if (location?.city && location.citySlug) crumbs.push({ name: location.city, path: `/cities/${location.citySlug}/` });
+  if (parent?.path) crumbs.push({ name: parent.title, path: parent.path });
   crumbs.push({ name: title, path });
   return crumbs;
 }
@@ -52,7 +59,7 @@ export async function generateMetadata(props: PageProps<"/rankings/[...segments]
   const answer = rankingAnswer(r);
   return buildMetadata({
     title: r.title,
-    description: answer || `${r.title}: ${pluralize(r.entries.length, r.entityType === "law_firm" ? "firm" : "lawyer")} ranked by the ${METHODOLOGY_VERSION} methodology.`,
+    description: answer || `${r.title}: ${pluralize(r.entries.length, r.entityType === "law_firm" ? "firm" : "lawyer")} ranked by the ${methodologyLabel(r.entries[0]?.scoreVersion)} methodology.`,
     path: r.path ?? `/rankings/${segments.join("/")}/`,
     noindex: !rankingEligibility(r).indexable,
   });
@@ -70,8 +77,12 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
   const path = ranking.path ?? `/rankings/${segments.join("/")}/`;
   const updated = formatDate(ranking.updatedAt);
   const sponsored = ranking.entries.length > 0 ? await getPlacements({ product: "sponsored", ranking: ranking.id }) : [];
-  const related = (await allRankings())
-    .filter((r) => r.id !== ranking.id && !r.isThin && (r.location?.stateSlug === ranking.location?.stateSlug || r.practiceArea?.slug === ranking.practiceArea?.slug))
+  const rankings = await allRankings();
+  const context = ranking.context ?? null;
+  // Narrower "best for" rankings that passed their data threshold (Etap F).
+  const narrower = rankings.filter((r) => r.context?.parent?.id === ranking.id && !r.isThin && r.path);
+  const related = rankings
+    .filter((r) => r.id !== ranking.id && !r.isThin && !narrower.includes(r) && (r.location?.stateSlug === ranking.location?.stateSlug || r.practiceArea?.slug === ranking.practiceArea?.slug))
     .slice(0, 4);
   const noun = ranking.entityType === "law_firm" ? "firm" : "lawyer";
   const facts = rankingFacts(ranking);
@@ -100,7 +111,11 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
           }),
         ]}
       />
-      <PageHeader crumbs={crumbsFor(ranking.title, path, ranking.location)} eyebrow={ranking.practiceArea?.name ?? "Ranking"} title={ranking.title}>
+      <PageHeader
+        crumbs={crumbsFor(ranking.title, path, ranking.location, context?.parent)}
+        eyebrow={[ranking.practiceArea?.name ?? "Ranking", context?.label].filter(Boolean).join(" · ")}
+        title={ranking.title}
+      >
         <div className="page-header__meta">
           {updated && (
             <span>
@@ -108,7 +123,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
             </span>
           )}
           <span>
-            Methodology <strong>{METHODOLOGY_VERSION}</strong>
+            Methodology <strong>{methodologyLabel(ranking.entries[0]?.scoreVersion)}</strong>
           </span>
           <span>
             <strong>{ranking.entries.length}</strong> {ranking.entries.length === 1 ? noun : `${noun}s`} ranked
@@ -135,13 +150,30 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
                 Ordered by organic LexRank score. Paid placements, where they exist, are always labelled and never affect a score or
                 position.
               </p>
+              {context && <ContextNote context={context} noun={noun} />}
             </div>
             <ol className="ranking-list" aria-label={ranking.title}>
               {ranking.entries.map((entry) => (
-                <RankingEntry key={entry.entity.id} entry={entry} />
+                <RankingEntry key={entry.entity.id} entry={entry} context={context} />
               ))}
             </ol>
             <CompareLinks ranking={ranking} />
+            {narrower.length > 0 && (
+              <nav className="card" aria-labelledby="narrower-heading" style={{ padding: "1rem 1.25rem" }}>
+                <p id="narrower-heading" className="panel-title" style={{ margin: 0 }}>
+                  Narrower rankings
+                </p>
+                <ul className="chips" style={{ marginTop: "0.5rem" }}>
+                  {narrower.map((r) => (
+                    <li key={r.id}>
+                      <Link className="chip" href={r.path as string}>
+                        {r.context?.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
           </section>
 
           <PlacementBlock placements={sponsored} product="sponsored" />
@@ -211,5 +243,23 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
         </aside>
       </div>
     </>
+  );
+}
+
+/** Who a contextual ranking includes, and on what evidence (Etap F). */
+function ContextNote({ context, noun }: { context: RankingContextDto; noun: string }) {
+  const e = context.eligibility;
+  const what =
+    context.type === "language"
+      ? `list ${context.value} among their languages`
+      : context.type === "client_type"
+        ? `list ${context.value} among the clients they serve`
+        : `list ${context.label.toLowerCase()} among the case types they handle`;
+  return (
+    <p className="context-note">
+      <strong>Who is included:</strong> only {noun}s whose sourced records {what}: {e.qualified} of the {e.parentCount} in{" "}
+      {context.parent?.path ? <Link href={context.parent.path}>{context.parent.title}</Link> : "the broader ranking"}, {e.verified} of them confirmed by a
+      verified fact. Scores are the same LexRank scores; the context selects who is ranked and never changes a score.
+    </p>
   );
 }

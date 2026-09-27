@@ -2,7 +2,8 @@ import type { RankingSummary } from "@/types/api";
 
 /**
  * Ranking URL resolution. Canonical ranking URLs are location/practice paths
- * (/rankings/florida/miami/personal-injury/); a bare slug
+ * (/rankings/florida/miami/personal-injury/), plus a context segment for
+ * contextual rankings (/rankings/florida/miami/personal-injury/car-accidents/); a bare slug
  * (/rankings/<slug>/) redirects to the canonical path.
  */
 
@@ -16,7 +17,7 @@ export function rankingPathFromSegments(segments: string[]): string {
 }
 
 export function resolveRanking(segments: string[], rankings: RankingSummary[]): RankingResolution {
-  if (segments.length === 0 || segments.length > 3) return { kind: "none" };
+  if (segments.length === 0 || segments.length > 4) return { kind: "none" };
   const path = rankingPathFromSegments(segments);
 
   const byPath = rankings.filter((r) => r.path === path).sort((a, b) => a.id - b.id);
@@ -47,7 +48,7 @@ export interface FinderOption {
 
 export function finderOptions(rankings: RankingSummary[]): FinderOption[] {
   return rankings
-    .filter((r) => !r.isThin && r.path)
+    .filter((r) => !r.isThin && r.path && !r.context)
     .map((r) => ({
       path: r.path as string,
       locationKey: `${r.location?.stateSlug ?? ""}/${r.location?.citySlug ?? ""}`,

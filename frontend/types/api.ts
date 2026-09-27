@@ -179,6 +179,9 @@ export interface LawyerDetail extends LawyerSummary {
     education: Array<{ institution: string | null; degree: string | null; year: string | null }>;
     awards: Array<{ name: string | null; issuer: string | null; year: string | null }>;
     languages: string[];
+    /** Since API 1.13. */
+    caseTypes?: string[];
+    clientTypes?: string[];
   };
   /** Sanitized HTML from the CMS. */
   bio: string;
@@ -221,6 +224,10 @@ export interface RankingEntry {
   why?: RankingWhy | null;
   /** What changed since the previous calculation, from snapshot diffs (API 1.11); null when nothing changed. */
   change?: RankingChange | null;
+  /** Since API 1.13: the inputs this entry was scored on. */
+  keyFacts?: KeyFacts;
+  /** Since API 1.13: contextual rankings only — the fact that qualifies this entry. */
+  qualification?: QualificationDto | null;
   entity: LawyerSummary | LawFirmSummary;
 }
 
@@ -265,6 +272,52 @@ export interface RankingSummary {
   /** When the engine last calculated this ranking. */
   calculatedAt: string | null;
   methodologyUrl: string;
+  /** Since API 1.13: the "best for" context of a contextual ranking; null for an ordinary one. */
+  context?: RankingContextDto | null;
+}
+
+export type RankingContextType = "case_type" | "client_type" | "language";
+
+export interface RankingContextDto {
+  type: RankingContextType;
+  value: string;
+  /** URL segment after the practice area: car-accidents, spanish-speaking, for-businesses. */
+  segment: string;
+  label: string;
+  /** Fact attribute that proves the context: case_types | client_types | languages. */
+  attribute: string;
+  eligibility: {
+    eligible: boolean;
+    reasons: string[];
+    qualified: number;
+    verified: number;
+    parentCount: number;
+    minEntities: number;
+    minVerified: number;
+  };
+  calculatedAt: string | null;
+  /** The broader ranking this one narrows. */
+  parent: { id: number; title: string; path: string | null } | null;
+}
+
+/** The stored fact that puts an entry into a contextual ranking. */
+export interface QualificationDto {
+  attribute: string;
+  value: string;
+  status: "verified" | "unverified";
+  sourceId: number | null;
+  claimId: number | null;
+  observedAt: string | null;
+  verifiedAt: string | null;
+  source: { name: string | null; url: string | null; tierLabel: string | null } | null;
+}
+
+/** Scored inputs of an entry (the snapshot's own values). */
+export interface KeyFacts {
+  yearsExperience: number | null;
+  barStatus: string | null;
+  practiceAreas: string[];
+  awards: number;
 }
 
 export interface FaqItem {

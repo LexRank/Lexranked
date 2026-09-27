@@ -143,9 +143,10 @@ final class EntityRepository {
 		}
 		$out = array_map(
 			static fn( \WP_Term $t ): array => array(
-				'id'   => (int) $t->term_id,
-				'slug' => (string) $t->slug,
-				'name' => (string) $t->name,
+				'id'     => (int) $t->term_id,
+				'slug'   => (string) $t->slug,
+				'name'   => (string) $t->name,
+				'parent' => (int) $t->parent,
 			),
 			$terms
 		);

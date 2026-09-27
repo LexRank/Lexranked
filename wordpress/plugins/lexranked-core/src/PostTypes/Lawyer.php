@@ -99,6 +99,8 @@ final class Lawyer extends PostType {
 			new Field( 'education', Field::TYPE_OBJECT_LIST, 'Education', options: array( 'institution', 'degree', 'year' ), help: 'One per line: Institution | Degree | Year' ),
 			new Field( 'awards', Field::TYPE_OBJECT_LIST, 'Awards', options: array( 'name', 'issuer', 'year' ), help: 'One per line: Award | Issuer | Year' ),
 			new Field( 'languages', Field::TYPE_STRING_LIST, 'Languages', help: 'One per line' ),
+			new Field( 'case_types', Field::TYPE_STRING_LIST, 'Case types handled', help: 'One per line: practice-area sub-area slugs, e.g. car-accidents. Only with a source (used for contextual rankings; never scored).' ),
+			new Field( 'client_types', Field::TYPE_STRING_LIST, 'Client types served', help: 'One per line, from: individuals, businesses, families, seniors, veterans, immigrants, employees. Only with a source (used for contextual rankings).' ),
 			new Field( 'summary', Field::TYPE_TEXT, 'Profile summary', help: 'Answer-first, 2–4 plain-text sentences shown at the top of the profile. Only facts backed by stored data and evidence.' ),
 			new Field( 'commercial_status', Field::TYPE_ENUM, 'Commercial status', read_only: true, options: CommercialStatus::values(), help: 'Set automatically from profile claims and placements (LexRanked → Claims / Placements). Display only; never affects the organic score.' ),
 			new Field( 'score', Field::TYPE_FLOAT, 'LexRank score', read_only: true, min: 0, max: 100 ),

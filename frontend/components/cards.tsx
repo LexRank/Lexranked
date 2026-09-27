@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { ArticleSummary, LawFirmSummary, LawyerSummary, RankingDetail, RankingEntry as RankingEntryDto, RankingSummary } from "@/types/api";
+import type { ArticleSummary, LawFirmSummary, LawyerSummary, RankingContextDto, RankingDetail, RankingEntry as RankingEntryDto, RankingSummary } from "@/types/api";
+import { contextualAttributes } from "@/lib/content/contextualAttributes";
 import { compareHref } from "@/lib/content/compare";
 import { formatDate, formatLocation, pluralize } from "@/lib/format";
 import { rankingScopeLabel } from "@/lib/content/rankings";
@@ -127,7 +128,7 @@ export function Movement({ movement, isNew }: { movement: number | null; isNew: 
   );
 }
 
-export function RankingEntry({ entry }: { entry: RankingEntryDto }) {
+export function RankingEntry({ entry, context }: { entry: RankingEntryDto; context?: RankingContextDto | null }) {
   const e = entry.entity;
   const isLawyer = e.type === "lawyer";
   const where = formatLocation(e.location);
@@ -158,6 +159,7 @@ export function RankingEntry({ entry }: { entry: RankingEntryDto }) {
             <VerificationBadge status={e.verification.status} />
             {e.isDemo && <DemoBadge />}
           </div>
+          <ContextualAttributes entry={entry} context={context} />
         </div>
       </div>
       <div className="entry__side">
@@ -257,5 +259,22 @@ export function CompareLinks({ ranking }: { ranking: RankingDetail }) {
         ))}
       </ul>
     </nav>
+  );
+}
+
+/** Key attributes chosen by the ranking's context (spec §22–23). */
+export function ContextualAttributes({ entry, context }: { entry: RankingEntryDto; context?: RankingContextDto | null }) {
+  const attributes = contextualAttributes(entry, context);
+  if (attributes.length === 0) return null;
+  return (
+    <ul className="key-attrs" aria-label="Key attributes">
+      {attributes.map((a) => (
+        <li key={a.key} className={a.key === "context" ? "key-attrs__item key-attrs__item--context" : "key-attrs__item"} title={a.source ? `Source: ${a.source}` : undefined}>
+          {a.evidence === "verified" && <span aria-hidden="true">✓ </span>}
+          {a.label}
+          {a.key === "context" && a.evidence && <span className="key-attrs__evidence">{a.evidence === "verified" ? " · verified" : " · sourced"}</span>}
+        </li>
+      ))}
+    </ul>
   );
 }

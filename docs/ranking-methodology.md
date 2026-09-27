@@ -104,6 +104,27 @@ Scores depend on context:
 
 Law firms use the longest-practising profiled lawyer for experience.
 
+### Contextual rankings ("best for", Etap F)
+
+A contextual ranking (car accidents, Spanish-speaking, for businesses)
+**selects** who is ranked; it never changes a score.
+
+- **Who is included.** An entity is included only when a stored fact confirms the context:
+  - `case_types` for a case type (a sub-area of the practice area in the taxonomy);
+  - `languages` for a language;
+  - `client_types` for a client type.
+
+  The fact must have a source and must not be in conflict. Nothing is inferred from names or text.
+- **Scores.** Included entities keep exactly the score they have in the broader ranking (same methodology version, same practice-area context).
+- **Case types are not practice areas.** A case type such as "car accidents" is kept in its own fact, so listing it never dilutes practice-area relevance (0.5 + 0.5 / n counts practice areas only).
+- **The page exists only when:**
+  - at least `min_entities` (default 5) qualify;
+  - at least `min_verified` (default 3) qualify by a **verified** fact;
+  - fewer entities qualify than in the broader ranking (otherwise the page would repeat it).
+
+  Below that threshold the API marks the ranking thin: no entries, a 404, and no sitemap entry. The counts and the reasons are published.
+- **Snapshots** store the qualifier and each entry's qualifying evidence.
+
 ## Runs and snapshots
 
 `RankingRunner` recalculates:

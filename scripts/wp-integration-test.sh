@@ -121,7 +121,7 @@ wp lexranked recalculate >/dev/null
 expect "ranking comes from engine snapshots with breakdowns" '(.calculatedAt != null) and ((.entries | length) == 8) and all(.entries[]; (.breakdown | length) == 7)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 expect "second calculation reports movement" 'all(.entries[]; .movement == 0 and .isNew == false)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 expect "ranking history has both runs" '(.runs | length) == 2 and ((.runs[0].entries | length) == 8)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo/history"
-expect "profile has breakdown summing to the score" '((.ranking.breakdown | map(.points) | add) * 100 | round) == ((.ranking.score) * 100 | round) and ((.rankings | length) == 1)' "$API/lawyers/avery-example-demo"
+expect "profile has breakdown summing to the score" '((.ranking.breakdown | map(.points) | add) * 100 | round) == ((.ranking.score) * 100 | round) and ((.rankings | length) == 2)' "$API/lawyers/avery-example-demo"
 expect "score versions endpoint: v1.1 reads the fact layer, v1.0 kept" '.active == "v1.1" and ([.versions[0].weights[].weight] | add) == 100 and ([.versions[] | select(.id == "v1.1")][0].input == "facts") and ([.versions[] | select(.id == "v1.0")][0].input == "profile")' "$API/score-versions"
 if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "all snapshots reproduce exactly from stored inputs"; else fail "snapshot reproduction"; fi
 
@@ -187,6 +187,23 @@ expect_status "the same entity twice is not a comparison" 400 "$API/compare?type
 expect_status "types are not mixed" 404 "$API/compare?type=law_firm&entities=$AVERY_E,$FIRM_E"
 expect_status "unknown entity" 404 "$API/compare?type=lawyer&entities=$AVERY_E,999999"
 expect "profiles offer the neighbours above and below as comparisons" '.rankings[0].neighbors | length == 2 and all(.[]; .entityId > 0)' "$API/lawyers/blake-sample-demo"
+
+echo "==> Contextual rankings (Etap F)"
+CAR="$API/rankings/best-car-accident-lawyers-in-miami-florida-demo"
+SPANISH="$API/rankings/best-spanish-speaking-personal-injury-lawyers-in-miami-florida-demo"
+expect "a case-type ranking has a context path under its practice area" '.path == "/rankings/florida/miami/personal-injury/car-accidents/" and .context.type == "case_type" and .context.label == "Car Accidents" and .context.parent.path == "/rankings/florida/miami/personal-injury/"' "$CAR"
+expect "it passes its data threshold: 5 of 8 qualify, 4 by verified facts" '.context.eligibility | .eligible and .qualified == 5 and .verified == 4 and .parentCount == 8' "$CAR"
+expect "only entities whose facts confirm the context are ranked, each with its evidence" '(.entries | length) == 5 and all(.entries[]; .qualification.attribute == "case_types" and .qualification.value == "car-accidents" and (.qualification.source.name | length) > 0)' "$CAR"
+check "the context never changes a score" '.[0] == .[1]' "$(jq -n --argjson a "$(curl -sS "$CAR" | jq -c '[.entries[] | {(.entity.slug): .score}] | add')" --argjson b "$(curl -sS "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo" | jq -c '[.entries[] | {(.entity.slug): .score}] | add')" '[$a, ($b | with_entries(select(.key as $k | $a | has($k))))]')"
+expect "a context below its threshold has no page, with the reasons" '.isThin and .entries == [] and (.context.eligibility.eligible | not) and (.context.eligibility.reasons | any(test("3 of the required 5")))' "$SPANISH"
+expect "the unpublished context is not listed on profiles" '[.rankings[].path] | index("/rankings/florida/miami/personal-injury/spanish-speaking/") == null' "$API/lawyers/avery-example-demo"
+expect "ranking entries carry the inputs they were scored on" '.entries[0].keyFacts.yearsExperience == 22' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+CONTEXTS="$(wp lexranked contexts --format=json)"
+check "discovery reports contexts from the data without creating them" 'any(.[]; .context == "case_type:wrongful-death" and (.status | startswith("below threshold"))) and any(.[]; .context == "case_type:car-accidents" and .status == "published")' "$CONTEXTS"
+check "discovery created no rankings" '. == 3' "$(wp post list --post_type=lr_ranking --post_status=any --format=count)"
+wp eval "\\LexRanked\\Core\\Plugin::services()->claims->insert( array( 'entity_id' => $(curl -sS "$API/lawyers/blake-sample-demo" | jq .id), 'entity_type' => 'lawyer', 'field_name' => 'languages', 'value' => array( 'English', 'Spanish' ), 'source_url' => 'https://example.com/demo/bar-registry', 'source_type' => 'official_registry', 'retrieved_at' => gmdate( 'c' ), 'confidence' => 0.95, 'verification_status' => 'verified' ) );" >/dev/null
+wp lexranked recalculate >/dev/null
+expect "new evidence moves a context towards its threshold" '.context.eligibility.qualified == 4 and .context.eligibility.verified == 1 and .isThin' "$SPANISH"
 
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
@@ -406,6 +423,17 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "ranking links its top entries to a comparison" "/rankings/florida/miami/personal-injury/" "Compare #1 and #2"
   page_has "profile links to comparisons with its neighbours" "/lawyers/blake-sample-demo/" "Compare with #"
   if curl -sS "$WEB/sitemap.xml" | grep -q "/compare"; then fail "comparison pages are in the sitemap"; else pass "comparison pages stay out of the sitemap"; fi
+
+  echo "==> Contextual ranking pages (Etap F)"
+  expect_status "contextual ranking page" 200 "$WEB/rankings/florida/miami/personal-injury/car-accidents/"
+  page_has "it says who is included and on what evidence" "/rankings/florida/miami/personal-injury/car-accidents/" "Who is included:"
+  page_has "cards show the context attribute with its evidence" "/rankings/florida/miami/personal-injury/car-accidents/" "Car Accidents"
+  page_has "breadcrumbs lead to the broader ranking" "/rankings/florida/miami/personal-injury/car-accidents/" 'href="/rankings/florida/miami/personal-injury/"'
+  page_has "the broader ranking links its narrower rankings" "/rankings/florida/miami/personal-injury/" "Narrower rankings"
+  page_has "cards show key attributes" "/rankings/florida/miami/personal-injury/" "22 years experience"
+  page_has "the header names the methodology the entries used" "/rankings/florida/miami/personal-injury/" "LexRank v1.1"
+  expect_status "a context below its threshold is a 404" 404 "$WEB/rankings/florida/miami/personal-injury/spanish-speaking/"
+  if curl -sS "$WEB/sitemap.xml" | grep -q "spanish-speaking"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
 
   echo "==> Data Quality on pages (Etap C)"
   page_has "profile shows the Data Quality panel" "/lawyers/avery-example-demo/" "Data quality"

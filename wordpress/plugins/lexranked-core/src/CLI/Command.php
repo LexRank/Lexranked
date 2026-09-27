@@ -13,6 +13,11 @@ use LexRanked\Core\Content\TermContent;
 use LexRanked\Core\Database\Installer;
 use LexRanked\Core\Plugin;
 use LexRanked\Core\PostTypes\PostType;
+use LexRanked\Core\PostTypes\Ranking;
+use LexRanked\Core\Ranking\ContextDiscovery;
+use LexRanked\Core\Ranking\ContextEligibility;
+use LexRanked\Core\Ranking\RankingQualifier;
+use LexRanked\Core\REST\DTO\RankingMapper;
 use LexRanked\Core\Research\JobException;
 use LexRanked\Core\Research\JobPolicy;
 use LexRanked\Core\Services;
@@ -89,6 +94,9 @@ final class Command {
 		$state    = $this->term( Location::SLUG, DemoData::STATE['name'], DemoData::STATE['slug'], 0 );
 		$city     = $this->term( Location::SLUG, DemoData::CITY['name'], DemoData::CITY['slug'], $state );
 		$practice = $this->term( PracticeArea::SLUG, DemoData::PRACTICE['name'], DemoData::PRACTICE['slug'], 0 );
+		foreach ( DemoData::CASE_TYPES as $slug => $name ) {
+			$this->term( PracticeArea::SLUG, $name, $slug, $practice );
+		}
 		update_term_meta( $state, Location::META_STATE, DemoData::STATE['code'] );
 
 		$sources = array();
@@ -182,6 +190,8 @@ final class Command {
 				array( 'city', DemoData::CITY['name'], 'registry', 'official_registry', 0.95 ),
 				array( 'state', DemoData::STATE['code'], 'registry', 'official_registry', 0.95 ),
 				array( 'practice_areas', array( DemoData::PRACTICE['slug'] ), 'website', 'official_website', 0.9 ),
+				// Case types an editor confirmed are verified; the others stay sourced but unverified.
+				array( 'case_types', $lawyer['case_types'], 'website', 'official_website', 0.9, $lawyer['case_verified'] ? 'verified' : 'pending' ),
 				array( 'website', $lawyer['website'], 'website', 'official_website', 0.9 ),
 				array( 'phone', $lawyer['phone'], 'website', 'official_website', 0.9 ),
 				array( 'education', $lawyer['education'], 'website', 'official_website', 0.9 ),
@@ -231,6 +241,26 @@ final class Command {
 		wp_set_object_terms( $ranking, array( $city ), Location::SLUG );
 		wp_set_object_terms( $ranking, array( $practice ), PracticeArea::SLUG );
 
+		// Contextual rankings (Etap F): one passes its data threshold, one does not and has no page.
+		foreach ( DemoData::context_rankings() as $context ) {
+			$id = $this->create(
+				$s->ranking,
+				$context['title'],
+				'',
+				array(
+					'entity_type'   => 'lawyer',
+					'context_type'  => $context['type'],
+					'context_value' => $context['value'],
+					'min_entities'  => 5,
+					'min_verified'  => 3,
+					'max_entities'  => 25,
+					'summary'       => $context['summary'],
+				)
+			);
+			wp_set_object_terms( $id, array( $city ), Location::SLUG );
+			wp_set_object_terms( $id, array( $practice ), PracticeArea::SLUG );
+		}
+
 		TermContent::store(
 			$city,
 			array(
@@ -261,9 +291,10 @@ final class Command {
 		$this->seed_demo_commercial( $ranking, $city, $firms['coral'] );
 		\WP_CLI::success(
 			sprintf(
-				'Demo data created: %d lawyers, %d firms, 1 ranking, 1 article, demo claims and paid placements (scored %d entities, calculated %d ranking). All records are flagged isDemo.',
+				'Demo data created: %d lawyers, %d firms, %d rankings, 1 article, demo claims and paid placements (scored %d entities, calculated %d rankings). All records are flagged isDemo.',
 				count( DemoData::lawyers() ),
 				count( $firms ),
+				1 + count( DemoData::context_rankings() ),
 				$result['entities'],
 				$result['rankings']
 			)
@@ -275,12 +306,13 @@ final class Command {
 	 *
 	 * @param string                        $type        lawyer|law_firm.
 	 * @param int                           $id          Entity post ID.
-	 * @param array<int, array<int, mixed>> $claims      [field, value, source key, source type, confidence].
+	 * @param array<int, array<int, mixed>> $claims      [field, value, source key, source type, confidence, optional verification status].
 	 * @param array<string, int>            $sources     Source post IDs by key.
 	 * @param string                        $retrieved   Retrieval time.
 	 */
 	private function demo_claims( string $type, int $id, array $claims, array $sources, string $retrieved ): void {
-		foreach ( $claims as [ $field, $value, $source, $source_type, $confidence ] ) {
+		foreach ( $claims as $claim ) {
+			[ $field, $value, $source, $source_type, $confidence ] = $claim;
 			if ( null === $value || '' === $value || array() === $value ) {
 				continue;
 			}
@@ -295,7 +327,7 @@ final class Command {
 					'source_type'         => $source_type,
 					'retrieved_at'        => $retrieved,
 					'confidence'          => $confidence,
-					'verification_status' => 'official_registry' === $source_type ? 'verified' : 'pending',
+					'verification_status' => $claim[5] ?? ( 'official_registry' === $source_type ? 'verified' : 'pending' ),
 				)
 			);
 		}
@@ -644,6 +676,89 @@ final class Command {
 		$s = $this->services;
 		\WP_CLI::log( sprintf( 'Claims keyed: %d.', $s->claims->backfill_entity_keys() ) );
 		\WP_CLI::success( sprintf( 'Facts rebuilt for %d entities: %s.', $s->facts->rebuild_all(), (string) wp_json_encode( $s->facts->summary() ) ) );
+	}
+
+	/**
+	 * Contextual rankings ("best for"): the status of existing ones, and which
+	 * contexts the data could support under each ranking. Reports only; it
+	 * never creates a ranking.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--format=<format>]
+	 * : table or json.
+	 * ---
+	 * default: table
+	 * ---
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function contexts( array $args, array $assoc_args ): void {
+		unset( $args );
+		$s        = $this->services;
+		$rows     = array();
+		$records  = array_map(
+			fn( \WP_Post $post ): array => $s->entities->record( $post, $s->ranking ),
+			get_posts(
+				array(
+					'post_type'        => Ranking::SLUG,
+					'post_status'      => 'publish',
+					'posts_per_page'   => 500,
+					'no_found_rows'    => true,
+					'orderby'          => 'ID',
+					'order'            => 'ASC',
+					'suppress_filters' => false,
+				)
+			)
+		);
+		$existing = array_map( array( RankingMapper::class, 'record_path' ), $records );
+		foreach ( $records as $record ) {
+			$context = $s->presenter->ranking_context( $record );
+			if ( null !== $context ) {
+				$rows[] = array(
+					'ranking'   => $record['title'],
+					'context'   => $context['type'] . ':' . $context['value'],
+					'path'      => RankingMapper::record_path( $record ),
+					'qualified' => $context['eligibility']['qualified'] . '/' . $context['eligibility']['parentCount'],
+					'verified'  => $context['eligibility']['verified'],
+					'status'    => $context['eligibility']['eligible'] ? 'published' : 'no page: ' . implode( ' ', $context['eligibility']['reasons'] ),
+				);
+				continue;
+			}
+			$practice = RankingQualifier::primary_practice( $record['practice_areas'], null );
+			$type     = 'law_firm' === $record['fields']['entity_type'] ? 'law_firm' : 'lawyer';
+			$facts    = array();
+			foreach ( $s->runner->candidates( $record, $practice ) as $candidate ) {
+				$facts[ (int) $candidate->ID ] = $s->facts->for_entity( $type, (int) $candidate->ID );
+			}
+			$children = null === $practice ? array() : get_terms(
+				array(
+					'taxonomy'   => PracticeArea::SLUG,
+					'parent'     => (int) $practice['id'],
+					'hide_empty' => false,
+					'fields'     => 'slugs',
+				)
+			);
+			$min      = (int) ( $record['fields']['min_entities'] ?? $s->settings->get( 'min_ranking_entities' ) );
+			foreach ( ContextDiscovery::suggest( $facts, $min, ContextEligibility::MIN_VERIFIED, is_array( $children ) ? $children : array() ) as $suggestion ) {
+				$e    = $suggestion['eligibility'];
+				$path = rtrim( (string) RankingMapper::record_path( $record ), '/' ) . '/' . $suggestion['segment'] . '/';
+				if ( in_array( $path, $existing, true ) ) {
+					continue;
+					// Listed above with its own status.
+				}
+				$rows[] = array(
+					'ranking'   => $record['title'],
+					'context'   => $suggestion['type'] . ':' . $suggestion['value'],
+					'path'      => $path,
+					'qualified' => $e['qualified'] . '/' . $e['parentCount'],
+					'verified'  => $e['verified'],
+					'status'    => $e['eligible'] ? 'could be created' : 'below threshold: ' . implode( ' ', $e['reasons'] ),
+				);
+			}
+		}//end foreach
+		\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $rows, array( 'ranking', 'context', 'path', 'qualified', 'verified', 'status' ) );
 	}
 
 	/**

@@ -2169,3 +2169,42 @@ main {
     padding: 0.7rem 0.75rem;
   }
 }
+
+/* ---------- Contextual rankings (Etap F) ---------- */
+
+.key-attrs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.key-attrs__item {
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  background: var(--neutral-bg);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+}
+
+.key-attrs__item--context {
+  color: var(--navy-800);
+  background: var(--navy-100);
+  font-weight: 600;
+}
+
+.key-attrs__evidence {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.context-note {
+  margin: 0.6rem 0 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--brass-500);
+  background: var(--brass-100);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+}

@@ -6,7 +6,12 @@
  * this module will read them from there instead.
  */
 
-export const METHODOLOGY_VERSION = "LexRank v1.0";
+export const METHODOLOGY_VERSION = "LexRank v1.1";
+
+/** "LexRank v1.1" for a stored score version; the default when unknown. */
+export function methodologyLabel(version?: string | null): string {
+  return version ? `LexRank ${version}` : METHODOLOGY_VERSION;
+}
 
 export interface MethodologyComponent {
   key: string;
