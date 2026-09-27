@@ -33,6 +33,7 @@ src/
   Attribute/         Attribute registry (data dictionary) and value normalisation (Etap B)
   Fact/              Fact layer: claims → one normalised fact per attribute (Etap B)
   Quality/           Data Quality Score (Etap C; never read by Ranking/)
+  Eligibility/       PageEligibility (pure, pe-1.0) + EligibilityService: which pages exist and are indexed (Etap G)
   Compare/           ComparisonEngine: side-by-side comparison from public detail DTOs (Etap E; never reads commercial data)
   Entity/            Entity registry: stable entity IDs, name/slug aliases, resolve (Etap A)
   Commercial/        Profile claims, placements (premium/featured/sponsored), status derivation (Phase 9; never read by Ranking/)

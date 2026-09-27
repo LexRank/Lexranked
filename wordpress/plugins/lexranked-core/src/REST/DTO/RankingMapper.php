@@ -79,13 +79,14 @@ final class RankingMapper {
 	 * @param bool                             $with_entries Include entries (detail) or only counts (list).
 	 * @param string|null                      $calculated_at Time of the snapshot run the entries come from.
 	 * @param array<string, mixed>|null        $context     Context DTO of a contextual ranking (EntityPresenter::ranking_context).
+	 * @param array<string, mixed>|null        $eligibility PageEligibility result (Etap G); decides isThin and indexable when given.
 	 * @return array<string, mixed>
 	 */
-	public static function ranking( array $record, array $entries, int $min_default, string $intro_html = '', bool $with_entries = true, ?string $calculated_at = null, ?array $context = null ): array {
+	public static function ranking( array $record, array $entries, int $min_default, string $intro_html = '', bool $with_entries = true, ?string $calculated_at = null, ?array $context = null, ?array $eligibility = null ): array {
 		$f        = $record['fields'];
 		$min      = $f['min_entities'] ?? $min_default;
 		$max      = $f['max_entities'] ?? self::DEFAULT_MAX;
-		$is_thin  = count( $entries ) < $min || ( null !== $context && ! $context['eligibility']['eligible'] );
+		$is_thin  = null !== $eligibility ? ! $eligibility['exists'] : ( count( $entries ) < $min || ( null !== $context && ! $context['eligibility']['eligible'] ) );
 		$location = LocationMapper::from_terms( $record['locations'] );
 		$practice = self::practice( $record );
 
@@ -98,11 +99,12 @@ final class RankingMapper {
 			'location'       => $location,
 			'practiceArea'   => $practice,
 			'context'        => $context,
+			'eligibility'    => $eligibility,
 			'scoreVersion'   => $f['score_version'],
 			'entryCount'     => count( $entries ),
 			'minEntities'    => $min,
 			'isThin'         => $is_thin,
-			'indexable'      => ! $is_thin && ! $f['is_demo'],
+			'indexable'      => null !== $eligibility ? (bool) $eligibility['indexable'] : ! $is_thin && ! $f['is_demo'],
 			'isDemo'         => (bool) $f['is_demo'],
 			'updatedAt'      => self::latest( $record['updated_at'], $calculated_at ),
 			'calculatedAt'   => $calculated_at,

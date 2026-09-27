@@ -146,6 +146,37 @@ final class QualityService {
 	}
 
 	/**
+	 * Evidence coverage per entity: the Data Quality completeness dimension
+	 * (share of expected facts backed by a source), 0–1. Used by the page
+	 * eligibility engine (Etap G) to decide which pages exist and are
+	 * indexed; never by the ranking engine.
+	 *
+	 * @param array<int, int> $wp_ids Post IDs.
+	 * @return array<int, float> wp_id => coverage (entities without a stored score are missing).
+	 */
+	public function coverage( array $wp_ids ): array {
+		global $wpdb;
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $wp_ids ) ) ) );
+		if ( array() === $ids ) {
+			return array();
+		}
+		$table = $wpdb->prefix . Schema::ENTITIES;
+		$in    = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Custom table; IN() placeholders built above.
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT wp_id, quality_json FROM {$table} WHERE wp_object = 'post' AND wp_id IN ({$in})", $ids ), ARRAY_A );
+		$out  = array();
+		foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+			$data = json_decode( (string) $row['quality_json'], true );
+			foreach ( (array) ( $data['dimensions'] ?? array() ) as $dimension ) {
+				if ( 'completeness' === ( $dimension['key'] ?? null ) ) {
+					$out[ (int) $row['wp_id'] ] = max( 0.0, min( 1.0, (float) $dimension['score'] / 100 ) );
+				}
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * Distribution for CLI/health: count, average, and bands.
 	 *
 	 * @return array{count: int, average: float|null, bands: array<string, int>}

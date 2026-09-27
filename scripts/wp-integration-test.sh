@@ -205,6 +205,17 @@ wp eval "\\LexRanked\\Core\\Plugin::services()->claims->insert( array( 'entity_i
 wp lexranked recalculate >/dev/null
 expect "new evidence moves a context towards its threshold" '.context.eligibility.qualified == 4 and .context.eligibility.verified == 1 and .isThin' "$SPANISH"
 
+echo "==> Page eligibility engine (Etap G)"
+expect "the rules are published" '.version == "pe-1.0" and (.types | keys) == ["article","comparison","hub","listing","profile","ranking"] and ([.types.ranking[].key] | index("context") != null)' "$API/page-eligibility"
+expect "every ranking carries its decision with explained checks" 'all(.[]; (.eligibility.checks | length) >= 4 and (.eligibility.version == "pe-1.0"))' "$API/rankings"
+expect "a demo ranking exists but is not indexed" '.eligibility.exists and (.eligibility.indexable | not) and .eligibility.reasons == ["Not indexed: demo data."] and (.isThin | not)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+expect "a ranking below its data threshold does not exist, and says only why" '(.eligibility.exists | not) and .isThin and all(.eligibility.reasons[]; startswith("Not indexed") | not)' "$SPANISH"
+expect "hubs carry their decision" 'all(.[]; .eligibility.exists == (.lawyerCount >= 3)) and all(.[]; .eligibility.indexable == false)' "$API/cities"
+expect "profiles carry their decision with evidence coverage" '.eligibility.exists and (.eligibility.checks[] | select(.key == "coverage") | .value >= 0.4)' "$API/lawyers/avery-example-demo"
+expect "profile summaries carry the compact decision" 'all(.[]; .eligibility.exists and (.eligibility.indexable | not))' "$API/lawyers?per_page=100"
+expect "comparisons exist but are never indexed" '.eligibility.exists and (.eligibility.indexable | not)' "$API/compare?type=lawyer&entities=$AVERY_E,$BLAKE_E"
+check "the pages report lists every decision" 'any(.[]; .path == "/rankings/florida/miami/personal-injury/spanish-speaking/" and .exists == "no") and any(.[]; .type == "profile" and .exists == "yes")' "$(wp lexranked pages --format=json)"
+
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 RID="$(curl -sS "$RANKING" | jq .id)"
@@ -434,6 +445,12 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "the header names the methodology the entries used" "/rankings/florida/miami/personal-injury/" "LexRank v1.1"
   expect_status "a context below its threshold is a 404" 404 "$WEB/rankings/florida/miami/personal-injury/spanish-speaking/"
   if curl -sS "$WEB/sitemap.xml" | grep -q "spanish-speaking"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
+
+  echo "==> Page eligibility on pages (Etap G)"
+  page_has "methodology publishes when a page exists" "/methodology/" 'id="page-eligibility"'
+  page_has "methodology lists the thresholds" "/methodology/" "Evidence coverage"
+  expect_status "a hub below the threshold has no page" 404 "$WEB/practice-areas/car-accidents/"
+  page_has "an existing demo hub is noindex" "/cities/miami/" 'content="noindex, follow"'
 
   echo "==> Data Quality on pages (Etap C)"
   page_has "profile shows the Data Quality panel" "/lawyers/avery-example-demo/" "Data quality"

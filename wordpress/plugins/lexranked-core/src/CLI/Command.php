@@ -762,6 +762,94 @@ final class Command {
 	}
 
 	/**
+	 * Page eligibility report (Etap G): every ranking, hub and profile page,
+	 * whether it exists, whether it is indexed, and why not.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--type=<type>]
+	 * : ranking, hub or profile. Default: all.
+	 *
+	 * [--format=<format>]
+	 * : table or json.
+	 * ---
+	 * default: table
+	 * ---
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function pages( array $args, array $assoc_args ): void {
+		unset( $args );
+		$s    = $this->services;
+		$only = $assoc_args['type'] ?? null;
+		$rows = array();
+		$add  = static function ( string $type, string $path, array $decision ) use ( &$rows ): void {
+			$rows[] = array(
+				'type'      => $type,
+				'path'      => $path,
+				'exists'    => $decision['exists'] ? 'yes' : 'no',
+				'indexable' => $decision['indexable'] ? 'yes' : 'no',
+				'reasons'   => implode( ' ', $decision['reasons'] ),
+			);
+		};
+		if ( null === $only || 'ranking' === $only ) {
+			foreach ( get_posts(
+				array(
+					'post_type'        => Ranking::SLUG,
+					'post_status'      => 'publish',
+					'posts_per_page'   => 500,
+					'orderby'          => 'ID',
+					'order'            => 'ASC',
+					'suppress_filters' => false,
+				)
+			) as $post ) {
+				$record  = $s->entities->record( $post, $s->ranking );
+				$entries = $s->presenter->ranking_entries( $record )['entries'];
+				$context = $s->presenter->ranking_context( $record );
+				$min     = (int) ( $record['fields']['min_entities'] ?? $s->settings->get( 'min_ranking_entities' ) );
+				$add( 'ranking', (string) RankingMapper::record_path( $record ), $s->eligibility->ranking( $record, $entries, $min, $context ) );
+			}
+		}
+		if ( null === $only || 'hub' === $only ) {
+			foreach ( array( Location::SLUG, PracticeArea::SLUG ) as $taxonomy ) {
+				$terms = get_terms(
+					array(
+						'taxonomy'   => $taxonomy,
+						'hide_empty' => false,
+					)
+				);
+				foreach ( is_array( $terms ) ? $terms : array() as $term ) {
+					$base = PracticeArea::SLUG === $taxonomy ? '/practice-areas/' : ( 0 === (int) $term->parent ? '/states/' : '/cities/' );
+					$add( 'hub', $base . $term->slug . '/', $s->eligibility->hub( $taxonomy, (int) $term->term_id ) );
+				}
+			}
+		}
+		if ( null === $only || 'profile' === $only ) {
+			foreach ( array(
+				'lawyer'   => '/lawyers/',
+				'law_firm' => '/law-firms/',
+			) as $type => $base ) {
+				$posts     = get_posts(
+					array(
+						'post_type'        => 'law_firm' === $type ? $s->law_firm->slug() : $s->lawyer->slug(),
+						'post_status'      => 'publish',
+						'posts_per_page'   => 2000,
+						'orderby'          => 'title',
+						'order'            => 'ASC',
+						'suppress_filters' => false,
+					)
+				);
+				$decisions = $s->eligibility->profiles( $type, array_map( static fn( \WP_Post $p ): int => (int) $p->ID, $posts ) );
+				foreach ( $posts as $post ) {
+					$add( 'profile', $base . $post->post_name . '/', $decisions[ (int) $post->ID ] );
+				}
+			}
+		}//end if
+		\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $rows, array( 'type', 'path', 'exists', 'indexable', 'reasons' ) );
+	}
+
+	/**
 	 * Data Quality Score: site summary, or one entity's dimensions (not a ranking).
 	 *
 	 * ## OPTIONS

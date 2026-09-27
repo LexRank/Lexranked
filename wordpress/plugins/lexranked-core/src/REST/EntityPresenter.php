@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Eligibility\PageEligibility;
 use LexRanked\Core\Entity\EntityType;
 use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
@@ -61,13 +62,14 @@ final class EntityPresenter {
 		$verifications = $s->verifications->for_entities( array_column( $records, 'id' ) );
 		$policy        = $s->settings->verification_policy( 'lawyer' );
 		$now           = $this->now();
+		$eligibility   = $s->eligibility->profiles( 'lawyer', array_column( $records, 'id' ) );
 
 		return array_map(
 			fn( array $r ): array => EntityMapper::lawyer_summary(
 				$r,
 				$firms[ $r['fields']['firm_id'] ?? 0 ] ?? null,
 				$policy->evaluate( $verifications[ $r['id'] ] ?? array(), $now )
-			),
+			) + array( 'eligibility' => PageEligibility::compact( $eligibility[ $r['id'] ] ) ),
 			$records
 		);
 	}
@@ -99,6 +101,7 @@ final class EntityPresenter {
 		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
 		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['dataQuality']    = $s->quality->stored( (int) $post->ID );
+		$dto['eligibility']    = $s->eligibility->profiles( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', array( (int) $post->ID ) )[ (int) $post->ID ];
 		return $this->with_scoring( $dto, (int) $post->ID );
 	}
 
@@ -116,9 +119,11 @@ final class EntityPresenter {
 		$counts        = $this->lawyer_counts( array_column( $records, 'id' ) );
 		$policy        = $s->settings->verification_policy( 'law_firm' );
 		$now           = $this->now();
+		$eligibility   = $s->eligibility->profiles( 'law_firm', array_column( $records, 'id' ) );
 
 		return array_map(
-			fn( array $r ): array => EntityMapper::firm_summary( $r, $policy->evaluate( $verifications[ $r['id'] ] ?? array(), $now ), $counts[ $r['id'] ] ?? 0 ),
+			fn( array $r ): array => EntityMapper::firm_summary( $r, $policy->evaluate( $verifications[ $r['id'] ] ?? array(), $now ), $counts[ $r['id'] ] ?? 0 )
+				+ array( 'eligibility' => PageEligibility::compact( $eligibility[ $r['id'] ] ) ),
 			$records
 		);
 	}
@@ -146,6 +151,7 @@ final class EntityPresenter {
 		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
 		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['dataQuality']    = $s->quality->stored( (int) $post->ID );
+		$dto['eligibility']    = $s->eligibility->profiles( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', array( (int) $post->ID ) )[ (int) $post->ID ];
 		return $this->with_scoring( $dto, (int) $post->ID );
 	}
 

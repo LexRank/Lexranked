@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.13.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.14.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -126,6 +126,14 @@ The published Data Quality model: `{ version, dimensions[{key, label, weight,
 description}], expected{lawyer: {attribute: weight}, law_firm: …},
 sourceTierScores, summary{count, average, bands} }`. See
 [knowledge-base.md](knowledge-base.md#etap-c-data-quality-score-implemented).
+
+### `GET /page-eligibility` and `eligibility` on DTOs (API 1.14)
+The page eligibility rules are `{ version: "pe-1.0", types: { hub | ranking | profile | article | comparison | listing: [{ key, label, required, level: exist|index, description }] } }`.
+
+Every DTO carries its decision:
+- Rankings (list and detail) carry `eligibility{exists, indexable, reasons[], version, type, checks[{key, label, value, required, level, passed}]}`. `isThin` is `!exists`, and `indexable` comes from the decision.
+- States, cities, practice areas, lawyer, firm and article summaries, and comparisons carry `eligibility{exists, indexable, reasons[]}`.
+- Lawyer and firm details carry the full decision.
 
 ### Contextual rankings (API 1.13)
 Rankings carry `context`: `null` for an ordinary ranking, otherwise:

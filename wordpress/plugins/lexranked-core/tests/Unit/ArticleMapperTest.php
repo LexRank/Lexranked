@@ -40,8 +40,12 @@ final class ArticleMapperTest extends TestCase {
 		$this->assertSame( 12, $dto['relatedRankingId'] );
 		$this->assertStringEndsWith( '…', $dto['excerpt'] );
 
+		$this->assertFalse( $dto['eligibility']['indexable'], 'Etap G: thin articles are noindex' );
+		$this->assertSame( array( 'Not indexed: words 299 (needs 300).' ), $dto['eligibility']['reasons'] );
+
 		$long = ArticleMapper::summary( self::record(), 'Manual excerpt.', $body . '<p>more</p>', array( 'name' => 'Ana' ), null, array() );
 		$this->assertFalse( $long['isThin'] );
+		$this->assertTrue( $long['eligibility']['indexable'] );
 		$this->assertSame( 'Manual excerpt.', $long['excerpt'] );
 	}
 

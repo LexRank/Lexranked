@@ -58,20 +58,17 @@ export function buildSitemap(input: SitemapInput): MetadataRoute.Sitemap {
   for (const firm of input.lawFirms) {
     if (profileEligibility(firm).indexable) entries.push(entry(firm.path, firm.updatedAt, 0.7));
   }
+  // Hubs: the CMS decision (Etap G) when present, else the local approximation.
+  const hubIndexable = (hub: { eligibility?: { exists: boolean; indexable: boolean } }, match: (l: LawyerSummary) => boolean) =>
+    hub.eligibility ? hub.eligibility.exists && hub.eligibility.indexable : realLawyerCount(input.lawyers, match) >= MIN_LAWYERS_FOR_HUB_PAGE;
   for (const state of input.states) {
-    if (realLawyerCount(input.lawyers, (l) => l.location?.stateSlug === state.slug) >= MIN_LAWYERS_FOR_HUB_PAGE) {
-      entries.push(entry(state.path, undefined, 0.6));
-    }
+    if (hubIndexable(state, (l) => l.location?.stateSlug === state.slug)) entries.push(entry(state.path, undefined, 0.6));
   }
   for (const city of input.cities) {
-    if (realLawyerCount(input.lawyers, (l) => l.location?.citySlug === city.slug) >= MIN_LAWYERS_FOR_HUB_PAGE) {
-      entries.push(entry(city.path, undefined, 0.6));
-    }
+    if (hubIndexable(city, (l) => l.location?.citySlug === city.slug)) entries.push(entry(city.path, undefined, 0.6));
   }
   for (const area of input.practiceAreas) {
-    if (realLawyerCount(input.lawyers, (l) => l.practiceAreas.some((p) => p.slug === area.slug)) >= MIN_LAWYERS_FOR_HUB_PAGE) {
-      entries.push(entry(area.path, undefined, 0.6));
-    }
+    if (hubIndexable(area, (l) => l.practiceAreas.some((p) => p.slug === area.slug))) entries.push(entry(area.path, undefined, 0.6));
   }
 
   const articles = (input.articles ?? []).filter((a) => articleEligibility(a).indexable);

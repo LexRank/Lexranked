@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Eligibility\PageEligibility;
 use LexRanked\Core\Compare\ComparisonEngine;
 use LexRanked\Core\Entity\EntityNames;
 use LexRanked\Core\Entity\EntityType;
@@ -93,7 +94,17 @@ final class CompareController extends RestController {
 			// Two requested IDs merged into the same entity.
 			return new \WP_Error( 'lexranked_invalid_param', 'Compare between ' . ComparisonEngine::MIN . ' and ' . ComparisonEngine::MAX . ' different entities.', array( 'status' => 400 ) );
 		}
-		return $this->item_response( ComparisonEngine::compare( $type->value, array_values( $details ) ) );
+		$result                = ComparisonEngine::compare( $type->value, array_values( $details ) );
+		$result['eligibility'] = PageEligibility::compact(
+			PageEligibility::evaluate(
+				'comparison',
+				array(
+					'entities' => count( $details ),
+					'curated'  => 0,
+				)
+			)
+		);
+		return $this->item_response( $result );
 	}
 
 	/**

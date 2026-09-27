@@ -4,7 +4,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { PageHeader } from "@/components/PageHeader";
 import { componentsWithWeights, METHODOLOGY_PRINCIPLES } from "@/lib/methodology";
 import { load } from "@/lib/data/loaders";
-import { getDataQualityModel, getScoreVersions } from "@/lib/wordpress/api";
+import { getDataQualityModel, getPageEligibilityModel, getScoreVersions } from "@/lib/wordpress/api";
 import { collectionPageJsonLd } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 
@@ -26,8 +26,21 @@ const TIERS = [
 
 export const revalidate = 3600;
 
+const PAGE_LABEL: Record<string, string> = {
+  hub: "State, city, practice area",
+  ranking: "Ranking",
+  profile: "Lawyer or firm profile",
+  article: "Guide",
+  comparison: "Comparison",
+  listing: "Listing",
+};
+
 export default async function MethodologyPage() {
-  const [versions, quality] = await Promise.all([load(async () => (await getScoreVersions()).data), load(() => getDataQualityModel())]);
+  const [versions, quality, pages] = await Promise.all([
+    load(async () => (await getScoreVersions()).data),
+    load(() => getDataQualityModel()),
+    load(() => getPageEligibilityModel()),
+  ]);
   const active = versions.ok ? versions.data.versions.find((v) => v.id === versions.data.active) : undefined;
   const components = componentsWithWeights(active?.weights ?? null);
   const params = active?.params;
@@ -175,6 +188,50 @@ export default async function MethodologyPage() {
                     ` Across ${quality.data.summary.count} published profiles the average is ${quality.data.summary.average}%.`}{" "}
                   The ranking has its own, separately published “data quality” factor above; the two are not combined.
                 </p>
+              </>
+            )}
+          </section>
+
+          <section id="page-eligibility">
+            <h2>When a page exists</h2>
+            <p>
+              LexRanked does not create a page because a search term exists. A ranking, city, state or practice-area page exists only
+              when the database holds enough published profiles for it, and it is indexed by search engines only when that data is
+              real, verified and backed by sources. Below the threshold the page is not published, or is published but kept out of
+              search. The same rules decide the sitemap.
+            </p>
+            {pages.ok && (
+              <>
+                <div className="table-wrap">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Page</th>
+                        <th scope="col">Requirement</th>
+                        <th scope="col">Minimum</th>
+                        <th scope="col">Needed to</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(pages.data.types).flatMap(([type, rules]) =>
+                        rules.map((r, i) => (
+                          <tr key={`${type}-${r.key}`}>
+                            <td>{i === 0 ? PAGE_LABEL[type] ?? type : ""}</td>
+                            <td>
+                              {r.label}
+                              <span className="muted" style={{ display: "block", fontSize: "0.82rem" }}>
+                                {r.description}
+                              </span>
+                            </td>
+                            <td>{r.key === "coverage" ? `${Math.round(r.required * 100)}%` : r.key === "real" && r.required === 1 ? "Yes" : r.required}</td>
+                            <td>{r.level === "exist" ? "Exist" : "Be indexed"}</td>
+                          </tr>
+                        )),
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="muted" style={{ fontSize: "0.85rem" }}>Rules {pages.data.version}.</p>
               </>
             )}
           </section>

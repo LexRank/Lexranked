@@ -47,7 +47,7 @@ position. Payment never enters the organic path (docs/commercial.md).
 | 9 | "Why this ranking / why ranked here" | ✅ D | Methodology section and per-entry breakdown exist. Etap D renders a per-entity "why ranked here" from components |
 | 10, 25 | Comparison engine and pages | ✅ E | `GET /compare`, `/compare/?lawyer=…&lawyer=…` (noindex, not in the sitemap), structured data only; linked from rankings and profiles |
 | 11–13 | Contextual ("best for") rankings, context model, context URLs | ✅ F | `case_type`, `client_type`, `language` qualifiers proven by facts; `/rankings/{state}/{city}/{practice}/{context}/` only above the data threshold; `wp lexranked contexts` reports what the data supports, never creates pages |
-| 14–15 | Page eligibility engine, no thin programmatic SEO | ◐ G | Rules exist: hubs need 3 published lawyers and 3 real ones to index; rankings need 5 entries; articles need 300 words; demo is noindex. Etap G moves this to one backend engine with verified-count, evidence-coverage and uniqueness thresholds |
+| 14–15 | Page eligibility engine, no thin programmatic SEO | ✅ G | One backend engine (`pe-1.0`) decides for every page type whether it exists and whether it is indexed: minimum entities, verified entities, real (non-demo) data, evidence coverage, words and context. Checks are explained, published at `GET /page-eligibility` and on the methodology page, and drive rendering, robots meta and the sitemap |
 | 16–18 | Profile structure, per-fact freshness, source panel | ◐ H | Profiles show identity, firm, areas, credentials, score breakdown, rankings, verification, and evidence with source, tier and retrieval date. Etap H groups them per fact ("Bar status → Florida Bar → verified Sep 27") |
 | 19 | AI-readable structured summary | ◐ H | Ranking pages have an answer-first summary built from data. Profiles and hubs get one in Etap H |
 | 20 | Schema.org from entity data only | ✅ / ◐ H | Person, Organization / LegalService, ItemList, BreadcrumbList and FAQPage are emitted only when their data exists. There is no review markup |
@@ -76,8 +76,8 @@ position. Payment never enters the organic path (docs/commercial.md).
 | **D** | Per-entity "why ranked here", snapshot-diff explanations, methodology v1.1 on the fact layer | ✅ |
 | **E** | Comparison engine | ✅ |
 | **F** | Contextual rankings | ✅ |
-| G | Unified page eligibility engine | next |
-| H | AI-readable page architecture | |
+| **G** | Unified page eligibility engine | ✅ |
+| H | AI-readable page architecture | next |
 | I | Market statistics and coverage | |
 | J | AI interpretation layer | |
 
@@ -258,4 +258,35 @@ A separate, published percentage of **how well a profile is documented**. It say
   - "Best Car Accident Lawyers in Miami" passes the threshold: 5 of 8 qualify, 4 verified.
   - "Best Spanish-speaking Personal Injury Lawyers in Miami" does not (3 of 8, 0 verified), so it has no page.
 - **API 1.13**: `context` on rankings; `keyFacts` and `qualification` on entries; `caseTypes` and `clientTypes` on profiles; ranking `path` includes the context segment.
+
+
+## Etap G: page eligibility engine (implemented)
+
+- **`Eligibility\PageEligibility` (`pe-1.0`, pure)** answers CAN_THIS_PAGE_EXIST? from data, never from keywords or search volume (enforced by a test). It returns `exists`, `indexable`, the checks (value, requirement, level, pass) and human reasons.
+- **Two levels.**
+  - **exist**: without it the page is a 404, is not linked and is left out of the sitemap.
+  - **index**: the page renders but is noindex until its data is real, verified and sourced.
+  - A page that cannot exist lists only what stops it from existing.
+- **Rules**:
+
+  | Page | Exist | Index |
+  |---|---|---|
+  | State / city / practice area | ≥ 3 published lawyers | ≥ 3 real (non-demo); ≥ 1 verified; evidence coverage ≥ 50% |
+  | Ranking | ≥ `min_entities` entries (default 5); contextual: context confirmed (Etap F) | real data; ≥ 3 verified entries; coverage ≥ 60% |
+  | Profile | published | real; coverage ≥ 40% |
+  | Guide | published | real; ≥ 300 words |
+  | Comparison | 2–4 entities | never, until an editor curates it |
+  | Listing | always | ≥ 1 real profile |
+
+  **Evidence coverage** is the Data Quality completeness dimension: the share of expected facts backed by a source. It decides which pages exist; it is still never a ranking input.
+- **Wiring.** `EligibilityService` gathers the counts: published entities, demo flags, verification policy results and stored coverage. Every DTO carries its decision:
+  - rankings get the full decision, and it now decides `isThin` and `indexable`;
+  - state, city and practice-area DTOs and lawyer, firm and article summaries get the compact form;
+  - profile details get the full decision;
+  - comparisons get it too.
+
+  The frontend's `eligibility.ts` and the sitemap use the CMS decision and keep their old rules only as a fallback for older APIs.
+- **Transparency.**
+  - `GET /page-eligibility` publishes the rules, and the methodology page shows them live under "When a page exists".
+  - `wp lexranked pages` lists every ranking, hub and profile with exists / indexed / reasons.
 

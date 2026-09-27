@@ -139,6 +139,8 @@ interface EntityBase {
   id: number;
   /** Stable LexRanked entity ID (API 1.8): survives renames and slug changes; `id` is the CMS record ID. */
   entityId?: number | null;
+  /** Since API 1.14: the page eligibility decision (Etap G). */
+  eligibility?: EligibilityDto;
   slug: string;
   path: string;
   name: string;
@@ -274,6 +276,23 @@ export interface RankingSummary {
   methodologyUrl: string;
   /** Since API 1.13: the "best for" context of a contextual ranking; null for an ordinary one. */
   context?: RankingContextDto | null;
+  /** Since API 1.14: the full page eligibility decision (Etap G); decides isThin and indexable. */
+  eligibility?: EligibilityDto | null;
+}
+
+/** Page eligibility (Etap G): does the page exist, may it be indexed, and why not. */
+export interface EligibilityDto {
+  exists: boolean;
+  indexable: boolean;
+  reasons: string[];
+  version?: string;
+  type?: string;
+  checks?: Array<{ key: string; label: string; value: number; required: number; level: "exist" | "index"; passed: boolean }>;
+}
+
+export interface PageEligibilityModelDto {
+  version: string;
+  types: Record<string, Array<{ key: string; label: string; required: number; level: "exist" | "index"; description: string }>>;
 }
 
 export type RankingContextType = "case_type" | "client_type" | "language";
@@ -340,6 +359,8 @@ export interface RankingDetail extends RankingSummary {
 export interface StateDto {
   id: number;
   entityId?: number | null;
+  /** Since API 1.14: the page eligibility decision (Etap G). */
+  eligibility?: EligibilityDto;
   slug: string;
   name: string;
   code: string | null;
@@ -353,6 +374,8 @@ export interface StateDto {
 export interface CityDto {
   id: number;
   entityId?: number | null;
+  /** Since API 1.14: the page eligibility decision (Etap G). */
+  eligibility?: EligibilityDto;
   slug: string;
   name: string;
   path: string;
@@ -365,6 +388,8 @@ export interface CityDto {
 export interface PracticeAreaDto {
   id: number;
   entityId?: number | null;
+  /** Since API 1.14: the page eligibility decision (Etap G). */
+  eligibility?: EligibilityDto;
   slug: string;
   name: string;
   description: string;
@@ -450,6 +475,8 @@ export interface TermContentDto {
 }
 
 export interface ArticleSummary {
+  /** Since API 1.14: the page eligibility decision (Etap G). */
+  eligibility?: EligibilityDto;
   id: number;
   slug: string;
   path: string;
@@ -556,6 +583,8 @@ export interface ComparisonEntity {
 }
 
 export interface ComparisonDto {
+  /** Since API 1.14: comparisons exist but stay noindex until curated. */
+  eligibility?: EligibilityDto;
   version: string;
   type: ComparableType;
   entities: ComparisonEntity[];

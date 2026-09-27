@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core;
 
+use LexRanked\Core\Eligibility\EligibilityService;
 use LexRanked\Core\Commercial\CommercialService;
 use LexRanked\Core\Commercial\PlacementRepository;
 use LexRanked\Core\Commercial\ProfileClaimRepository;
@@ -129,6 +130,13 @@ final class Services {
 	 * @var QualityService
 	 */
 	public readonly QualityService $quality;
+
+	/**
+	 * Page eligibility (Etap G).
+	 *
+	 * @var EligibilityService
+	 */
+	public readonly EligibilityService $eligibility;
 
 	/**
 	 * Entities.
@@ -265,6 +273,7 @@ final class Services {
 		);
 		$this->facts         = new FactService( $this );
 		$this->quality       = new QualityService( $this );
+		$this->eligibility   = new EligibilityService( $this );
 		$this->snapshots     = new SnapshotRepository();
 		$this->versions      = new ScoreVersions();
 		$this->presenter     = new EntityPresenter( $this );

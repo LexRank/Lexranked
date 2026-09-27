@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Eligibility\PageEligibility;
+use LexRanked\Core\Eligibility\EligibilityService;
 use LexRanked\Core\Content\TermContent;
 use LexRanked\Core\Entity\EntityRegistry;
 use LexRanked\Core\Entity\EntityType;
@@ -32,9 +34,10 @@ final class TaxonomiesController extends RestController {
 	/**
 	 * Constructor.
 	 *
-	 * @param EntityRegistry $registry Entity registry.
+	 * @param EntityRegistry     $registry    Entity registry.
+	 * @param EligibilityService $eligibility Page eligibility (Etap G).
 	 */
-	public function __construct( private readonly EntityRegistry $registry ) {
+	public function __construct( private readonly EntityRegistry $registry, private readonly EligibilityService $eligibility ) {
 	}
 
 	/**
@@ -108,14 +111,15 @@ final class TaxonomiesController extends RestController {
 					}
 					$location = LocationMapper::build( null, EntityRepository::location_term( $term ) );
 					$items[]  = array(
-						'id'        => (int) $term->term_id,
-						'entityId'  => $this->registry->id_for( EntityType::Location, (int) $term->term_id ),
-						'slug'      => $term->slug,
-						'name'      => $location['state'],
-						'code'      => $location['stateCode'],
-						'path'      => '/states/' . $term->slug . '/',
-						'cityCount' => count( $this->terms( Location::SLUG, array( 'parent' => $term->term_id ) ) ),
-						'content'   => TermContent::dto( (int) $term->term_id ),
+						'id'          => (int) $term->term_id,
+						'entityId'    => $this->registry->id_for( EntityType::Location, (int) $term->term_id ),
+						'slug'        => $term->slug,
+						'name'        => $location['state'],
+						'code'        => $location['stateCode'],
+						'path'        => '/states/' . $term->slug . '/',
+						'cityCount'   => count( $this->terms( Location::SLUG, array( 'parent' => $term->term_id ) ) ),
+						'content'     => TermContent::dto( (int) $term->term_id ),
+						'eligibility' => PageEligibility::compact( $this->eligibility->hub( Location::SLUG, (int) $term->term_id ) ),
 					) + $counts;
 				}
 				return $items;
@@ -157,19 +161,20 @@ final class TaxonomiesController extends RestController {
 						}
 						$location = LocationMapper::build( EntityRepository::location_term( $city ), $state );
 						$items[]  = array(
-							'id'       => (int) $city->term_id,
-							'entityId' => $this->registry->id_for( EntityType::Location, (int) $city->term_id ),
-							'slug'     => $city->slug,
-							'name'     => $city->name,
-							'path'     => '/cities/' . $city->slug . '/',
-							'state'    => array(
+							'id'          => (int) $city->term_id,
+							'entityId'    => $this->registry->id_for( EntityType::Location, (int) $city->term_id ),
+							'slug'        => $city->slug,
+							'name'        => $city->name,
+							'path'        => '/cities/' . $city->slug . '/',
+							'state'       => array(
 								'slug' => $location['stateSlug'],
 								'name' => $location['state'],
 								'code' => $location['stateCode'],
 							),
-							'content'  => TermContent::dto( (int) $city->term_id ),
+							'content'     => TermContent::dto( (int) $city->term_id ),
+							'eligibility' => PageEligibility::compact( $this->eligibility->hub( Location::SLUG, (int) $city->term_id ) ),
 						) + $counts;
-					}
+					}//end foreach
 				}//end foreach
 				return $items;
 			}
@@ -206,6 +211,7 @@ final class TaxonomiesController extends RestController {
 						'description' => $term->description,
 						'path'        => '/practice-areas/' . $term->slug . '/',
 						'content'     => TermContent::dto( (int) $term->term_id ),
+						'eligibility' => PageEligibility::compact( $this->eligibility->hub( PracticeArea::SLUG, (int) $term->term_id ) ),
 					) + $counts;
 				}
 				return $items;

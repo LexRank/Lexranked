@@ -322,3 +322,13 @@ verified facts, and the result differs from the broader ranking. Contexts
 come from editors, informed by `wp lexranked contexts`, which reports what the
 data supports. They never come from keyword lists, and pages are never
 created automatically.
+
+### ADR-039 — One page eligibility engine decides existence and indexing
+Whether a page exists, and whether it may be indexed, is decided in one
+backend engine from database counts: entities, verified entities, real vs
+demo, evidence coverage, words and context. The decision travels with each
+DTO, so rendering, robots meta and the sitemap agree. The rules are versioned,
+published at `/page-eligibility` and on the methodology page, and every decision lists its
+checks. Keywords and search volume are not inputs. The frontend keeps its
+earlier rules only as a fallback for older API versions.
+

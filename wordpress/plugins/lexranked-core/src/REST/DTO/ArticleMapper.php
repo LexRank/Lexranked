@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST\DTO;
 
+use LexRanked\Core\Eligibility\PageEligibility;
 use LexRanked\Core\PostTypes\Article;
 
 /**
@@ -71,6 +72,15 @@ final class ArticleMapper {
 			'isThin'           => $words < Article::MIN_INDEXABLE_WORDS,
 			'relatedRankingId' => $record['fields']['related_ranking'] ?? null,
 			'isDemo'           => (bool) ( $record['fields']['is_demo'] ?? false ),
+			'eligibility'      => PageEligibility::compact(
+				PageEligibility::evaluate(
+					'article',
+					array(
+						'real'  => empty( $record['fields']['is_demo'] ),
+						'words' => $words,
+					)
+				)
+			),
 		);
 	}
 

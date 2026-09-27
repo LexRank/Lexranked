@@ -142,9 +142,10 @@ final class RankingsController extends RestController {
 
 		$items = array();
 		foreach ( $posts as $post ) {
-			$record = $this->services->entities->record( $post, $this->services->ranking );
-			$run    = $this->services->presenter->ranking_entries( $record );
-			$dto    = RankingMapper::ranking( $record, $run['entries'], (int) $this->services->settings->get( 'min_ranking_entities' ), '', false, $run['calculated_at'], $this->services->presenter->ranking_context( $record ) );
+			$record                    = $this->services->entities->record( $post, $this->services->ranking );
+			$run                       = $this->services->presenter->ranking_entries( $record );
+			[ $context, $eligibility ] = $this->decide( $record, $run['entries'] );
+			$dto                       = RankingMapper::ranking( $record, $run['entries'], (int) $this->services->settings->get( 'min_ranking_entities' ), '', false, $run['calculated_at'], $context, $eligibility );
 			if ( null !== $request['indexable'] && (bool) $request['indexable'] !== $dto['indexable'] ) {
 				continue;
 			}
@@ -212,8 +213,9 @@ final class RankingsController extends RestController {
 		if ( null === $post ) {
 			return $this->not_found( 'Ranking' );
 		}
-		$record = $this->services->entities->record( $post, $this->services->ranking );
-		$run    = $this->services->presenter->ranking_entries( $record );
+		$record                    = $this->services->entities->record( $post, $this->services->ranking );
+		$run                       = $this->services->presenter->ranking_entries( $record );
+		[ $context, $eligibility ] = $this->decide( $record, $run['entries'] );
 		return $this->item_response(
 			RankingMapper::ranking(
 				$record,
@@ -222,8 +224,22 @@ final class RankingsController extends RestController {
 				$this->html( $post->post_content ),
 				true,
 				$run['calculated_at'],
-				$this->services->presenter->ranking_context( $record )
+				$context,
+				$eligibility
 			)
 		);
+	}
+
+	/**
+	 * Context and page eligibility of a ranking (Etap F/G).
+	 *
+	 * @param array<string, mixed>             $record  Ranking record.
+	 * @param array<int, array<string, mixed>> $entries Entries.
+	 * @return array{0: array<string, mixed>|null, 1: array<string, mixed>}
+	 */
+	private function decide( array $record, array $entries ): array {
+		$context = $this->services->presenter->ranking_context( $record );
+		$min     = (int) ( $record['fields']['min_entities'] ?? $this->services->settings->get( 'min_ranking_entities' ) );
+		return array( $context, $this->services->eligibility->ranking( $record, $entries, $min, $context ) );
 	}
 }

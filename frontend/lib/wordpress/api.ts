@@ -14,6 +14,7 @@ import type {
   LawFirmSummary,
   LawyerDetail,
   LawyerSummary,
+  PageEligibilityModelDto,
   PlacementDto,
   PracticeAreaDto,
   RankingDetail,
@@ -171,3 +172,7 @@ export async function getComparison(type: ComparableType, ids: number[], opts?: 
     throw error;
   }
 }
+
+/** The published page eligibility rules (Etap G, methodology page). */
+export const getPageEligibilityModel = (opts?: Opts) =>
+  apiRequest<PageEligibilityModelDto>("page-eligibility", { revalidate: 3600, ...opts }).then((r) => r.data);

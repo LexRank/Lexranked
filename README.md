@@ -91,7 +91,8 @@ C. ✅ **Data Quality Score**: separate, published documentation score (complete
 D. ✅ **Ranking explanations + methodology v1.1**: scores from evidence-backed facts; "Why #N?" on every entry; position changes explained from snapshot differences
 E. ✅ **Comparison engine**: `/compare/?lawyer=…&lawyer=…` (noindex) compares 2–4 lawyers or firms from stored facts, each cell with its source and check date; differences stated, never a verdict; linked from rankings and profiles
 F. ✅ **Contextual rankings**: "best for" rankings by case type, client type or language, e.g. `/rankings/florida/miami/personal-injury/car-accidents/`. Entities qualify only through sourced facts, and a page exists only above a verified-data threshold. The context never changes a score, and key card attributes follow the context
-G. Page eligibility engine · H. AI-readable pages · I. Market statistics · J. AI interpretation layer
+G. ✅ **Page eligibility engine**: one explained, published decision per page (exists / indexed) from entities, verified entities, real data, evidence coverage and context; it drives rendering, robots and the sitemap, never keywords
+H. AI-readable pages · I. Market statistics · J. AI interpretation layer
 
 ## Security
 
