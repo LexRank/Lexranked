@@ -449,7 +449,9 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "an invalid comparison explains itself" "/compare/?lawyer=$AVERY_E" "different lawyers or law firms"
   page_has "ranking links its top entries to a comparison" "/rankings/florida/miami/personal-injury/" "Compare #1 and #2"
   page_has "profile links to comparisons with its neighbours" "/lawyers/blake-sample-demo/" "Compare with #"
-  if curl -sS "$WEB/sitemap.xml" | grep -q "/compare"; then fail "comparison pages are in the sitemap"; else pass "comparison pages stay out of the sitemap"; fi
+  # Read whole bodies before grepping: with pipefail, `curl | grep -q` fails as soon as grep stops reading early.
+  sitemap_body="$(curl -sS "$WEB/sitemap.xml")"
+  if grep -q "/compare" <<<"$sitemap_body"; then fail "comparison pages are in the sitemap"; else pass "comparison pages stay out of the sitemap"; fi
 
   echo "==> Contextual ranking pages (Etap F)"
   expect_status "contextual ranking page" 200 "$WEB/rankings/florida/miami/personal-injury/car-accidents/"
@@ -460,7 +462,7 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "cards show key attributes" "/rankings/florida/miami/personal-injury/" "22 years experience"
   page_has "the header names the methodology the entries used" "/rankings/florida/miami/personal-injury/" "LexRank v1.1"
   expect_status "a context below its threshold is a 404" 404 "$WEB/rankings/florida/miami/personal-injury/spanish-speaking/"
-  if curl -sS "$WEB/sitemap.xml" | grep -q "spanish-speaking"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
+  if grep -q "spanish-speaking" <<<"$(curl -sS "$WEB/sitemap.xml")"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
 
   echo "==> Page eligibility on pages (Etap G)"
   page_has "methodology publishes when a page exists" "/methodology/" 'id="page-eligibility"'
@@ -538,7 +540,7 @@ if [[ -n "$FRONTEND" ]]; then
   check "WordPress reports the frontend refresh" '.state == "ok"' "$(wp option get lexranked_revalidation_status --format=json)"
   refreshed=""
   for _ in $(seq 1 10); do
-    if curl -sS "$WEB/rankings/florida/miami/personal-injury/" | grep -qF "(Demo) Updated"; then refreshed=1; break; fi
+    if grep -qF "(Demo) Updated" <<<"$(curl -sS "$WEB/rankings/florida/miami/personal-injury/")"; then refreshed=1; break; fi
     sleep 1
   done
   if [[ -n "$refreshed" ]]; then pass "page refreshed within seconds of the change"; else fail "page was not refreshed after the signed webhook"; fi
