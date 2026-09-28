@@ -150,7 +150,7 @@ describe('content_generation and ai_candidate_review pipelines', () => {
     // The AI reviewer's issue with an excerpt that is not in the draft is dropped.
     expect(draft.qa.issues.map((i) => i.code)).toEqual(['ai_unnatural_language']);
     expect(draft.facts.length).toBe(12);
-    expect(draft.prompt_version).toBe('ranking-content/1');
+    expect(draft.prompt_version).toBe('interp/1+ranking-content/2');
   });
 
   it('marks drafts with invented facts as needs_review', async () => {

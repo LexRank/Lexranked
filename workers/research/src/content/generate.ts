@@ -5,12 +5,14 @@
  */
 
 import type { AiClient } from '../ai/openai.js';
+import { interpretationSystem } from '../ai/interpretation.js';
 import type { JsonSchema } from '../ai/jsonSchema.js';
 import type { Fact, RankingData } from './facts.js';
+import { factForModel } from './facts.js';
 import { place } from './facts.js';
 import type { Unit } from './qa.js';
 
-export const CONTENT_PROMPT_VERSION = 'ranking-content/1';
+export const CONTENT_PROMPT_VERSION = 'ranking-content/2';
 
 export interface Generated {
   summary: string;
@@ -66,17 +68,15 @@ export function contentSchema(factIds: string[]): JsonSchema {
 }
 
 export async function generateRankingContent(ai: AiClient, ranking: RankingData, facts: Fact[]): Promise<{ content: Generated; model: string }> {
-  const system = [
-    'You write the editorial text for a LexRanked ranking page (US English, neutral, factual, helpful to someone choosing a lawyer).',
-    'Use ONLY the numbered facts provided. Every paragraph, the summary and every FAQ answer must list the IDs of the facts it relies on in factRefs.',
-    'Never add names, numbers, dates, awards, reviews, fees, outcomes or credentials that are not in the facts. Do not give legal advice.',
-    'Do not call anyone "the best", do not promise results, do not include links, phone numbers or calls to action.',
-    'When you mention a position, use the exact position from the facts. Describe positions as reflecting the LexRank score and methodology.',
-    'Write: a 1–3 sentence answer-first summary; up to 4 short sections (e.g. who leads the ranking, how positions are decided, what to check when choosing); and 3–5 FAQs that a reader would actually ask.',
-  ].join('\n');
+  const system = interpretationSystem('write', [
+    'You write the editorial text for a LexRanked ranking page.',
+    'Every paragraph, the summary and every FAQ answer must list the IDs of the facts it relies on in factRefs.',
+    'When you mention a position, use the exact position from the facts. Describe positions as reflecting the LexRank score and methodology; to explain a position, use the "Why" facts.',
+    'Write: a 1–3 sentence answer-first summary; up to 4 short sections (e.g. who leads the ranking, how positions are decided, what the market looks like, what to check when choosing); and 3–5 FAQs that a reader would actually ask.',
+  ]);
   const user = JSON.stringify({
     page: { title: ranking.title, place: place(ranking), practiceArea: ranking.practiceArea?.name ?? null },
-    facts: facts.map(({ id, label, value }) => ({ id, label, value })),
+    facts: facts.map(factForModel),
   });
   const res = await ai.structured<Generated>({
     name: 'ranking_content',
@@ -104,29 +104,22 @@ export function unitsOf(c: Generated & { title?: string }): Unit[] {
 
 // ─── Phase 7: hubs, profiles, articles ────────────────────────────────────
 
-export const HUB_PROMPT_VERSION = 'hub-content/1';
-export const PROFILE_PROMPT_VERSION = 'profile-summary/1';
-export const ARTICLE_PROMPT_VERSION = 'article/1';
-
-const COMMON_RULES = [
-  'Use ONLY the numbered facts provided and cite the IDs you rely on in factRefs.',
-  'Never add names, numbers, dates, awards, reviews, fees, case outcomes or credentials that are not in the facts. Do not give legal advice.',
-  'Do not call anyone "the best", do not promise results, do not include links, phone numbers or calls to action.',
-  'US English, neutral and factual, written for someone choosing a lawyer.',
-];
+export const HUB_PROMPT_VERSION = 'hub-content/2';
+export const PROFILE_PROMPT_VERSION = 'profile-summary/2';
+export const ARTICLE_PROMPT_VERSION = 'article/2';
 
 /** Hub pages (state, city, practice area): same shape as ranking content. */
 export async function generateHubContent(ai: AiClient, page: { title: string; place: string }, facts: Fact[]): Promise<{ content: Generated; model: string }> {
-  const system = [
+  const system = interpretationSystem('write', [
     'You write the editorial text for a LexRanked location or practice-area page that lists lawyer profiles and rankings.',
-    ...COMMON_RULES,
-    'Write: a 1–3 sentence answer-first summary; up to 3 short sections (what the page covers, how profiles are ordered, what to check when choosing); and 3–5 FAQs a reader would actually ask.',
-  ].join('\n');
+    'Market figures (counts, average rating, median reviews) are computed by LexRanked; quote them exactly as given, with their sample size where it is stated.',
+    'Write: a 1–3 sentence answer-first summary; up to 3 short sections (what the page covers, what the market looks like, how profiles are ordered, what to check when choosing); and 3–5 FAQs a reader would actually ask.',
+  ]);
   const res = await ai.structured<Generated>({
     name: 'hub_content',
     schema: contentSchema(facts.map((f) => f.id)),
     system,
-    user: JSON.stringify({ page, facts: facts.map(({ id, label, value }) => ({ id, label, value })) }),
+    user: JSON.stringify({ page, facts: facts.map(factForModel) }),
     maxOutputTokens: 3500,
   });
   return { content: res.data, model: res.model };
@@ -150,15 +143,14 @@ export function profileSchema(factIds: string[]): JsonSchema {
 }
 
 export async function generateProfileSummary(ai: AiClient, facts: Fact[]): Promise<{ content: ProfileSummary; model: string }> {
-  const system = [
+  const system = interpretationSystem('summarize', [
     'You write a 2–4 sentence, answer-first summary for a LexRanked lawyer or law firm profile: who they are, where they practise, what they focus on and how LexRanked scores and verifies them.',
-    ...COMMON_RULES,
-  ].join('\n');
+  ]);
   const res = await ai.structured<ProfileSummary>({
     name: 'profile_summary',
     schema: profileSchema(facts.map((f) => f.id)),
     system,
-    user: JSON.stringify({ facts: facts.map(({ id, label, value }) => ({ id, label, value })) }),
+    user: JSON.stringify({ facts: facts.map(factForModel) }),
     maxOutputTokens: 800,
   });
   return { content: res.data, model: res.model };
@@ -208,18 +200,17 @@ export function articleSchema(factIds: string[]): JsonSchema {
 }
 
 export async function generateArticle(ai: AiClient, topic: string, facts: Fact[]): Promise<{ content: GeneratedArticle; model: string }> {
-  const system = [
+  const system = interpretationSystem('write', [
     'You draft an editorial guide for LexRanked, a site that ranks US lawyers with a published, data-driven methodology.',
     'The topic is an editor\'s brief, not a fact. Practical, general guidance (what to check, what to ask) needs no citation, but must not contain names, numbers, statistics, laws or claims about specific people or firms.',
     'Anything about specific lawyers, firms, rankings, scores or the methodology must come from the numbered facts, cited in factRefs.',
-    ...COMMON_RULES.slice(1),
     'Write a clear title, a 1–2 sentence summary, 3–5 sections and up to 4 FAQs.',
-  ].join('\n');
+  ]);
   const res = await ai.structured<GeneratedArticle>({
     name: 'article_draft',
     schema: articleSchema(facts.map((f) => f.id)),
     system,
-    user: JSON.stringify({ topic, facts: facts.map(({ id, label, value }) => ({ id, label, value })) }),
+    user: JSON.stringify({ topic, facts: facts.map(factForModel) }),
     maxOutputTokens: 5000,
   });
   return { content: res.data, model: res.model };

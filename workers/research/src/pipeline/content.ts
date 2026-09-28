@@ -16,6 +16,7 @@
 
 import type { ContentDraftInput } from '../api.js';
 import { AiError, type AiClient } from '../ai/openai.js';
+import { promptVersion } from '../ai/interpretation.js';
 import { aiReviewContent } from '../content/aiQa.js';
 import {
   buildHubFacts,
@@ -26,6 +27,7 @@ import {
   type EntitySummary,
   type Fact,
   type HubData,
+  type MarketData,
   type MethodologyData,
   type ProfileData,
   type RankingData,
@@ -72,6 +74,18 @@ interface Draft {
 
 const pad = (n: number): string => String(n).padStart(10, '0');
 
+/**
+ * Market statistics computed by the backend (Etap I). Optional: an older API
+ * or an unknown slug gives null, and the facts fall back to page data.
+ */
+async function marketFor(ctx: JobContext, query: string): Promise<MarketData | null> {
+  try {
+    return await ctx.api.getPublic<MarketData>(`/market?${query}`);
+  } catch {
+    return null;
+  }
+}
+
 export function parseAfterCursor(cursor: string | null): string {
   const m = /^after:(.+)$/.exec(cursor ?? '');
   return m ? (m[1] as string) : '';
@@ -112,9 +126,11 @@ async function rankingTargets(ctx: JobContext): Promise<Target[]> {
     build: async (ai) => {
       const ranking = await ctx.api.getPublic<RankingData>(`/rankings/${id}`);
       if (ranking.isThin || ranking.entries.length < MIN_ENTRIES_FOR_CONTENT) return null;
-      const facts = buildRankingFacts(ranking);
+      const place = ranking.location?.citySlug ?? ranking.location?.stateSlug ?? null;
+      const market = place ? await marketFor(ctx, `location=${place}${ranking.practiceArea ? `&practice_area=${ranking.practiceArea.slug}` : ''}`) : null;
+      const facts = buildRankingFacts(ranking, market);
       const { content, model } = await generateRankingContent(ai, ranking, facts);
-      return { payload: { content_type: 'ranking_content', target_id: id }, generated: content, facts, qa: rankingQaContext(ranking), model, promptVersion: CONTENT_PROMPT_VERSION };
+      return { payload: { content_type: 'ranking_content', target_id: id }, generated: content, facts, qa: rankingQaContext(ranking), model, promptVersion: promptVersion(CONTENT_PROMPT_VERSION) };
     },
   }));
 }
@@ -141,7 +157,8 @@ async function hubTargets(ctx: JobContext): Promise<Target[]> {
       const lawyers = await ctx.api.getPublic<EntitySummary[]>(`/lawyers?${filter}&per_page=10&orderby=score&order=desc`);
       const rankingFilter = h.kind === 'practice_area' ? `practice_area=${h.slug}` : `location=${h.slug}`;
       const rankings = (await ctx.api.getPublic<{ title: string; entryCount: number; isThin: boolean }[]>(`/rankings?${rankingFilter}&per_page=20`)).filter((r) => !r.isThin);
-      const facts = buildHubFacts(h, lawyers, rankings);
+      const market = await marketFor(ctx, h.kind === 'practice_area' ? `practice_area=${h.slug}` : `location=${h.slug}`);
+      const facts = buildHubFacts(h, lawyers, rankings, market);
       const place = hubPlace(h);
       const { content, model } = await generateHubContent(ai, { title: h.kind === 'practice_area' ? `${h.name} lawyers` : `Lawyers in ${place}`, place }, facts);
       const existing = h.content ? [h.content.summary ?? '', h.content.body.replace(/<[^>]+>/g, ' '), ...h.content.faq.map((f) => `${f.question} ${f.answer}`)].join(' ') : '';
@@ -151,7 +168,7 @@ async function hubTargets(ctx: JobContext): Promise<Target[]> {
         facts,
         qa: { keyword: place, existingText: existing, calculatedAt: null, isDemo: lawyers.length > 0 && lawyers.every((l) => l.isDemo), refsRequired: true, minWords: 120 },
         model,
-        promptVersion: HUB_PROMPT_VERSION,
+        promptVersion: promptVersion(HUB_PROMPT_VERSION),
       };
     },
   }));
@@ -178,7 +195,7 @@ async function profileTargets(ctx: JobContext): Promise<Target[]> {
           facts,
           qa: { keyword: '', existingText: p.summary ?? '', calculatedAt: null, isDemo: p.isDemo, refsRequired: true, minWords: 0 },
           model,
-          promptVersion: PROFILE_PROMPT_VERSION,
+          promptVersion: promptVersion(PROFILE_PROMPT_VERSION),
         };
       },
     }));
@@ -215,7 +232,7 @@ async function articleTargets(ctx: JobContext): Promise<Target[]> {
           facts,
           qa: { keyword: '', existingText: '', calculatedAt, isDemo, refsRequired: false, minWords: 300 },
           model,
-          promptVersion: ARTICLE_PROMPT_VERSION,
+          promptVersion: promptVersion(ARTICLE_PROMPT_VERSION),
         };
       },
     },
@@ -269,7 +286,7 @@ export async function runContent(ctx: JobContext): Promise<PipelineResult> {
             sections: g.sections.map((s) => ({ heading: s.heading, paragraphs: s.paragraphs.map((p) => ({ text: p.text })) })),
             faq: g.faq.map((f) => ({ question: f.question, answer: f.answer })),
           },
-          facts: draft.facts.map(({ id, label, value }) => ({ id, label, value })),
+          facts: draft.facts.map(({ id, label, value, status, origin }) => ({ id, label, value, ...(status ? { status } : {}), ...(origin ? { origin } : {}) })),
           qa: { status: issues.some((i) => i.severity === 'error') ? 'needs_review' : 'ready_for_review', issues },
           model: draft.model,
           prompt_version: draft.promptVersion,

@@ -138,7 +138,7 @@ describe('content_generation kinds', () => {
     const job = wp.addJob('content_generation', { kind: 'hub' });
     expect(await runOnce(deps)).toBe('completed');
     expect(wp.drafts).toHaveLength(1);
-    expect(wp.drafts[0]).toMatchObject({ content_type: 'hub_content', target_term: 7, target_taxonomy: 'lr_location', prompt_version: 'hub-content/1' });
+    expect(wp.drafts[0]).toMatchObject({ content_type: 'hub_content', target_term: 7, target_taxonomy: 'lr_location', prompt_version: 'interp/1+hub-content/2' });
     expect(job.stats).toMatchObject({ targets_skipped_thin: 1 });
   });
 
@@ -177,7 +177,7 @@ describe('content_generation kinds', () => {
     wp.publicRoutes = { '/score-versions': METHODOLOGY };
     wp.addJob('content_generation', { kind: 'article', topic: 'How to read a lawyer ranking' });
     expect(await runOnce(deps)).toBe('completed');
-    expect(wp.drafts[0]).toMatchObject({ content_type: 'article', target_id: null, content: { title: 'How to read a lawyer ranking' }, prompt_version: 'article/1' });
+    expect(wp.drafts[0]).toMatchObject({ content_type: 'article', target_id: null, content: { title: 'How to read a lawyer ranking' }, prompt_version: 'interp/1+article/2' });
   });
 
   it('rejects an article job without a usable topic', async () => {

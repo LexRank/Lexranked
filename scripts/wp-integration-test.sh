@@ -351,6 +351,8 @@ check "content job completed" '.status == "completed" and .stats.drafts_ready + 
 DRAFT_ID="$(wp post list --post_type=lr_content_draft --post_status=any --field=ID --posts_per_page=1 | tail -1)"
 check "generated content is stored as a draft, never published" '. == "draft"' "\"$(wp post get "$DRAFT_ID" --field=post_status)\""
 check "draft carries its facts and QA status" 'test("ready_for_review|needs_review")' "\"$(wp post meta get "$DRAFT_ID" _lr_qa_status)\""
+check "drafts record the interpretation contract (Etap J)" 'startswith("interp/1+ranking-content/")' "\"$(wp post meta get "$DRAFT_ID" _lr_prompt_version)\""
+check "draft facts say which backend computation they come from" 'fromjson | any(.[]; .origin == "ranking snapshot") and any(.[]; .status == "computed")' "$(wp post meta get "$DRAFT_ID" _lr_facts | jq -Rs .)"
 check "draft body is built from escaped plain text" 'test("<h2>How positions are decided</h2>")' "$(wp post get "$DRAFT_ID" --field=post_content | jq -Rs .)"
 check "ranking content unchanged until an editor applies the draft" '(.summary | test("LexRank methodology") | not)' "$(curl -sS "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo")"
 HUB_JOB="$(wp lexranked research-job content_generation --params='{"kind":"hub","hubs":"city"}' --porcelain | tail -1)"

@@ -21,7 +21,10 @@ use LexRanked\Core\Schema\ValidationException;
  */
 final class ContentDraftInput {
 
-	public const MAX_SECTIONS   = 8;
+	public const MAX_SECTIONS = 8;
+
+	/** Fact statuses (Etap J): verified by LexRanked, backed by a source, or computed by the backend. */
+	public const FACT_STATUSES  = array( 'verified', 'sourced', 'computed' );
 	public const MAX_PARAGRAPHS = 6;
 	public const MAX_FAQ        = 10;
 	public const MAX_FACTS      = 300;
@@ -32,7 +35,7 @@ final class ContentDraftInput {
 	 * Validate.
 	 *
 	 * @param array<string, mixed> $input Raw payload.
-	 * @return array{content_type: string, target_id: int|null, target_term: int|null, target_taxonomy: string|null, title: string, summary: string, sections: array<int, array{heading: string, paragraphs: array<int, string>}>, faq: array<int, array{question: string, answer: string}>, qa_status: string, issues: array<int, array<string, string>>, facts: array<int, array{id: string, label: string, value: string}>, model: string, prompt_version: string}
+	 * @return array{content_type: string, target_id: int|null, target_term: int|null, target_taxonomy: string|null, title: string, summary: string, sections: array<int, array{heading: string, paragraphs: array<int, string>}>, faq: array<int, array{question: string, answer: string}>, qa_status: string, issues: array<int, array<string, string>>, facts: array<int, array{id: string, label: string, value: string, status: string, origin: string}>, model: string, prompt_version: string}
 	 * @throws ValidationException When invalid.
 	 */
 	public static function validate( array $input ): array {
@@ -98,10 +101,17 @@ final class ContentDraftInput {
 
 		$facts = array();
 		foreach ( self::list( $input['facts'] ?? array(), 'facts', self::MAX_FACTS ) as $i => $fact ) {
+			$status = (string) ( $fact['status'] ?? '' );
+			if ( '' !== $status && ! in_array( $status, self::FACT_STATUSES, true ) ) {
+				throw new ValidationException( "facts.$i.status", 'must be verified, sourced or computed' );
+			}
 			$facts[] = array(
-				'id'    => self::text( $fact['id'] ?? '', "facts.$i.id", 10, true ),
-				'label' => self::text( $fact['label'] ?? '', "facts.$i.label", 200, true ),
-				'value' => self::text( $fact['value'] ?? '', "facts.$i.value", 500, true ),
+				'id'     => self::text( $fact['id'] ?? '', "facts.$i.id", 10, true ),
+				'label'  => self::text( $fact['label'] ?? '', "facts.$i.label", 200, true ),
+				'value'  => self::text( $fact['value'] ?? '', "facts.$i.value", 500, true ),
+				// Etap J: how the fact is known and which backend computation produced it.
+				'status' => $status,
+				'origin' => self::text( $fact['origin'] ?? '', "facts.$i.origin", 80, false ),
 			);
 		}
 		if ( array() === $facts ) {

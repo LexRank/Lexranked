@@ -58,6 +58,19 @@ const ERROR_PHRASES = [
   /\bcall (us|now|today)\b/i,
   /\bsponsored\b/i,
 ];
+/**
+ * Etap J: the model interprets; it never decides or judges a position. These
+ * phrases assert a ranking decision or a verdict, which only the LexRank
+ * engine (positions) or the reader (choices) can make.
+ */
+const DECISION_PHRASES = [
+  /\b(?:should|deserves? to|ought to) (?:be )?(?:ranked|placed|listed|rank) (?:higher|lower|first|above|below|#?\d+)\b/i,
+  /\b(?:is|are) (?:a )?(?:better|worse) (?:lawyer|attorney|firm|choice|option)s?\b/i,
+  /\b(?:better|worse) than\b/i,
+  /\bwe (?:recommend|suggest)\b/i,
+  /\byou should (?:hire|choose|pick|retain|call)\b/i,
+];
+
 const WARNING_PHRASES = [/\bthe best\b/i, /\btop[- ]rated\b/i, /\baward[- ]winning\b/i, /\bpremier\b/i, /\bleading\b/i, /\bcheapest\b/i, /\bmost trusted\b/i];
 
 const NUMBER = /(?<![\w.])\d+(?:[.,]\d+)*(?![\w])/g;
@@ -142,6 +155,16 @@ export function checkContent(units: Unit[], facts: Fact[], page: QaContext | Ran
     for (const re of ERROR_PHRASES) {
       const m = re.exec(u.text);
       if (m) add('forbidden_claim', 'error', `${u.where}: "${m[0]}" is a promise or promotional claim LexRanked does not make.`, u.text);
+    }
+    for (const re of DECISION_PHRASES) {
+      const m = re.exec(u.text);
+      if (m) add('ranking_decision', 'error', `${u.where}: "${m[0]}" decides or judges a position; only the LexRank engine sets positions and the reader chooses.`, u.text);
+    }
+    // "Verified" must rest on a verified fact (Etap J): sourced facts are not verified.
+    if (/\bverified\b/i.test(u.text.replace(/\b(?:not yet|not|un)[\s-]?verified\b/gi, '')) && refs.length > 0) {
+      const cited = refs.map((id) => byId.get(id) as Fact);
+      const supports = cited.some((f) => f.status === 'verified' || /verif/i.test(`${f.label} ${f.value}`));
+      if (!supports) add('overstated_verification', 'error', `${u.where} says "verified" but none of the cited facts is verified.`, u.text);
     }
     for (const re of WARNING_PHRASES) {
       const m = re.exec(u.text);

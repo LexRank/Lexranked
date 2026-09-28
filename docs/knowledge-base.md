@@ -41,7 +41,7 @@ position. Payment never enters the organic path (docs/commercial.md).
 | 3 | Attributes linkable to evidence | ✅ B | Each entity type has one field schema, and evidence claims reference its fields. Etap B adds an attribute registry (type, unit, applicable entity types, which layer) |
 | 4 | Claim / evidence layer | ✅ B | `lr_claims` already stores entity, field, value, source, `retrieved_at`, confidence, verification and review status, method and research job. Etap B keys claims by `entity_id` and covers term entities |
 | 5 | Sources as objects with tiers | ✅ B | Source posts have URL, type and tier (1–5, configurable). Etap B adds domain, publisher, `last_checked_at`, status and the requested source types (directory, editorial, social, other) |
-| 6 | Data vs interpretation | ✅ B / ◐ J | Raw claims and derived components are already separate, and AI text cites facts. Etap B makes the four layers explicit |
+| 6 | Data vs interpretation | ✅ B / J | Raw claims, facts, derived components and AI text are separate layers. AI text is a draft built from numbered facts that carry their status (verified / sourced / computed) and origin |
 | 7 | Ranking from evidence, never from AI | ✅ D | The engine reads resolved entity fields (from claims via FactResolver), never AI output. AI claims are capped at 0.6 and need review. Etap B makes the path claims → verified facts → normalised attributes explicit |
 | 8 | Score components | ✅ | 7 components with points, maximum, explanation and missing inputs, plus `score_version` and `calculated_at`, stored per snapshot |
 | 9 | "Why this ranking / why ranked here" | ✅ D | Methodology section and per-entry breakdown exist. Etap D renders a per-entity "why ranked here" from components |
@@ -60,7 +60,7 @@ position. Payment never enters the organic path (docs/commercial.md).
 | 33 | Coverage statistics | ✅ I | Hubs show "N lawyers · N law firms · N with verified professional data", computed by the backend. Nothing is shown that cannot be counted from the database |
 | 34–35 | Market statistics computed by the backend | ✅ I | `Market\MarketStatistics` (`mkt-1.0`) returns lawyers, firms, verified counts, average rating, median review count and median experience, each with its sample size (withheld below 3), plus the most common practice area, data-verified date and calculation time. `GET /market`, `wp lexranked market`. A template summary states only these numbers; AI may rephrase it but never computes |
 | 36 | Research provenance | ✅ B | Claims and candidates carry `job_id`; the job log exists; snapshots store the exact inputs. Etap B links fact → claim → source → job end-to-end |
-| 37–38 | AI interpretation layer | ◐ J | AI already writes only from numbered facts with QA, into drafts. Etap J reframes it as interpretation (summarise, explain, compare, classify) |
+| 37–38 | AI interpretation layer | ✅ J | One contract (`interp/1`): the model may summarize, explain, compare, classify and write from supplied facts only. It never invents, researches from memory, computes numbers or decides positions. Facts come from backend computations (snapshots, explanations, contexts, eligibility, market statistics, sources). QA rejects computed numbers, overstated verification and ranking decisions; output stays a draft. See [ai-interpretation.md](ai-interpretation.md) |
 | 39–40 | Semantic internal linking | ✅ H/I | Profiles: firm, city, state, areas, rankings, comparisons, related lawyers. Rankings: city, practice area, profiles, narrower rankings, comparisons, **market statistics** (linking to the hub), related rankings. Hubs group their lawyers by practice area or city |
 | 41–42 | Live methodology, score versioning | ✅ H | `GET /methodology`: active version, last calculation, schedule, source tiers, freshness windows. The page shows "Methodology LexRank v1.1 · Scores updated …"; old snapshots keep their version |
 | 43 | Benchmark structure, not competitors' text | rule | Structure, coverage, freshness, entity depth and transparency are benchmarked; no competitor content or design is copied |
@@ -79,7 +79,7 @@ position. Payment never enters the organic path (docs/commercial.md).
 | **G** | Unified page eligibility engine | ✅ |
 | **H** | AI-readable page architecture | ✅ |
 | **I** | Market statistics and coverage | ✅ |
-| J | AI interpretation layer | next |
+| **J** | AI interpretation layer | ✅ |
 
 ## Etap A: entity model (implemented)
 
@@ -324,4 +324,23 @@ A separate, published percentage of **how well a profile is documented**. It say
   - **Hubs** show coverage in the header, lead with the computed summary (this completes the Etap H hub summaries) and have a "Market statistics" section.
   - **Rankings** show their market, e.g. "Personal Injury market in Miami", linking to the hub.
   - Withheld figures are shown as "Withheld".
+
+
+## Etap J: AI interpretation layer (implemented)
+
+Details are in [ai-interpretation.md](ai-interpretation.md).
+
+- **Contract `interp/1`** (`workers/research/src/ai/interpretation.ts`).
+  - The tasks are summarize, explain, compare, classify and write.
+  - Shared rules close every prompt: interpret supplied facts only; never research, recall, estimate, compute a number, or decide or judge a position; say "verified" only for verified facts.
+  - Drafts record `interp/1+<page prompt>` as their prompt version (ranking, hub, profile and article prompts are now v2).
+- **Facts from the backend, not from the worker.**
+  - Rankings: verified entries (from page eligibility), the "best for" context, sources, market statistics and the engine's "Why #N" explanations.
+  - Hubs: market-wide figures from `/market`, replacing counts the worker used to derive from the few profiles shown.
+  - Profiles: each statement's evidence status from `aiSummary`.
+  - Every fact carries `status` (verified / sourced / computed) and `origin`. The plugin stores both with the draft and shows them on the draft screen.
+- **QA guards.**
+  - New: `overstated_verification` ("verified" on a sourced fact) and `ranking_decision` ("should be ranked higher", "better lawyer", "we recommend", "you should hire").
+  - Existing: `unsupported_number` rejects any number the model computed itself.
+  - Output is still a draft that an editor applies. Nothing is published automatically.
 

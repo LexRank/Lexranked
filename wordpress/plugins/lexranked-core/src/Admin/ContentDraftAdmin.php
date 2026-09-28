@@ -141,7 +141,13 @@ final class ContentDraftAdmin {
 		}
 		echo '<table class="widefat striped"><tbody>';
 		foreach ( $facts as $fact ) {
-			printf( '<tr><td style="width:50px"><code>%s</code></td><td style="width:35%%">%s</td><td>%s</td></tr>', esc_html( (string) ( $fact['id'] ?? '' ) ), esc_html( (string) ( $fact['label'] ?? '' ) ), esc_html( (string) ( $fact['value'] ?? '' ) ) );
+			printf(
+				'<tr><td style="width:50px"><code>%s</code></td><td style="width:30%%">%s</td><td>%s</td><td style="width:18%%">%s</td></tr>',
+				esc_html( (string) ( $fact['id'] ?? '' ) ),
+				esc_html( (string) ( $fact['label'] ?? '' ) ),
+				esc_html( (string) ( $fact['value'] ?? '' ) ),
+				esc_html( trim( (string) ( $fact['status'] ?? '' ) . ( empty( $fact['origin'] ) ? '' : ' · ' . $fact['origin'] ), ' ·' ) )
+			);
 		}
 		echo '</tbody></table>';
 	}

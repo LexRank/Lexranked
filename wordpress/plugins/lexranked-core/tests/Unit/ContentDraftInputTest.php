@@ -88,6 +88,28 @@ final class ContentDraftInputTest extends TestCase {
 		ContentDraftInput::validate( self::payload( array( 'content' => array( 'summary' => 'Click <a href="https://x.test">here</a>' ) ) ) );
 	}
 
+	public function testFactsKeepTheirStatusAndOrigin(): void {
+		$payload                   = self::payload();
+		$payload['facts'][0]       = array(
+			'id'     => 'F1',
+			'label'  => 'Average client rating',
+			'value'  => '4.7 out of 5 across 8 lawyers',
+			'status' => 'computed',
+			'origin' => 'market mkt-1.0',
+		);
+		$payload['prompt_version'] = 'interp/1+ranking-content/2';
+		$draft                     = ContentDraftInput::validate( $payload );
+		$this->assertSame( 'computed', $draft['facts'][0]['status'] );
+		$this->assertSame( 'market mkt-1.0', $draft['facts'][0]['origin'] );
+		$this->assertSame( 'interp/1+ranking-content/2', $draft['prompt_version'] );
+
+		$this->assertSame( '', ContentDraftInput::validate( self::payload() )['facts'][0]['status'], 'Older workers send no status' );
+
+		$payload['facts'][0]['status'] = 'guessed';
+		$this->expectException( ValidationException::class );
+		ContentDraftInput::validate( $payload );
+	}
+
 	public function testFactsAreRequired(): void {
 		$payload          = self::payload();
 		$payload['facts'] = array();

@@ -102,7 +102,7 @@ export interface ContentDraftInput {
     sections: { heading: string; paragraphs: { text: string }[] }[];
     faq: { question: string; answer: string }[];
   };
-  facts: { id: string; label: string; value: string }[];
+  facts: { id: string; label: string; value: string; status?: 'verified' | 'sourced' | 'computed'; origin?: string }[];
   qa: { status: 'ready_for_review' | 'needs_review'; issues: { code: string; severity: 'error' | 'warning'; message: string; excerpt: string }[] };
   model: string;
   prompt_version: string;
