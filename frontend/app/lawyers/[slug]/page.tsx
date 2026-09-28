@@ -1,4 +1,6 @@
 import { DataQualityPanel } from "@/components/profile/DataQuality";
+import { AtAGlance, SourcesAndVerification } from "@/components/profile/Facts";
+import { lastVerified } from "@/lib/content/facts";
 import { redirectIfMoved } from "@/lib/content/moved";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -49,7 +51,7 @@ export async function generateMetadata(props: PageProps<"/lawyers/[slug]">): Pro
   ].filter(Boolean);
   return buildMetadata({
     title,
-    description: lawyer.summary ? lawyer.summary : `${lawyer.name}${where ? `, ${where}` : ""}. ${facts.join(", ")}. Practice areas, credentials, verification status and sources.`,
+    description: lawyer.summary ? lawyer.summary : lawyer.aiSummary?.text ? lawyer.aiSummary.text : `${lawyer.name}${where ? `, ${where}` : ""}. ${facts.join(", ")}. Practice areas, credentials, verification status and sources.`,
     path: lawyer.path,
     type: "profile",
     noindex: !profileEligibility(lawyer).indexable,
@@ -114,6 +116,13 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
                     </Link>
                   )}
                 </div>
+                {lastVerified(lawyer.facts ?? []) && (
+                  <p className="profile-head__verified">
+                    Data last verified <time dateTime={isoDate(lastVerified(lawyer.facts ?? []))}>{formatDate(lastVerified(lawyer.facts ?? []))}</time>
+                    {" · "}
+                    <a href="#sources-and-verification">Sources &amp; verification</a>
+                  </p>
+                )}
               </div>
             </div>
             <ScoreRing score={lawyer.ranking.score} size="lg" />
@@ -131,6 +140,7 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
               </p>
             </section>
           )}
+          {lawyer.aiSummary && <AtAGlance summary={lawyer.aiSummary} showText={!lawyer.summary} />}
 
           <dl className="facts">
             {lawyer.rating !== null && (
@@ -234,7 +244,17 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
           </section>
 
           <VerificationSection verification={lawyer.verification} freshness={lawyer.freshness} />
-          <SourcesSection sources={lawyer.sources} />
+          {(lawyer.facts ?? []).length > 0 ? (
+            <>
+              <SourcesAndVerification facts={lawyer.facts ?? []} practiceNames={Object.fromEntries(lawyer.practiceAreas.map((a) => [a.slug, a.name]))} />
+              <details className="evidence-all">
+                <summary>All recorded evidence ({lawyer.sources.length})</summary>
+                <SourcesSection sources={lawyer.sources} />
+              </details>
+            </>
+          ) : (
+            <SourcesSection sources={lawyer.sources} />
+          )}
 
           {related.ok && related.data.length > 0 && (
             <section>

@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Content\StructuredSummary;
 use LexRanked\Core\Eligibility\PageEligibility;
 use LexRanked\Core\Entity\EntityType;
 use LexRanked\Core\PostTypes\LawFirm;
@@ -102,7 +103,9 @@ final class EntityPresenter {
 		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['dataQuality']    = $s->quality->stored( (int) $post->ID );
 		$dto['eligibility']    = $s->eligibility->profiles( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', array( (int) $post->ID ) )[ (int) $post->ID ];
-		return $this->with_scoring( $dto, (int) $post->ID );
+		$dto                   = $this->with_scoring( $dto, (int) $post->ID );
+		$dto['aiSummary']      = StructuredSummary::for_detail( $dto );
+		return $dto;
 	}
 
 	/**
@@ -152,7 +155,9 @@ final class EntityPresenter {
 		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['dataQuality']    = $s->quality->stored( (int) $post->ID );
 		$dto['eligibility']    = $s->eligibility->profiles( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', array( (int) $post->ID ) )[ (int) $post->ID ];
-		return $this->with_scoring( $dto, (int) $post->ID );
+		$dto                   = $this->with_scoring( $dto, (int) $post->ID );
+		$dto['aiSummary']      = StructuredSummary::for_detail( $dto );
+		return $dto;
 	}
 
 	/**
@@ -214,6 +219,40 @@ final class EntityPresenter {
 			'entries'       => $entries,
 			'calculated_at' => $rows[0]['calculated_at'] ?? null,
 		);
+	}
+
+	/**
+	 * Sources behind a ranking's entries (Etap H): every published source
+	 * that at least one entry's facts rest on, with how many facts and
+	 * entries it supports, best tier first.
+	 *
+	 * @param string                           $entity_type lawyer|law_firm.
+	 * @param array<int, array<string, mixed>> $entries     Entries.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function ranking_sources( string $entity_type, array $entries ): array {
+		$counts = $this->services->facts->source_counts( $entity_type, array_map( static fn( array $e ): int => (int) $e['entity']['id'], $entries ) );
+		$dtos   = $this->source_dtos( array_map( static fn( int $id ): array => array( 'source_id' => $id ), array_keys( $counts ) ) );
+		$out    = array();
+		foreach ( $counts as $source_id => $c ) {
+			if ( ! isset( $dtos[ $source_id ] ) ) {
+				continue;
+			}
+			$d     = $dtos[ $source_id ];
+			$out[] = array(
+				'id'        => $source_id,
+				'name'      => $d['name'],
+				'url'       => $d['url'],
+				'publisher' => $d['publisher'] ?? null,
+				'type'      => $d['type'] ?? null,
+				'tier'      => $d['tier'] ?? null,
+				'tierLabel' => $d['tierLabel'] ?? null,
+				'facts'     => $c['facts'],
+				'entities'  => $c['entities'],
+			);
+		}
+		usort( $out, static fn( array $a, array $b ): int => array( $a['tier'] ?? 9, -$a['facts'], $a['name'] ) <=> array( $b['tier'] ?? 9, -$b['facts'], $b['name'] ) );
+		return $out;
 	}
 
 	/**

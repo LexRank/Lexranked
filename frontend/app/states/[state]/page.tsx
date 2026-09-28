@@ -55,6 +55,7 @@ export default async function StatePage(props: PageProps<"/states/[state]">) {
   const { state: s } = data;
   return (
     <HubPage
+      groupBy="practice"
       crumbs={[
         { name: "Home", path: "/" },
         { name: "States", path: "/states/" },

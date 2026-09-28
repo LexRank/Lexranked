@@ -216,6 +216,13 @@ expect "profile summaries carry the compact decision" 'all(.[]; .eligibility.exi
 expect "comparisons exist but are never indexed" '.eligibility.exists and (.eligibility.indexable | not)' "$API/compare?type=lawyer&entities=$AVERY_E,$BLAKE_E"
 check "the pages report lists every decision" 'any(.[]; .path == "/rankings/florida/miami/personal-injury/spanish-speaking/" and .exists == "no") and any(.[]; .type == "profile" and .exists == "yes")' "$(wp lexranked pages --format=json)"
 
+echo "==> AI-readable pages (Etap H)"
+expect "the methodology is live: version, last calculation, sources, update frequency" '.active.id == "v1.1" and (.updatedAt | length) > 0 and ([.sourceTiers[].tier] | unique) == [1,2,3,4,5] and ([.freshness[] | select(.category == "review_data")][0].maxAgeDays == 7) and .pageEligibility == "pe-1.0"' "$API/methodology"
+expect "profiles carry an answer-first summary built from their facts" '(.aiSummary.text | startswith("Avery Example (Demo) is a Founding Partner at Harbor Example Injury Law (Demo) in Miami, Florida")) and (.aiSummary.text | test("LexRank score: [0-9.]+/100 \\(methodology v1.1\\)")) and ([.aiSummary.facts[] | select(.key == "bar_status")][0].status == "verified")' "$API/lawyers/avery-example-demo"
+expect "summaries say verified only when the fact is" '(.aiSummary.text | test("Practice areas on record: Personal Injury")) and (.aiSummary.text | test("Verified case types: Car Accidents"))' "$API/lawyers/avery-example-demo"
+expect "summaries never mention paid status" '(.commercial.status == "premium") and (.aiSummary.text | test("premium|sponsor|paid"; "i") | not)' "$API/lawyers/emery-mockwell-demo"
+expect "rankings list the sources behind their entries, best tier first" '(.sources | length) >= 2 and .sources[0].tier == 1 and all(.sources[]; .facts > 0 and .entities > 0)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 RID="$(curl -sS "$RANKING" | jq .id)"
@@ -451,6 +458,18 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "methodology lists the thresholds" "/methodology/" "Evidence coverage"
   expect_status "a hub below the threshold has no page" 404 "$WEB/practice-areas/car-accidents/"
   page_has "an existing demo hub is noindex" "/cities/miami/" 'content="noindex, follow"'
+
+  echo "==> AI-readable pages (Etap H)"
+  page_has "profile has the Sources & verification panel" "/lawyers/avery-example-demo/" 'id="sources-and-verification"'
+  page_has "each fact shows its source tier and date" "/lawyers/avery-example-demo/" "Official / regulatory"
+  page_has "profile says when its data was last verified" "/lawyers/avery-example-demo/" "Data last verified"
+  page_has "profile has the answer-first summary" "/lawyers/avery-example-demo/" "At a glance"
+  page_has "schema.org mirrors the visible bar admission" "/lawyers/avery-example-demo/" '"hasCredential"'
+  page_has "ranking lists its sources" "/rankings/florida/miami/personal-injury/" 'id="sources"'
+  page_has "ranking answers related questions from its data" "/rankings/florida/miami/personal-injury/" "Which lawyers are verified?"
+  page_has "related questions link narrower rankings" "/rankings/florida/miami/personal-injury/" "list car accidents among their case types"
+  page_has "methodology lists data sources" "/methodology/" 'id="data-sources"'
+  page_has "methodology says how often data is updated" "/methodology/" "How often data is updated"
 
   echo "==> Data Quality on pages (Etap C)"
   page_has "profile shows the Data Quality panel" "/lawyers/avery-example-demo/" "Data quality"

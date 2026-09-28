@@ -61,6 +61,7 @@ export default async function CityPage(props: PageProps<"/cities/[city]">) {
   crumbs.push({ name: c.name, path: c.path });
   return (
     <HubPage
+      groupBy="practice"
       crumbs={crumbs}
       path={c.path}
       eyebrow={c.state.name ? `City · ${c.state.name}` : "City"}

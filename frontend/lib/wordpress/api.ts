@@ -14,6 +14,7 @@ import type {
   LawFirmSummary,
   LawyerDetail,
   LawyerSummary,
+  MethodologyDto,
   PageEligibilityModelDto,
   PlacementDto,
   PracticeAreaDto,
@@ -176,3 +177,6 @@ export async function getComparison(type: ComparableType, ids: number[], opts?: 
 /** The published page eligibility rules (Etap G, methodology page). */
 export const getPageEligibilityModel = (opts?: Opts) =>
   apiRequest<PageEligibilityModelDto>("page-eligibility", { revalidate: 3600, ...opts }).then((r) => r.data);
+
+/** The live methodology: active version, last calculation, sources and update frequency (Etap H). */
+export const getMethodology = (opts?: Opts) => apiRequest<MethodologyDto>("methodology", { revalidate: 600, ...opts }).then((r) => r.data);

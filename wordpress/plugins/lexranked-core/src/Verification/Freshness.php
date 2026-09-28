@@ -31,6 +31,15 @@ final class Freshness {
 	}
 
 	/**
+	 * Max age in days per category (merged with the defaults).
+	 *
+	 * @return array<string, int>
+	 */
+	public function rules(): array {
+		return array_map( 'intval', $this->rules + self::DEFAULT_RULES );
+	}
+
+	/**
 	 * Evaluate freshness.
 	 *
 	 * @param string             $category         Rule category, e.g. "profile".

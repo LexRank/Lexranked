@@ -53,6 +53,7 @@ export default async function PracticeAreaPage(props: PageProps<"/practice-areas
   const a = data.area;
   return (
     <HubPage
+      groupBy="city"
       crumbs={[
         { name: "Home", path: "/" },
         { name: "Practice areas", path: "/practice-areas/" },

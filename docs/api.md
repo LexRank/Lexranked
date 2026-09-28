@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.14.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.15.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -126,6 +126,11 @@ The published Data Quality model: `{ version, dimensions[{key, label, weight,
 description}], expected{lawyer: {attribute: weight}, law_firm: …},
 sourceTierScores, summary{count, average, bands} }`. See
 [knowledge-base.md](knowledge-base.md#etap-c-data-quality-score-implemented).
+
+### AI-readable pages (API 1.15)
+- **`GET /methodology`** returns `{ active, versions[], updatedAt, schedule{recalculation, dataQuality, snapshots}, sourceTiers[{type, tier, tierLabel}], freshness[{category, maxAgeDays}], dataQuality, pageEligibility }`. `active` and `versions[]` are ScoreVersion objects; `updatedAt` is the last calculation.
+- **Lawyer and firm details** add `aiSummary{version: "sum-1.0", text, facts[{key, label, value, status: verified|sourced|derived, asOf, source}], asOf}`. It is generated from the profile's facts only.
+- **Ranking details** add `sources[{id, name, url, publisher, type, tier, tierLabel, facts, entities}]`: the sources behind the entries' facts, best tier first.
 
 ### `GET /page-eligibility` and `eligibility` on DTOs (API 1.14)
 The page eligibility rules are `{ version: "pe-1.0", types: { hub | ranking | profile | article | comparison | listing: [{ key, label, required, level: exist|index, description }] } }`.

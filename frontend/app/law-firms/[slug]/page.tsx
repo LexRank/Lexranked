@@ -1,4 +1,6 @@
 import { DataQualityPanel } from "@/components/profile/DataQuality";
+import { AtAGlance, SourcesAndVerification } from "@/components/profile/Facts";
+import { lastVerified } from "@/lib/content/facts";
 import { redirectIfMoved } from "@/lib/content/moved";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -44,7 +46,7 @@ export async function generateMetadata(props: PageProps<"/law-firms/[slug]">): P
   const practice = firm.practiceAreas[0]?.name;
   return buildMetadata({
     title: [firm.name, practice && where ? `${practice} Law Firm in ${where}` : where].filter(Boolean).join(" – "),
-    description: firm.summary ? firm.summary : `${firm.name}${where ? `, ${where}` : ""}: ${pluralize(firm.lawyers.length, "lawyer")} profiled${firm.ranking.score !== null ? `, LexRank score ${firm.ranking.score.toFixed(2)}` : ""}. Verification status, sources and related rankings.`,
+    description: firm.summary ? firm.summary : firm.aiSummary?.text ? firm.aiSummary.text : `${firm.name}${where ? `, ${where}` : ""}: ${pluralize(firm.lawyers.length, "lawyer")} profiled${firm.ranking.score !== null ? `, LexRank score ${firm.ranking.score.toFixed(2)}` : ""}. Verification status, sources and related rankings.`,
     path: firm.path,
     type: "profile",
     noindex: !profileEligibility(firm).indexable,
@@ -86,6 +88,13 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
                   <ClaimedBadge commercial={firm.commercial} entityType="law_firm" />
                   {firm.isDemo && <DemoBadge />}
                 </div>
+                {lastVerified(firm.facts ?? []) && (
+                  <p className="profile-head__verified">
+                    Data last verified <time dateTime={isoDate(lastVerified(firm.facts ?? []))}>{formatDate(lastVerified(firm.facts ?? []))}</time>
+                    {" · "}
+                    <a href="#sources-and-verification">Sources &amp; verification</a>
+                  </p>
+                )}
               </div>
             </div>
             <ScoreRing score={firm.ranking.score} size="lg" />
@@ -103,6 +112,7 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
               </p>
             </section>
           )}
+          {firm.aiSummary && <AtAGlance summary={firm.aiSummary} showText={!firm.summary} />}
           {firm.rating !== null && (
             <dl className="facts">
               <div>
@@ -139,7 +149,17 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
             </section>
           )}
           <VerificationSection verification={firm.verification} freshness={firm.freshness} />
-          <SourcesSection sources={firm.sources} />
+          {(firm.facts ?? []).length > 0 ? (
+            <>
+              <SourcesAndVerification facts={firm.facts ?? []} practiceNames={Object.fromEntries(firm.practiceAreas.map((a) => [a.slug, a.name]))} />
+              <details className="evidence-all">
+                <summary>All recorded evidence ({firm.sources.length})</summary>
+                <SourcesSection sources={firm.sources} />
+              </details>
+            </>
+          ) : (
+            <SourcesSection sources={firm.sources} />
+          )}
           {others.ok && others.data.length > 0 && (
             <section>
               <h2 style={{ fontSize: "1.4rem" }}>Other law firms{firm.location?.city ? ` in ${firm.location.city}` : ""}</h2>

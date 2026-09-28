@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { FaqItem, RankingDetail } from "@/types/api";
+import type { FaqItem, RankingDetail, RankingSourceDto } from "@/types/api";
+import type { RelatedQuestion } from "@/lib/content/relatedQuestions";
 import type { RankingFacts } from "@/lib/content/rankingFacts";
 import { formatCount, formatDate, isoDate } from "@/lib/format";
 import { METHODOLOGY_VERSION } from "@/lib/methodology";
@@ -128,5 +129,68 @@ export function OnThisPage({ links }: { links: Array<{ href: string; label: stri
         ))}
       </ol>
     </nav>
+  );
+}
+
+/** Sources behind the ranked entries' facts (spec §21 "Sources"), best tier first. */
+export function RankingSources({ sources, noun }: { sources: RankingSourceDto[]; noun: string }) {
+  if (sources.length === 0) return null;
+  return (
+    <section id="sources" className="card" aria-labelledby="sources-heading">
+      <h2 id="sources-heading" style={{ fontSize: "1.4rem" }}>
+        Sources
+      </h2>
+      <p className="muted" style={{ fontSize: "0.9rem" }}>
+        Every score on this page is calculated from facts backed by these sources. Each profile shows which source supports which fact
+        and when it was last checked.
+      </p>
+      <ul className="weights" style={{ gap: "0.5rem" }}>
+        {sources.map((s) => (
+          <li key={s.id} className="ranking-source">
+            <span>
+              {s.url && /^https?:\/\//.test(s.url) ? (
+                <a href={s.url} rel="nofollow noopener noreferrer" target="_blank">
+                  {s.name}
+                </a>
+              ) : (
+                s.name
+              )}
+              {s.tierLabel && <span className="muted"> · {s.tierLabel}</span>}
+            </span>
+            <span className="muted">
+              {s.facts} {s.facts === 1 ? "fact" : "facts"} for {s.entities} {s.entities === 1 ? noun : `${noun}s`}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Questions the ranking's own data answers (spec §24); not marked up as FAQPage. */
+export function RelatedQuestions({ items }: { items: RelatedQuestion[] }) {
+  if (items.length === 0) return null;
+  return (
+    <section id="related-questions" aria-labelledby="related-questions-heading">
+      <h2 id="related-questions-heading" style={{ fontSize: "1.5rem" }}>
+        Related questions
+      </h2>
+      <div className="faq">
+        {items.map((q) => (
+          <details key={q.question} className="faq__item">
+            <summary>{q.question}</summary>
+            <p>
+              {q.answer}
+              {q.link && (
+                <>
+                  {" "}
+                  <Link href={q.link.href}>{q.link.label}</Link>
+                </>
+              )}
+            </p>
+          </details>
+        ))}
+      </div>
+    </section>
   );
 }

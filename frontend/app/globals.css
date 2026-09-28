@@ -2208,3 +2208,152 @@ main {
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
 }
+
+/* ---------- AI-readable pages (Etap H) ---------- */
+
+.profile-head__verified {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: var(--brass-300);
+}
+
+.profile-head__verified a {
+  color: inherit;
+}
+
+.glance {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0.6rem 1.25rem;
+  margin: 0;
+}
+
+.glance dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.glance dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+}
+
+.glance__status {
+  display: block;
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.glance__status--verified {
+  color: var(--verified);
+}
+
+.facts-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.facts-panel__group ul {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(0, 2fr);
+  gap: 0.15rem 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.92rem;
+}
+
+.fact__label {
+  font-weight: 600;
+  color: var(--ink-2);
+  grid-row: span 3;
+}
+
+.fact__value {
+  overflow-wrap: anywhere;
+}
+
+.fact__source,
+.fact__status {
+  font-size: 0.82rem;
+}
+
+.fact__status--verified {
+  color: var(--verified);
+}
+
+.fact__status--unverified {
+  color: var(--muted);
+}
+
+.fact__status--conflict,
+.fact__stale {
+  color: var(--pending);
+}
+
+.evidence-all > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--navy-800);
+}
+
+@media (max-width: 640px) {
+  .fact {
+    grid-template-columns: 1fr;
+  }
+
+  .fact__label {
+    grid-row: auto;
+  }
+}
+
+.ranking-source {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.hub-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1rem;
+}
+
+.hub-tree > li {
+  border-left: 3px solid var(--brass-500);
+  padding-left: 0.75rem;
+}
+
+.hub-tree__head {
+  font-weight: 600;
+}
+
+.hub-tree ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Long ranking titles in profile badges wrap instead of widening the page. */
+.profile-head__id > div {
+  min-width: 0;
+}
+
+.profile-head__badges .badge {
+  white-space: normal;
+  max-width: 100%;
+}

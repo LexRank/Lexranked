@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Sources\SourceTiers;
+use LexRanked\Core\Ranking\RankingRunner;
+use LexRanked\Core\Quality\DataQuality;
+use LexRanked\Core\Eligibility\PageEligibility;
 use LexRanked\Core\Plugin;
 use LexRanked\Core\PostTypes\Ranking;
 use LexRanked\Core\REST\DTO\RankingMapper;
@@ -70,6 +74,16 @@ final class RankingsController extends RestController {
 						'validate_callback' => 'rest_validate_request_arg',
 					),
 				),
+			)
+		);
+		register_rest_route(
+			Plugin::REST_NAMESPACE,
+			'/methodology',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'methodology' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(),
 			)
 		);
 		register_rest_route(
@@ -180,6 +194,56 @@ final class RankingsController extends RestController {
 	}
 
 	/**
+	 * The live methodology (Etap H): active version, last calculation,
+	 * schedule, source tiers and freshness windows.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function methodology( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$error = $this->reject_unknown_params( $request );
+		if ( null !== $error ) {
+			return $error;
+		}
+		$s     = $this->services;
+		$tiers = $s->settings->source_tiers();
+		$types = array();
+		foreach ( $tiers->types() as $type ) {
+			$tier    = $tiers->tier_for( $type );
+			$types[] = array(
+				'type'      => $type,
+				'tier'      => $tier,
+				'tierLabel' => SourceTiers::label( $tier ),
+			);
+		}
+		usort( $types, static fn( array $a, array $b ): int => array( $a['tier'], $a['type'] ) <=> array( $b['tier'], $b['type'] ) );
+		$freshness = array();
+		foreach ( $s->settings->freshness()->rules() as $category => $days ) {
+			$freshness[] = array(
+				'category'   => $category,
+				'maxAgeDays' => $days,
+			);
+		}
+		$last = (string) get_option( RankingRunner::LAST_RUN_OPTION, '' );
+		return $this->item_response(
+			array(
+				'active'          => $s->runner->active_version()->to_array(),
+				'versions'        => array_values( array_map( static fn( $v ): array => $v->to_array(), $s->versions->all() ) ),
+				'updatedAt'       => '' === $last ? null : $last,
+				'schedule'        => array(
+					'recalculation' => 'Daily, and within minutes of any change to profiles or evidence.',
+					'dataQuality'   => 'Daily, and whenever an entity\'s facts or verifications change.',
+					'snapshots'     => 'Every calculation is stored as an immutable snapshot with its inputs and methodology version.',
+				),
+				'sourceTiers'     => $types,
+				'freshness'       => $freshness,
+				'dataQuality'     => DataQuality::VERSION,
+				'pageEligibility' => PageEligibility::VERSION,
+			)
+		);
+	}
+
+	/**
 	 * Methodology versions and weights (single source for the frontend).
 	 *
 	 * @param \WP_REST_Request $request Request.
@@ -216,18 +280,18 @@ final class RankingsController extends RestController {
 		$record                    = $this->services->entities->record( $post, $this->services->ranking );
 		$run                       = $this->services->presenter->ranking_entries( $record );
 		[ $context, $eligibility ] = $this->decide( $record, $run['entries'] );
-		return $this->item_response(
-			RankingMapper::ranking(
-				$record,
-				$run['entries'],
-				(int) $this->services->settings->get( 'min_ranking_entities' ),
-				$this->html( $post->post_content ),
-				true,
-				$run['calculated_at'],
-				$context,
-				$eligibility
-			)
+		$dto                       = RankingMapper::ranking(
+			$record,
+			$run['entries'],
+			(int) $this->services->settings->get( 'min_ranking_entities' ),
+			$this->html( $post->post_content ),
+			true,
+			$run['calculated_at'],
+			$context,
+			$eligibility
 		);
+		$dto['sources']            = $dto['isThin'] ? array() : $this->services->presenter->ranking_sources( 'law_firm' === $record['fields']['entity_type'] ? 'law_firm' : 'lawyer', $dto['entries'] );
+		return $this->item_response( $dto );
 	}
 
 	/**

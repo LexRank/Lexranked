@@ -332,3 +332,12 @@ published at `/page-eligibility` and on the methodology page, and every decision
 checks. Keywords and search volume are not inputs. The frontend keeps its
 earlier rules only as a fallback for older API versions.
 
+### ADR-040 — Pages carry the answer and the evidence, both generated from data
+Profiles and rankings lead with a short answer: `aiSummary` on profiles, the
+answer-first summary on rankings. Both are built deterministically from the
+same facts the page shows, and every statement carries its status and date.
+Evidence sits next to the answer: the per-fact "Sources & verification" panel
+and the ranking's source list. Related questions are asked only when the
+data answers them. Schema.org mirrors visible data only. The Etap J AI
+interpretation layer may rephrase these texts, but it may not add a fact.
+

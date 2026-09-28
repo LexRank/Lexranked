@@ -163,6 +163,32 @@ final class FactService {
 	}
 
 	/**
+	 * Facts and entities per source for a set of entities (ranking sources, Etap H).
+	 *
+	 * @param string          $entity_type lawyer|law_firm.
+	 * @param array<int, int> $wp_ids      Post IDs.
+	 * @return array<int, array{facts: int, entities: int}> source_id => counts.
+	 */
+	public function source_counts( string $entity_type, array $wp_ids ): array {
+		global $wpdb;
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $wp_ids ) ) ) );
+		if ( array() === $ids ) {
+			return array();
+		}
+		$in = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Custom table; IN() placeholders built above.
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT source_id, COUNT(*) AS facts, COUNT(DISTINCT wp_id) AS entities FROM {$this->table()} WHERE entity_type = %s AND source_id IS NOT NULL AND wp_id IN ({$in}) GROUP BY source_id", array_merge( array( $entity_type ), $ids ) ), ARRAY_A );
+		$out  = array();
+		foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+			$out[ (int) $row['source_id'] ] = array(
+				'facts'    => (int) $row['facts'],
+				'entities' => (int) $row['entities'],
+			);
+		}
+		return $out;
+	}
+
+	/**
 	 * Coverage figures for the whole fact layer (health, docs).
 	 *
 	 * @return array{facts: int, verified: int, conflicts: int, attributes: int}

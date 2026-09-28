@@ -10,7 +10,8 @@ import { DemoNotice } from "@/components/ui";
 import { rankingEligibility } from "@/lib/content/eligibility";
 import { resolveRanking } from "@/lib/content/rankings";
 import { rankingAnswer, rankingFacts } from "@/lib/content/rankingFacts";
-import { AboutRanking, EditorialBody, FaqSection, OnThisPage, RankingOverview } from "@/components/ranking/RankingContent";
+import { AboutRanking, EditorialBody, FaqSection, OnThisPage, RankingOverview, RankingSources, RelatedQuestions } from "@/components/ranking/RankingContent";
+import { relatedQuestions } from "@/lib/content/relatedQuestions";
 import { allRankings } from "@/lib/data/loaders";
 import { formatDate, isoDate, pluralize } from "@/lib/format";
 import { methodologyLabel } from "@/lib/methodology";
@@ -87,11 +88,14 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
   const noun = ranking.entityType === "law_firm" ? "firm" : "lawyer";
   const facts = rankingFacts(ranking);
   const answer = rankingAnswer(ranking, facts);
+  const questions = relatedQuestions(ranking, rankings);
   const toc = [
     { href: "#ranking", label: "The ranking" },
     ...(ranking.body.trim() ? [{ href: "#guide", label: "Guide" }] : []),
+    ...((ranking.sources ?? []).length > 0 ? [{ href: "#sources", label: "Sources" }] : []),
     { href: "#methodology", label: "Why this ranking?" },
     ...(ranking.faq.length > 0 ? [{ href: "#faq", label: "FAQ" }] : []),
+    ...(questions.length > 0 ? [{ href: "#related-questions", label: "Related questions" }] : []),
     { href: "#about", label: "About this ranking" },
     ...(related.length > 0 ? [{ href: "#related", label: "Related rankings" }] : []),
   ];
@@ -178,6 +182,8 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
 
           <PlacementBlock placements={sponsored} product="sponsored" />
 
+          <RankingSources sources={ranking.sources ?? []} noun={noun} />
+
           <EditorialBody html={ranking.body} />
 
           <section id="methodology" className="card" aria-labelledby="why-this-ranking">
@@ -195,6 +201,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
           </section>
 
           <FaqSection items={ranking.faq} />
+          <RelatedQuestions items={questions} />
           <AboutRanking ranking={ranking} facts={facts} />
           <div className="card">
             <p className="panel-title">Explore</p>

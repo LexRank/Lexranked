@@ -113,6 +113,15 @@ export function lawyerJsonLd(lawyer: LawyerDetail): JsonLdObject {
       .filter((e) => e.institution)
       .map((e) => ({ "@type": "EducationalOrganization", name: e.institution })),
     award: lawyer.professional.awards.filter((a) => a.name).map((a) => a.name as string),
+    // Only when the page shows an active bar admission (Etap H: schema mirrors visible data).
+    hasCredential:
+      lawyer.professional.barState && lawyer.professional.barStatus === "active"
+        ? {
+            "@type": "EducationalOccupationalCredential",
+            credentialCategory: "license",
+            name: `Bar admission (${lawyer.professional.barState})`,
+          }
+        : undefined,
   });
 }
 

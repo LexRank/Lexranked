@@ -4,7 +4,8 @@ import { JsonLd } from "@/components/JsonLd";
 import { PageHeader } from "@/components/PageHeader";
 import { componentsWithWeights, METHODOLOGY_PRINCIPLES } from "@/lib/methodology";
 import { load } from "@/lib/data/loaders";
-import { getDataQualityModel, getPageEligibilityModel, getScoreVersions } from "@/lib/wordpress/api";
+import { formatDate, humanize, isoDate } from "@/lib/format";
+import { getDataQualityModel, getMethodology, getPageEligibilityModel, getScoreVersions } from "@/lib/wordpress/api";
 import { collectionPageJsonLd } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 
@@ -26,6 +27,13 @@ const TIERS = [
 
 export const revalidate = 3600;
 
+const FRESHNESS_LABEL: Record<string, string> = {
+  bar_status: "Bar status and license",
+  review_data: "Ratings and review counts",
+  website: "Website and contact details",
+  profile: "Other profile facts",
+};
+
 const PAGE_LABEL: Record<string, string> = {
   hub: "State, city, practice area",
   ranking: "Ranking",
@@ -36,11 +44,13 @@ const PAGE_LABEL: Record<string, string> = {
 };
 
 export default async function MethodologyPage() {
-  const [versions, quality, pages] = await Promise.all([
+  const [versions, quality, pages, live] = await Promise.all([
     load(async () => (await getScoreVersions()).data),
     load(() => getDataQualityModel()),
     load(() => getPageEligibilityModel()),
+    load(() => getMethodology()),
   ]);
+  const updated = live.ok ? formatDate(live.data.updatedAt) : null;
   const active = versions.ok ? versions.data.versions.find((v) => v.id === versions.data.active) : undefined;
   const components = componentsWithWeights(active?.weights ?? null);
   const params = active?.params;
@@ -56,7 +66,26 @@ export default async function MethodologyPage() {
         eyebrow={versionLabel}
         title="How we rank lawyers"
         lead="LexRank is a deterministic scoring methodology. The same data and methodology version always produce the same score — and no one can pay to change it."
-      />
+      >
+        {live.ok && (
+          <div className="page-header__meta">
+            <span>
+              Methodology <strong>{versionLabel}</strong>
+            </span>
+            {updated && (
+              <span>
+                Scores updated{" "}
+                <strong>
+                  <time dateTime={isoDate(live.data.updatedAt)}>{updated}</time>
+                </strong>
+              </span>
+            )}
+            <span>
+              Data quality <strong>{live.data.dataQuality}</strong> · Pages <strong>{live.data.pageEligibility}</strong>
+            </span>
+          </div>
+        )}
+      </PageHeader>
       <div className="container section layout-sidebar">
         <article className="stack prose" style={{ maxWidth: "none", gap: "2.5rem" }}>
           <section>
@@ -191,6 +220,71 @@ export default async function MethodologyPage() {
               </>
             )}
           </section>
+
+          {live.ok && (
+            <section id="data-sources">
+              <h2>Data sources</h2>
+              <p>
+                Every fact comes from a source, and sources are ranked by tier. When sources disagree, the higher tier wins; when
+                sources of the same tier disagree, the fact is marked as conflicting and not used until it is resolved.
+              </p>
+              <div className="table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Tier</th>
+                      <th scope="col">Meaning</th>
+                      <th scope="col">Source types</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...new Set(live.data.sourceTiers.map((t) => t.tier))].map((tier) => {
+                      const types = live.data.sourceTiers.filter((t) => t.tier === tier);
+                      return (
+                        <tr key={tier}>
+                          <td>{tier}</td>
+                          <td>{types[0]?.tierLabel}</td>
+                          <td>{types.map((t) => humanize(t.type)).join(", ")}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <h2 id="update-frequency">How often data is updated</h2>
+              <ul>
+                <li>
+                  <strong>Scores:</strong> {live.data.schedule.recalculation}
+                </li>
+                <li>
+                  <strong>Data quality:</strong> {live.data.schedule.dataQuality}
+                </li>
+                <li>
+                  <strong>History:</strong> {live.data.schedule.snapshots}
+                </li>
+              </ul>
+              <p>Each kind of fact has its own freshness window; older facts are flagged for re-checking and count as stale:</p>
+              <div className="table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Data</th>
+                      <th scope="col">Re-check after</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {live.data.freshness.map((f) => (
+                      <tr key={f.category}>
+                        <td>{FRESHNESS_LABEL[f.category] ?? humanize(f.category)}</td>
+                        <td>{f.maxAgeDays} days</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
 
           <section id="page-eligibility">
             <h2>When a page exists</h2>

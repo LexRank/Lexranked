@@ -28,6 +28,7 @@ export function HubPage({
   firmsHeading,
   content,
   featured = [],
+  groupBy,
 }: {
   crumbs: Crumb[];
   path: string;
@@ -45,7 +46,10 @@ export function HubPage({
   content?: TermContentDto | null;
   /** Labelled paid placements, shown after the editorial lists (never mixed into them). */
   featured?: PlacementDto[];
+  /** Internal linking that mirrors the data (spec §39): city/state → practice areas → lawyers, or practice area → cities → lawyers. */
+  groupBy?: "practice" | "city";
 }) {
+  const groups = groupBy ? hubGroups(lawyers, rankings, groupBy) : [];
   const reviewed = formatDate(content?.reviewedAt ?? null);
   const hasDemo = lawyers.some((l) => l.isDemo) || rankings.some((r) => r.isDemo);
   return (
@@ -83,6 +87,28 @@ export function HubPage({
                   <RankingCard key={r.id} ranking={r} />
                 ))}
               </div>
+            </section>
+          )}
+          {groups.length > 1 && (
+            <section aria-labelledby="hub-tree-heading">
+              <h2 id="hub-tree-heading">{groupBy === "city" ? "By city" : "By practice area"}</h2>
+              <ul className="hub-tree">
+                {groups.map((g) => (
+                  <li key={g.key}>
+                    <Link href={g.href} className="hub-tree__head">
+                      {g.label}
+                    </Link>
+                    <span className="muted"> · {pluralize(g.lawyers.length, "lawyer")}</span>
+                    <ul>
+                      {g.lawyers.slice(0, 3).map((l) => (
+                        <li key={l.id}>
+                          <Link href={l.path}>{l.name}</Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
           {lawyers.length > 0 && (
@@ -137,4 +163,32 @@ export function HubPage({
       </div>
     </>
   );
+}
+
+interface HubGroup {
+  key: string;
+  label: string;
+  href: string;
+  lawyers: LawyerSummary[];
+}
+
+/** Groups of the listed lawyers, each linking to the most specific existing page (a ranking when one exists). */
+function hubGroups(lawyers: LawyerSummary[], rankings: RankingSummary[], by: "practice" | "city"): HubGroup[] {
+  const groups = new Map<string, HubGroup>();
+  for (const l of lawyers) {
+    const keys =
+      by === "practice"
+        ? l.practiceAreas.map((p) => ({ key: p.slug, label: p.name }))
+        : l.location?.citySlug && l.location.city
+          ? [{ key: l.location.citySlug, label: l.location.city }]
+          : [];
+    for (const k of keys) {
+      if (!groups.has(k.key)) {
+        const ranking = rankings.find((r) => !r.context && r.path && (by === "practice" ? r.practiceArea?.slug === k.key : r.location?.citySlug === k.key));
+        groups.set(k.key, { ...k, href: ranking?.path ?? (by === "practice" ? `/practice-areas/${k.key}/` : `/cities/${k.key}/`), lawyers: [] });
+      }
+      groups.get(k.key)!.lawyers.push(l);
+    }
+  }
+  return [...groups.values()].sort((a, b) => b.lawyers.length - a.lawyers.length || a.label.localeCompare(b.label));
 }
