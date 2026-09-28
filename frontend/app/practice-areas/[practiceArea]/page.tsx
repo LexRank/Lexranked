@@ -6,7 +6,7 @@ import { HubPage } from "@/components/HubPage";
 import { hubEligibility } from "@/lib/content/eligibility";
 import { allRankings } from "@/lib/data/loaders";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { getLawFirms, getLawyers, getPracticeAreas, getPlacements } from "@/lib/wordpress/api";
+import { getLawFirms, getLawyers, getPracticeAreas, getPlacements, getMarket } from "@/lib/wordpress/api";
 
 export const revalidate = 300;
 
@@ -17,15 +17,18 @@ export function generateStaticParams() {
 const loadArea = cache(async (slug: string) => {
   const area = (await getPracticeAreas()).data.find((p) => p.slug === slug);
   if (!area) return null;
-  const [lawyers, firms, rankings, featured] = await Promise.all([
+  const [lawyers, firms, rankings, featured, market] = await Promise.all([
     getLawyers({ practice_area: slug, per_page: 12, orderby: "score", order: "desc" }),
     getLawFirms({ practice_area: slug, per_page: 6, orderby: "score", order: "desc" }),
     allRankings(),
     getPlacements({ product: "featured", practice_area: slug }),
+    // Market statistics are optional: the hub still renders without them.
+    getMarket({ practice_area: slug }).catch(() => null),
   ]);
   return {
     area,
     featured,
+    market,
     lawyers: lawyers.data,
     firms: firms.data,
     rankings: rankings.filter((r) => !r.isThin && r.practiceArea?.slug === slug),
@@ -65,6 +68,7 @@ export default async function PracticeAreaPage(props: PageProps<"/practice-areas
       lead={a.description || `${a.name} lawyers and law firms, ranked by location with the LexRank methodology.`}
       counts={a}
       featured={data.featured}
+      market={data.market}
       content={a.content ?? null}
       rankings={data.rankings}
       lawyers={data.lawyers}

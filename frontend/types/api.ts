@@ -640,3 +640,35 @@ export interface MethodologyDto {
   dataQuality: string;
   pageEligibility: string;
 }
+
+/* ---------- Etap I: market statistics ---------- */
+
+export interface MarketFigure {
+  value: number;
+  sample: number;
+}
+
+/** GET /market (API 1.16): computed by the backend from stored data; figures below the minimum sample are null. */
+export interface MarketDto {
+  scope: {
+    location: { slug: string; name: string; type: "state" | "city" } | null;
+    practiceArea: { slug: string; name: string } | null;
+  };
+  stats: {
+    version: string;
+    lawyers: number;
+    firms: number;
+    verifiedLawyers: number;
+    verifiedFirms: number;
+    demoProfiles: number;
+    averageRating: MarketFigure | null;
+    medianReviewCount: MarketFigure | null;
+    medianExperience: MarketFigure | null;
+    mostCommonPractice: { slug: string; name: string; count: number } | null;
+    practiceAreas: Array<{ slug: string; name: string; count: number }>;
+    dataVerifiedAt: string | null;
+    calculatedAt: string;
+    notes: string[];
+  };
+  summary: string;
+}

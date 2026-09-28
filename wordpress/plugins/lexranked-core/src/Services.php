@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core;
 
+use LexRanked\Core\Market\MarketService;
 use LexRanked\Core\Eligibility\EligibilityService;
 use LexRanked\Core\Commercial\CommercialService;
 use LexRanked\Core\Commercial\PlacementRepository;
@@ -130,6 +131,13 @@ final class Services {
 	 * @var QualityService
 	 */
 	public readonly QualityService $quality;
+
+	/**
+	 * Market statistics (Etap I).
+	 *
+	 * @var MarketService
+	 */
+	public readonly MarketService $market;
 
 	/**
 	 * Page eligibility (Etap G).
@@ -274,6 +282,7 @@ final class Services {
 		$this->facts         = new FactService( $this );
 		$this->quality       = new QualityService( $this );
 		$this->eligibility   = new EligibilityService( $this );
+		$this->market        = new MarketService( $this );
 		$this->snapshots     = new SnapshotRepository();
 		$this->versions      = new ScoreVersions();
 		$this->presenter     = new EntityPresenter( $this );

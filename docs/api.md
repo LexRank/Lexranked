@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.15.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.16.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -126,6 +126,21 @@ The published Data Quality model: `{ version, dimensions[{key, label, weight,
 description}], expected{lawyer: {attribute: weight}, law_firm: …},
 sourceTierScores, summary{count, average, bands} }`. See
 [knowledge-base.md](knowledge-base.md#etap-c-data-quality-score-implemented).
+
+### `GET /market?location=&practice_area=` (API 1.16)
+Statistics for a market. Both parameters are optional slugs; an unknown slug is 404.
+
+The response is `{ scope{location{slug, name, type: state|city}|null, practiceArea{slug, name}|null}, stats, summary }`, where `stats` is:
+- `version: "mkt-1.0"`;
+- counts: `lawyers`, `firms`, `verifiedLawyers`, `verifiedFirms`, `demoProfiles`;
+- figures: `averageRating`, `medianReviewCount`, `medianExperience`, each `{value, sample}` or `null`;
+- practice areas: `mostCommonPractice{slug, name, count}|null`, `practiceAreas[]`;
+- dates: `dataVerifiedAt`, `calculatedAt`;
+- `notes[]`.
+
+Rules:
+- Figures use only sourced, non-conflicting lawyer facts and are `null` below a sample of 3.
+- `summary` is a fixed template over these numbers.
 
 ### AI-readable pages (API 1.15)
 - **`GET /methodology`** returns `{ active, versions[], updatedAt, schedule{recalculation, dataQuality, snapshots}, sourceTiers[{type, tier, tierLabel}], freshness[{category, maxAgeDays}], dataQuality, pageEligibility }`. `active` and `versions[]` are ScoreVersion objects; `updatedAt` is the last calculation.

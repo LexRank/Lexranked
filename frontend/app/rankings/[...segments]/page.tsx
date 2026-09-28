@@ -17,7 +17,8 @@ import { formatDate, isoDate, pluralize } from "@/lib/format";
 import { methodologyLabel } from "@/lib/methodology";
 import { rankingJsonLd, rankingPageJsonLd, type Crumb } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { getPlacements, getRanking } from "@/lib/wordpress/api";
+import { getMarket, getPlacements, getRanking } from "@/lib/wordpress/api";
+import { MarketStats } from "@/components/MarketStats";
 import type { RankingContextDto } from "@/types/api";
 import { PlacementBlock } from "@/components/commercial/Commercial";
 
@@ -78,6 +79,10 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
   const path = ranking.path ?? `/rankings/${segments.join("/")}/`;
   const updated = formatDate(ranking.updatedAt);
   const sponsored = ranking.entries.length > 0 ? await getPlacements({ product: "sponsored", ranking: ranking.id }) : [];
+  // The market the ranking belongs to (Etap I); optional, the page renders without it.
+  const marketPlace = ranking.location?.citySlug ?? ranking.location?.stateSlug ?? null;
+  const market = marketPlace ? await getMarket({ location: marketPlace, practice_area: ranking.practiceArea?.slug }).catch(() => null) : null;
+  const hubPath = ranking.location?.citySlug ? `/cities/${ranking.location.citySlug}/` : ranking.location?.stateSlug ? `/states/${ranking.location.stateSlug}/` : null;
   const rankings = await allRankings();
   const context = ranking.context ?? null;
   // Narrower "best for" rankings that passed their data threshold (Etap F).
@@ -93,6 +98,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
     { href: "#ranking", label: "The ranking" },
     ...(ranking.body.trim() ? [{ href: "#guide", label: "Guide" }] : []),
     ...((ranking.sources ?? []).length > 0 ? [{ href: "#sources", label: "Sources" }] : []),
+    ...(market && market.stats.lawyers > 0 ? [{ href: "#market", label: "Market statistics" }] : []),
     { href: "#methodology", label: "Why this ranking?" },
     ...(ranking.faq.length > 0 ? [{ href: "#faq", label: "FAQ" }] : []),
     ...(questions.length > 0 ? [{ href: "#related-questions", label: "Related questions" }] : []),
@@ -183,6 +189,13 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
           <PlacementBlock placements={sponsored} product="sponsored" />
 
           <RankingSources sources={ranking.sources ?? []} noun={noun} />
+          {market && (
+            <MarketStats
+              market={market}
+              title={`${ranking.practiceArea?.name ?? "Legal"} market${ranking.location?.city ? ` in ${ranking.location.city}` : ranking.location?.state ? ` in ${ranking.location.state}` : ""}`}
+              link={hubPath ? { href: hubPath, label: `All lawyers in ${ranking.location?.city ?? ranking.location?.state}` } : null}
+            />
+          )}
 
           <EditorialBody html={ranking.body} />
 

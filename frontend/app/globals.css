@@ -2357,3 +2357,17 @@ main {
   white-space: normal;
   max-width: 100%;
 }
+
+/* ---------- Market statistics (Etap I) ---------- */
+
+.market__facts {
+  margin: 1rem 0;
+}
+
+.market__note {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--muted);
+  font-family: var(--font-sans);
+}

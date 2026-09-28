@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { CityDto, LawFirmSummary, LawyerSummary, PlacementDto, RankingSummary, TermContentDto } from "@/types/api";
+import type { CityDto, LawFirmSummary, LawyerSummary, MarketDto, PlacementDto, RankingSummary, TermContentDto } from "@/types/api";
+import { MarketStats } from "./MarketStats";
 import { PlacementBlock } from "./commercial/Commercial";
 import { pluralize } from "@/lib/format";
 import type { Crumb } from "@/lib/seo/jsonld";
@@ -29,6 +30,7 @@ export function HubPage({
   content,
   featured = [],
   groupBy,
+  market,
 }: {
   crumbs: Crumb[];
   path: string;
@@ -48,6 +50,8 @@ export function HubPage({
   featured?: PlacementDto[];
   /** Internal linking that mirrors the data (spec §39): city/state → practice areas → lawyers, or practice area → cities → lawyers. */
   groupBy?: "practice" | "city";
+  /** Market statistics computed by the CMS for this hub (Etap I). */
+  market?: MarketDto | null;
 }) {
   const groups = groupBy ? hubGroups(lawyers, rankings, groupBy) : [];
   const reviewed = formatDate(content?.reviewedAt ?? null);
@@ -67,16 +71,28 @@ export function HubPage({
             <strong>{counts.lawFirmCount}</strong> {counts.lawFirmCount === 1 ? "law firm" : "law firms"}
           </span>
           {rankings.length > 0 && <span>{pluralize(rankings.length, "ranking")}</span>}
+          {market && market.stats.lawyers > 0 && (
+            <span>
+              <strong>{market.stats.verifiedLawyers}</strong> with verified professional data
+            </span>
+          )}
         </div>
       </PageHeader>
       <div className="container section layout-sidebar">
         <div className="stack">
           {hasDemo && <DemoNotice />}
-          {content?.summary && (
+          {(content?.summary || market?.summary) && (
             <section className="overview" aria-label="Summary">
-              <p className="overview__summary" style={{ margin: 0 }}>
-                {content.summary}
-              </p>
+              {market?.summary && (
+                <p className="overview__answer" style={{ margin: content?.summary ? undefined : 0 }}>
+                  {market.summary}
+                </p>
+              )}
+              {content?.summary && (
+                <p className="overview__summary" style={{ margin: 0 }}>
+                  {content.summary}
+                </p>
+              )}
             </section>
           )}
           {rankings.length > 0 && (
@@ -89,6 +105,7 @@ export function HubPage({
               </div>
             </section>
           )}
+          {market && <MarketStats market={{ ...market, summary: "" }} title="Market statistics" />}
           {groups.length > 1 && (
             <section aria-labelledby="hub-tree-heading">
               <h2 id="hub-tree-heading">{groupBy === "city" ? "By city" : "By practice area"}</h2>

@@ -6,7 +6,7 @@ import { HubPage } from "@/components/HubPage";
 import { hubEligibility } from "@/lib/content/eligibility";
 import { allRankings } from "@/lib/data/loaders";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { getCities, getLawFirms, getLawyers, getPlacements } from "@/lib/wordpress/api";
+import { getCities, getLawFirms, getLawyers, getPlacements, getMarket } from "@/lib/wordpress/api";
 
 export const revalidate = 300;
 
@@ -17,15 +17,18 @@ export function generateStaticParams() {
 const loadCity = cache(async (slug: string) => {
   const city = (await getCities()).data.find((c) => c.slug === slug);
   if (!city) return null;
-  const [lawyers, firms, rankings, featured] = await Promise.all([
+  const [lawyers, firms, rankings, featured, market] = await Promise.all([
     getLawyers({ city: slug, per_page: 12, orderby: "score", order: "desc" }),
     getLawFirms({ city: slug, per_page: 6, orderby: "score", order: "desc" }),
     allRankings(),
     getPlacements({ product: "featured", location: slug }),
+    // Market statistics are optional: the hub still renders without them.
+    getMarket({ location: slug }).catch(() => null),
   ]);
   return {
     city,
     featured,
+    market,
     lawyers: lawyers.data,
     firms: firms.data,
     rankings: rankings.filter((r) => !r.isThin && r.location?.citySlug === slug),
@@ -69,6 +72,7 @@ export default async function CityPage(props: PageProps<"/cities/[city]">) {
       lead={`Rankings, lawyers and law firms in ${label(c)}, scored with the LexRank methodology from sourced, verified data.`}
       counts={c}
       featured={data.featured}
+      market={data.market}
       content={c.content ?? null}
       rankings={data.rankings}
       lawyers={data.lawyers}

@@ -14,6 +14,7 @@ import type {
   LawFirmSummary,
   LawyerDetail,
   LawyerSummary,
+  MarketDto,
   MethodologyDto,
   PageEligibilityModelDto,
   PlacementDto,
@@ -180,3 +181,16 @@ export const getPageEligibilityModel = (opts?: Opts) =>
 
 /** The live methodology: active version, last calculation, sources and update frequency (Etap H). */
 export const getMethodology = (opts?: Opts) => apiRequest<MethodologyDto>("methodology", { revalidate: 600, ...opts }).then((r) => r.data);
+
+/** Market statistics for a location and/or practice area (Etap I); null when a slug is unknown. */
+export async function getMarket(scope: { location?: string | null; practice_area?: string | null }, opts?: Opts): Promise<MarketDto | null> {
+  const query: Record<string, string> = {};
+  if (scope.location) query.location = scope.location;
+  if (scope.practice_area) query.practice_area = scope.practice_area;
+  try {
+    return (await apiRequest<MarketDto>("market", { query, ...opts })).data;
+  } catch (error) {
+    if (error instanceof WordPressApiError && (error.status === 404 || error.status === 400)) return null;
+    throw error;
+  }
+}

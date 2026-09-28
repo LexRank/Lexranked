@@ -341,3 +341,11 @@ and the ranking's source list. Related questions are asked only when the
 data answers them. Schema.org mirrors visible data only. The Etap J AI
 interpretation layer may rephrase these texts, but it may not add a fact.
 
+### ADR-041 — Market statistics are computed, sampled and timestamped
+Numbers about a market (counts, verified counts, average rating, median
+reviews, most common practice area) are computed by the backend from
+published profiles and sourced, non-conflicting facts. Each figure carries
+its sample size and the calculation time. Below a minimum sample the figure is
+withheld rather than estimated. Summaries state only these numbers. An AI
+layer may phrase them but never compute or invent one.
+

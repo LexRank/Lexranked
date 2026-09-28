@@ -93,7 +93,8 @@ E. ✅ **Comparison engine**: `/compare/?lawyer=…&lawyer=…` (noindex) compar
 F. ✅ **Contextual rankings**: "best for" rankings by case type, client type or language, e.g. `/rankings/florida/miami/personal-injury/car-accidents/`. Entities qualify only through sourced facts, and a page exists only above a verified-data threshold. The context never changes a score, and key card attributes follow the context
 G. ✅ **Page eligibility engine**: one explained, published decision per page (exists / indexed) from entities, verified entities, real data, evidence coverage and context; it drives rendering, robots and the sitemap, never keywords
 H. ✅ **AI-readable pages**: answer-first summaries built from facts, a per-fact "Sources & verification" panel, ranking sources and data-generated related questions, a live methodology page and schema.org that mirrors visible data
-I. Market statistics · J. AI interpretation layer
+I. ✅ **Market statistics and coverage**: counts, verified counts, average rating, median reviews and the most common practice area, computed by the backend with sample sizes (withheld below 3) and shown on hubs and rankings
+J. AI interpretation layer
 
 ## Security
 

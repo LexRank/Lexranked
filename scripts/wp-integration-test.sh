@@ -223,6 +223,15 @@ expect "summaries say verified only when the fact is" '(.aiSummary.text | test("
 expect "summaries never mention paid status" '(.commercial.status == "premium") and (.aiSummary.text | test("premium|sponsor|paid"; "i") | not)' "$API/lawyers/emery-mockwell-demo"
 expect "rankings list the sources behind their entries, best tier first" '(.sources | length) >= 2 and .sources[0].tier == 1 and all(.sources[]; .facts > 0 and .entities > 0)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 
+echo "==> Market statistics (Etap I)"
+MARKET="$API/market?location=miami&practice_area=personal-injury"
+expect "market counts come from the database" '.stats.version == "mkt-1.0" and .stats.lawyers == 8 and .stats.firms == 3 and .stats.verifiedLawyers == 5 and .scope.location.name == "Miami, Florida"' "$MARKET"
+expect "averages and medians carry their sample size and a calculation time" '.stats.averageRating.sample == 8 and (.stats.averageRating.value > 0) and .stats.medianReviewCount.sample == 8 and (.stats.calculatedAt | length) > 0 and (.stats.dataVerifiedAt | length) > 0' "$MARKET"
+expect "the summary states computed numbers only" '(.summary | startswith("LexRanked tracks 8 lawyers and 3 law firms in personal injury law in Miami, Florida. 5 of the lawyers have verified professional data."))' "$MARKET"
+expect "a place-level market names its most common practice area" '.stats.mostCommonPractice.slug == "personal-injury" and (.summary | test("most common practice area in Miami, Florida is Personal Injury"))' "$API/market?location=miami"
+expect "too little data is withheld, not estimated" '.stats.lawyers == 0 and .stats.averageRating == null and .stats.medianReviewCount == null and .summary == ""' "$API/market?practice_area=car-accidents"
+expect_status "unknown market" 404 "$API/market?location=atlantis"
+
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 RID="$(curl -sS "$RANKING" | jq .id)"
@@ -470,6 +479,12 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "related questions link narrower rankings" "/rankings/florida/miami/personal-injury/" "list car accidents among their case types"
   page_has "methodology lists data sources" "/methodology/" 'id="data-sources"'
   page_has "methodology says how often data is updated" "/methodology/" "How often data is updated"
+
+  echo "==> Market statistics on pages (Etap I)"
+  page_has "city hub shows coverage" "/cities/miami/" "with verified professional data"
+  page_has "city hub leads with its computed summary" "/cities/miami/" "LexRanked tracks 8 lawyers and 3 law firms in Miami, Florida"
+  page_has "city hub shows market statistics" "/cities/miami/" 'id="market"'
+  page_has "ranking shows its market statistics" "/rankings/florida/miami/personal-injury/" "Personal Injury market in Miami"
 
   echo "==> Data Quality on pages (Etap C)"
   page_has "profile shows the Data Quality panel" "/lawyers/avery-example-demo/" "Data quality"

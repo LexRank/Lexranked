@@ -762,6 +762,40 @@ final class Command {
 	}
 
 	/**
+	 * Market statistics for a location and/or practice area (Etap I), computed
+	 * from stored data.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--location=<slug>]
+	 * : State or city slug.
+	 *
+	 * [--practice-area=<slug>]
+	 * : Practice-area slug.
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function market( array $args, array $assoc_args ): void {
+		unset( $args );
+		$location = null;
+		$practice = null;
+		if ( isset( $assoc_args['location'] ) ) {
+			$location = get_term_by( 'slug', (string) $assoc_args['location'], Location::SLUG );
+			if ( ! $location instanceof \WP_Term ) {
+				\WP_CLI::error( 'Unknown location.' );
+			}
+		}
+		if ( isset( $assoc_args['practice-area'] ) ) {
+			$practice = get_term_by( 'slug', (string) $assoc_args['practice-area'], PracticeArea::SLUG );
+			if ( ! $practice instanceof \WP_Term ) {
+				\WP_CLI::error( 'Unknown practice area.' );
+			}
+		}
+		\WP_CLI::line( (string) wp_json_encode( $this->services->market->for_scope( $location instanceof \WP_Term ? $location : null, $practice instanceof \WP_Term ? $practice : null ), JSON_PRETTY_PRINT ) );
+	}
+
+	/**
 	 * Page eligibility report (Etap G): every ranking, hub and profile page,
 	 * whether it exists, whether it is indexed, and why not.
 	 *
