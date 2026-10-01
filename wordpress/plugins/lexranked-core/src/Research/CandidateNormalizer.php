@@ -79,6 +79,9 @@ final class CandidateNormalizer {
 			if ( false !== $decomposed ) {
 				$text = (string) preg_replace( '/\p{Mn}+/u', '', $decomposed );
 			}
+		} elseif ( function_exists( 'remove_accents' ) ) {
+			// Without the intl extension, use WordPress's table so "José" stays "jose", not "jos".
+			$text = remove_accents( $text );
 		}
 		return (string) preg_replace( '/[^\x20-\x7E]/', '', $text );
 	}
