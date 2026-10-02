@@ -95,6 +95,7 @@ G. ✅ **Page eligibility engine**: one explained, published decision per page (
 H. ✅ **AI-readable pages**: answer-first summaries built from facts, a per-fact "Sources & verification" panel, ranking sources and data-generated related questions, a live methodology page and schema.org that mirrors visible data
 I. ✅ **Market statistics and coverage**: counts, verified counts, average rating, median reviews and the most common practice area, computed by the backend with sample sizes (withheld below 3) and shown on hubs and rankings
 J. ✅ **AI interpretation layer**: the model only summarizes, explains, compares, classifies and writes from backend-computed facts (with verified / sourced / computed status). It never invents, computes a number or decides a position; QA enforces this, and output stays a draft ([docs/ai-interpretation.md](docs/ai-interpretation.md))
+K. ✅ **Autonomous research** (opt-in): workers create research jobs, and a completed job publishes only profiles that pass fixed checks (licence and bar status verified by an official source, no conflicts, nothing missing) with their records and sources, and creates rankings above the threshold; doubtful results stay drafts with the reason ([docs/research.md](docs/research.md#autonomous-research))
 
 ## Security
 

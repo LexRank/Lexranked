@@ -325,6 +325,47 @@ SITE_PID=""
 wp lexranked research-job verification >/dev/null
 check "internal jobs run in WordPress" 'test("Processed 1 internal")' "\"$(wp lexranked research-run)\""
 
+echo "==> Autonomous research (publish what passes every check, keep doubts as drafts)"
+expect_status "workers cannot create jobs while autonomy is off" 403 "$API/research/jobs" -u "researcher:$WORKER_PW" \
+  -H 'Content-Type: application/json' -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-demo"}}'
+wp option update lexranked_settings '{"search_rate_per_minute":5,"research_autonomy":true,"min_ranking_entities":3}' --format=json >/dev/null
+expect_status "AI job types cannot be created through the API" 400 "$API/research/jobs" -u "researcher:$WORKER_PW" \
+  -H 'Content-Type: application/json' -d '{"job_type":"content_generation"}'
+cat >"$DATA_DIR/autonomy-demo.csv" <<'CSV'
+entity_type,name,city,state,practice_area,website,source_url,source_type,retrieved_at,phone,bar_state,bar_number,bar_status
+lawyer,Avery Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2001,bar_association,2026-09-01,,FL,2001,active
+lawyer,Blake Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2002,bar_association,2026-09-01,,FL,2002,active
+lawyer,Cameron Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2003,bar_association,2026-09-01,,FL,2003,active
+lawyer,Dana Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2004,bar_association,2026-09-01,,FL,2004,inactive
+lawyer,Emery Autotest,Hialeah,FL,personal-injury,,https://directory.fixture.test/lawyers/emery,professional_directory,2026-09-01,,,,
+CSV
+created="$(curl -sS -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' \
+  -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-demo","fetch_websites":false},"title":"Autonomy IT"}' "$API/research/jobs")"
+check "a worker creates a research job through the API" '.status == "pending" and .params.dataset == "autonomy-demo"' "$created"
+AUTO_JOB="$(jq -r '.id' <<<"$created")"
+run_worker && pass "worker runs the API-created job" || fail "worker failed on the API-created job (see $DATA_DIR/worker.log)"
+auto="$(wp lexranked research-status "$AUTO_JOB" --format=json)"
+check "API-created job completed" '.status == "completed" and .stats.candidates_created == 5' "$auto"
+check "the run is summarised in the job log" '[.log[].message] | any(startswith("Autonomous research: 3 published, 2 kept as drafts, 6 verification records and 3 sources published, 1 rankings created"))' "$auto"
+check "profiles with official checks are published" '. == 3' "$(wp post list --post_type=lr_lawyer --post_status=publish --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+held_ids="$(wp post list --post_type=lr_lawyer --post_status=draft --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --field=ID --format=csv | tr -dc '0-9\n')"
+holds=""
+for id in $held_ids; do holds+="$(wp post meta get "$id" _lr_auto_publish_hold) "; done
+check "doubtful profiles stay drafts with the reason" 'test("bar status is not active") and test("no bar state and bar number")' "\"${holds//\"/\'}\""
+check "their verification records are published with them" '. == 6' "$(wp post list --post_type=lr_verification --post_status=publish --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+check "the doubtful profiles' records stay pending" '. >= 2' "$(wp post list --post_type=lr_verification --post_status=pending --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+check "official sources behind them are published" '. == 3' "$(wp post list --post_type=lr_source --post_status=publish --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+check "a ranking is created once the city has enough profiles" '. == 1' "$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Personal Injury Lawyers in Hialeah, Florida' --format=count)"
+expect "published autonomous profiles appear in the public API" 'map(.name) | (index("Avery Autotest") != null) and (index("Dana Autotest") == null)' "$API/lawyers?city=hialeah&per_page=100"
+again="$(wp lexranked research-auto-publish "$AUTO_JOB")"
+check "re-applying the rules creates nothing twice" 'test("0 published, 2 kept as drafts, 0 verification records and 0 sources published, 0 rankings created")' "\"$(tail -n1 <<<"$again")\""
+# Remove the autonomous-research records so later sections see the same data as before.
+auto_ids="$(wp post list --post_type=lr_lawyer,lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --field=ID --format=csv | tr -dc '0-9\n')"
+auto_ids+=" $(wp post list --post_type=lr_ranking --post_status=any --title='Best Personal Injury Lawyers in Hialeah, Florida' --field=ID --format=csv | tr -dc '0-9\n')"
+# shellcheck disable=SC2086 # Word splitting on IDs is intended.
+wp post delete $auto_ids --force >/dev/null
+wp option update lexranked_settings '{"search_rate_per_minute":5}' --format=json >/dev/null
+
 echo "==> Entity resolution identifiers (Etap B)"
 check "research drafts are indexed by bar number" '. >= 1' "$(wp db query "SELECT COUNT(*) FROM wp_postmeta WHERE meta_key = '_lr_id_bar' AND meta_value = 'FL:1001'" --skip-column-names | tr -dc 0-9)"
 DUP_ID="$(wp post create --post_type=lr_lawyer --post_status=draft --post_title="J. Sample Duplicate" --meta_input='{"_lr_bar_state":"FL","_lr_bar_number":"01001"}' --porcelain | tail -1)"

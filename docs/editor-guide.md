@@ -150,6 +150,26 @@ good bar standing that belong to that page can be placed; the form tells you
 why otherwise. Every placement is labelled "Paid" on the site and never
 changes a ranking. Pause or cancel from the same screen.
 
+## Autonomous research
+
+**LexRanked → Settings → Autonomous research** (off by default) lets the
+research worker create its own research jobs and publish results without
+waiting for you, but only what passes every fixed check:
+
+- a **lawyer** is published when they have a name, city, practice area, bar
+  number and an *active* bar status, their licence and bar status are
+  verified by an official source (the state bar), and no sources disagree;
+- a **law firm** needs a website and a verified business record;
+- their verification records and sources are published with them;
+- a **ranking** for a city and practice area is created once at least
+  *Minimum entities for a ranking* profiles there are published.
+
+Everything else stays a **draft**, and the job log says why (for example
+"Kept #63 as a draft: bar status is not active"). Review those drafts as
+usual. To undo an automatic publication, switch the profile back to draft
+or move it to the trash; the audit log records every automatic publication.
+AI content drafts and profile claims are never published automatically.
+
 ## Research jobs
 
 **LexRanked → Research Jobs → Add** (or WP-CLI, see `docs/research.md`):
