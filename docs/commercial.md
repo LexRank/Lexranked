@@ -106,3 +106,12 @@ Settings so links point at the public site.
 
 The `claims` health check warns when a confirmed claim has waited more than
 7 days for review.
+
+## Contact details on profiles
+
+The website link is shown on every profile. The phone number and email are
+shown as plain text until the profile is **active** (claimed by its owner
+with confirmed identity, or premium); only then are they click-to-call
+(`tel:`) and click-to-email (`mailto:`) links
+(`frontend/components/profile/Contact.tsx`). This never affects a score or
+a position.

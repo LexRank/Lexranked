@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
+import { EmailLine, PhoneLine, profileActive } from "@/components/profile/Contact";
 import { cityPageExists } from "@/lib/content/hubs";
 import { FirmCard, LawyerCard } from "@/components/cards";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -190,11 +191,8 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
                   </a>
                 </dd>
               )}
-              {firm.contact.phone && (
-                <dd>
-                  <a href={`tel:${firm.contact.phone.replace(/[^\d+]/g, "")}`}>{firm.contact.phone}</a>
-                </dd>
-              )}
+              {firm.contact.phone && <PhoneLine phone={firm.contact.phone} active={profileActive(firm.commercial)} />}
+              {firm.contact.email && <EmailLine email={firm.contact.email} active={profileActive(firm.commercial)} />}
             </dl>
           </div>
           <div className="card">
