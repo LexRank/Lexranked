@@ -3406,3 +3406,15 @@ h2 {
   border-color: var(--navy-900);
   color: #fff;
 }
+
+.card--guide .card__thumb {
+  display: block;
+  width: calc(100% + 2 * var(--card-pad, 1.5rem));
+  max-width: none;
+  height: auto;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  margin: calc(-1 * var(--card-pad, 1.5rem)) calc(-1 * var(--card-pad, 1.5rem)) 1rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--neutral-bg);
+}

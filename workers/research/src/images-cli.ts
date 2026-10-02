@@ -10,6 +10,7 @@
  * Exit codes: 0 ok · 1 configuration error · 2 at least one post failed
  */
 
+import { readFile } from 'node:fs/promises';
 import { resolveModel } from './ai/models.js';
 import { addFeaturedImage, OpenAIImageGenerator, WordPressMedia } from './images/featuredImage.js';
 
@@ -39,10 +40,13 @@ async function main(argv: string[]): Promise<number> {
   const model = await resolveModel('image', { apiKey: env.OPENAI_API_KEY as string, override: env.OPENAI_IMAGE_MODEL, ...baseUrl });
   process.stdout.write(JSON.stringify({ imageModel: model }) + '\n');
   const images = new OpenAIImageGenerator({ apiKey: env.OPENAI_API_KEY as string, model, ...baseUrl });
+  // The LexRanked owl, kept consistent across images (override: LEXRANKED_BRAND_IMAGE).
+  const refPath = env.LEXRANKED_BRAND_IMAGE ?? new URL('../assets/lexranked-owl.png', import.meta.url).pathname;
+  const reference = { bytes: new Uint8Array(await readFile(refPath)), filename: 'lexranked-owl.png', type: 'image/png' };
   let failed = 0;
   for (const id of posts) {
     try {
-      const outcome = await addFeaturedImage(id, { wp, images, force });
+      const outcome = await addFeaturedImage(id, { wp, images, force, reference });
       process.stdout.write(JSON.stringify({ post: id, ...outcome }) + '\n');
     } catch (err) {
       failed++;

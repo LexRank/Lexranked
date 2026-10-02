@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { guideImage } from "@/lib/content/articles";
 import type { ArticleSummary, LawFirmSummary, LawyerSummary, RankingContextDto, RankingDetail, RankingEntry as RankingEntryDto, RankingSummary } from "@/types/api";
 import { contextualAttributes } from "@/lib/content/contextualAttributes";
 import { compareHref } from "@/lib/content/compare";
@@ -64,8 +65,11 @@ export function FirmCard({ firm }: { firm: LawFirmSummary }) {
 
 export function ArticleCard({ article }: { article: ArticleSummary }) {
   const date = formatDate(article.updatedAt ?? article.publishedAt);
+  const image = guideImage(article);
   return (
-    <Link href={article.path} className="card card--link">
+    <Link href={article.path} className="card card--link card--guide">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="card__thumb" src={image.url} width={image.width} height={image.height} alt="" loading="lazy" />
       <p className="eyebrow" style={{ marginBottom: "0.5rem" }}>
         Guide{article.categories[0] ? ` · ${article.categories[0].name}` : ""}
       </p>

@@ -20,10 +20,11 @@ describe('featured images', () => {
   it('builds prompts from the article with fixed no-people, no-text rules', () => {
     const prompt = buildImagePrompt({ title: 'Car Accidents in <b>Miami</b>', excerpt: 'PIP &amp; the 14-day rule.' });
     expect(prompt).toContain('"Car Accidents in Miami"');
-    expect(prompt).toContain('no people');
+    expect(prompt).toContain('LexRanked owl');
     expect(prompt).toContain('no text');
+    expect(prompt).toContain('No human people');
     expect(prompt).not.toContain('<b>');
-    expect(altText({ title: 'Car Accidents in Miami', excerpt: '' })).toBe('Illustration for the article “Car Accidents in Miami”');
+    expect(altText({ title: 'Car Accidents in Miami', excerpt: '' })).toBe('The LexRanked owl illustrating “Car Accidents in Miami”');
   });
 
   it('decodes the generated image and retries rate limits', async () => {
@@ -35,6 +36,17 @@ describe('featured images', () => {
     expect(calls).toHaveLength(2);
     expect(JSON.parse(String(calls[1]!.init.body))).toMatchObject({ model: 'img-model', prompt: 'p', n: 1 });
     expect((calls[1]!.init.headers as Record<string, string>).Authorization).toBe('Bearer sk-test');
+  });
+
+  it('sends the owl as a reference image to the edits endpoint', async () => {
+    const { impl, calls } = fakeFetch(() => ({ json: { data: [{ b64_json: PNG }] } }));
+    const gen = new OpenAIImageGenerator({ apiKey: 'k', model: 'img', fetchImpl: impl });
+    await gen.generate('p', { bytes: new Uint8Array([1, 2, 3]), filename: 'lexranked-owl.png', type: 'image/png' });
+    expect(calls[0]!.url).toBe('https://api.openai.com/v1/images/edits');
+    const form = calls[0]!.init.body as FormData;
+    expect(form.get('model')).toBe('img');
+    expect((form.get('image[]') as File).name).toBe('lexranked-owl.png');
+    expect((calls[0]!.init.headers as Record<string, string>)['Content-Type']).toBeUndefined();
   });
 
   it('fails clearly without image data', async () => {
@@ -57,7 +69,7 @@ describe('featured images', () => {
     const upload = calls.find((c) => c.url === 'https://cms.test/wp-json/wp/v2/media')!;
     expect((upload.init.headers as Record<string, string>)['Content-Disposition']).toBe('attachment; filename="pip-in-florida.png"');
     const meta = calls.find((c) => c.url.endsWith('/wp/v2/media/55'))!;
-    expect(JSON.parse(String(meta.init.body))).toMatchObject({ alt_text: 'Illustration for the article “PIP in Florida”' });
+    expect(JSON.parse(String(meta.init.body))).toMatchObject({ alt_text: 'The LexRanked owl illustrating “PIP in Florida”' });
     const attach = calls.find((c) => c.url.endsWith('/wp/v2/posts/7') && c.init.method === 'POST')!;
     expect(JSON.parse(String(attach.init.body))).toEqual({ featured_media: 55 });
 

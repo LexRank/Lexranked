@@ -32,7 +32,9 @@ automatically (`frontend/lib/content/articles.ts`).
 5. **Honest.** No "best" claims beyond what a ranking's data shows; no
    invented statistics, quotes or case results; general information, not
    legal advice (stated on the page).
-6. **Structure.** One WordPress category (the plan's Category); a clear
+6. **Featured image.** Every guide has its own featured image with the
+   LexRanked owl, simple and without any text ([brand.md](brand.md)).
+7. **Structure.** One WordPress category (the plan's Category); a clear
    title with the primary keyword; a 150–160 character excerpt that answers
    the question; internal links to related guides and the matching rankings
    (the template adds rankings automatically); update date set when facts

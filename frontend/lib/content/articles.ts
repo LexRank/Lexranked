@@ -1,6 +1,14 @@
 import type { ArticleSummary, PracticeAreaRef, RankingSummary } from "@/types/api";
 import { articleEligibility } from "./eligibility";
 
+/** The LexRanked owl, shown when a guide has no featured image of its own. */
+export const DEFAULT_GUIDE_IMAGE = { url: "/brand/guide-default.webp", width: 1200, height: 630, alt: "The LexRanked owl with law books and a ranking report" } as const;
+
+/** A guide's featured image, or the brand default: every guide shows one. */
+export function guideImage(article: Pick<ArticleSummary, "image">): { url: string; width: number; height: number; alt: string } {
+  return article.image ?? DEFAULT_GUIDE_IMAGE;
+}
+
 /**
  * Guide (blog) page helpers: a table of contents from the article's own
  * headings, related guides, category counts and the rankings a guide leads
