@@ -118,3 +118,26 @@ the real one. The end-to-end test (`scripts/wp-integration-test.sh`) runs
 the worker against `workers/research/fixtures/openai/server.mjs`, a **fake**
 local Responses endpoint that returns canned, schema-valid output. CI never
 calls OpenAI and needs no key.
+
+## Featured images for articles
+
+`lexranked-images` (worker package) generates an illustration for an article
+and sets it as the featured image:
+
+```bash
+cd workers/research && npm run build
+OPENAI_API_KEY=… OPENAI_IMAGE_MODEL=… \
+LEXRANKED_API_URL=https://cms.example.com/wp-json/lexranked/v1 \
+LEXRANKED_WORKER_USER=editor-account LEXRANKED_WORKER_APP_PASSWORD='…' \
+node dist/images-cli.js --post 42 [--post 43] [--force]
+```
+
+- The prompt is built from the article's title and excerpt plus fixed rules:
+  an editorial illustration with **no people, faces, hands, text, logos or
+  seals** (a lawyer-ranking site must not suggest real people or
+  endorsements).
+- The image is uploaded to the media library with alt text
+  ("Illustration for the article “…”") and set as the featured image.
+  Posts that already have one are skipped unless `--force`.
+- The WordPress user needs `upload_files` and `edit_posts` (an editor).
+
