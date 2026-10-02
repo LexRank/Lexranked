@@ -16,6 +16,7 @@ use LexRanked\Core\Schema\Field;
 use LexRanked\Core\Schema\FieldSanitizer;
 use LexRanked\Core\Schema\MetaCodec;
 use LexRanked\Core\Schema\ValidationException;
+use LexRanked\Core\Support\Text;
 use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
 
@@ -54,7 +55,7 @@ final class EntityRepository {
 			'entity_id'      => null === $entity_type || null === $this->registry ? null : $this->registry->id_for( $entity_type, (int) $post->ID ),
 			'type'           => $type->slug(),
 			'slug'           => (string) $post->post_name,
-			'title'          => (string) get_the_title( $post ),
+			'title'          => Text::title( $post ),
 			'content'        => (string) $post->post_content,
 			'status'         => (string) $post->post_status,
 			'created_at'     => self::iso( (string) $post->post_date_gmt ),

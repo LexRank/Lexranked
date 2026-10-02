@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { FaqItem, RankingDetail, RankingSourceDto } from "@/types/api";
+import { wrapTables } from "@/lib/content/articles";
 import { groupRankingSources } from "@/lib/content/rankingSources";
 import type { RankingFacts } from "@/lib/content/rankingFacts";
 import { formatCount, formatDate, isoDate } from "@/lib/format";
@@ -46,7 +47,7 @@ export function EditorialBody({ html }: { html: string }) {
   if (!html.trim()) return null;
   return (
     <section id="guide" className="card editorial" aria-label="Guide">
-      <div className="prose editorial__body" dangerouslySetInnerHTML={{ __html: html }} />
+      <div className="prose editorial__body" dangerouslySetInnerHTML={{ __html: wrapTables(html) }} />
     </section>
   );
 }

@@ -9,7 +9,10 @@ The plan's ranking URLs map to LexRanked rankings:
 only to rankings that exist; the guide template adds the matching rankings
 automatically (`frontend/lib/content/articles.ts`).
 
-## Editorial standard (every guide)
+## Editorial standard (every guide and all other content)
+
+These rules apply to guides and to every other text on the site: ranking,
+state, city and practice-area pages, FAQs and profile summaries.
 
 1. **Complete.** The guide answers its topic fully and every question a
    reader searching for it would ask (the plan's "Questions" are the
@@ -39,13 +42,23 @@ automatically (`frontend/lib/content/articles.ts`).
    the question; internal links to related guides and the matching rankings
    (the template adds rankings automatically); update date set when facts
    are rechecked (see the plan's Update column).
+8. **Something others don't have.** Every text adds at least one thing a
+   reader would not find in the other pages on the same topic: a true,
+   useful differentiator, not a gimmick. Examples: a comparison table nobody
+   else has assembled (deadlines by claim type, fee caps by stage), a
+   checklist built from the official rule, a local detail (the court,
+   agency or form for that city), a common mistake explained, or
+   LexRanked's own verified data (how many ranked lawyers are board
+   certified, when licences were last checked). It must be checked like
+   every other fact (rule 4); if nothing true and helpful can be added,
+   nothing is invented.
 
 Who writes: guides need outside facts (statutes, deadlines, fees), so they
 are researched and written by the editorial assistant with web research and
 primary sources. The AI content generator (`content_generation` with
 `kind: article`) only writes from LexRanked's own data and is for guides
-about rankings and profiles; it also follows rules 1–3 (answer-first
-paragraphs, bullet lists).
+about rankings and profiles; it also follows rules 1–3 and 8 (answer-first
+paragraphs, bullet lists, one distinctive point drawn from the facts).
 
 Status: ✅ published · 🟡 draft · blank = not started. Published so far:
 `personal-injury-claims-miami-florida-law` (Personal Injury, overlaps 11/15),

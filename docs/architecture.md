@@ -353,7 +353,7 @@ layer may phrase them but never compute or invent one.
 Language models sit at the end of the data flow. They receive only numbered
 facts built from backend computations: snapshots, explanations, contexts,
 eligibility, market statistics and the fact layer. Each fact carries its
-evidence status and origin. One interpretation contract (`interp/1`) is added
+evidence status and origin. One interpretation contract (`interp/2`) is added
 to every prompt. Deterministic QA rejects numbers that are not in the cited
 facts, "verified" claims resting on unverified facts, and ranking decisions
 or verdicts. Output is a draft that an editor applies; the ranking engine

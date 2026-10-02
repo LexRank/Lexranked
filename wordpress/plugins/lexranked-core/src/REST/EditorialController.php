@@ -18,6 +18,7 @@ use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\PostTypes\Ranking;
 use LexRanked\Core\Security\AuditLog;
 use LexRanked\Core\Services;
+use LexRanked\Core\Support\Text;
 use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
 
@@ -310,7 +311,7 @@ final class EditorialController extends RestController {
 		return $this->item_response(
 			array(
 				'id'      => $id,
-				'name'    => get_the_title( $id ),
+				'name'    => Text::title( $id ),
 				'summary' => $this->services->entities->record( $post, $type )['fields']['summary'],
 			),
 			true
@@ -343,7 +344,7 @@ final class EditorialController extends RestController {
 			}
 			$items[] = array(
 				'id'          => (int) $post->ID,
-				'title'       => get_the_title( $post ),
+				'title'       => Text::title( $post ),
 				'contentType' => $fields['content_type'],
 				'qaStatus'    => $fields['qa_status'],
 				'target'      => $applier->target( $fields )['label'] ?? null,

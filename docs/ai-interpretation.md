@@ -22,9 +22,11 @@ has already established.
 | **classify** into supplied labels, quoting evidence (research extraction, Phase 6) | decide, change, predict or judge a position or score |
 | **write** editorial text built on the facts | say who is better or who to hire, promise results, add links or calls to action |
 
+Every text also adds something a generic page on the topic would not have: at least one specific, useful point from the facts (a verified credential, a check date, a market figure with its sample size). It must be true and cited; with nothing distinctive in the facts, the model adds nothing.
+
 These rules are one contract, `workers/research/src/ai/interpretation.ts`
-(`interp/1`). Every prompt starts with the task and ends with the same rules.
-Each draft records its prompt version, e.g. `interp/1+ranking-content/2`, so
+(`interp/2`). Every prompt starts with the task and ends with the same rules.
+Each draft records its prompt version, e.g. `interp/2+ranking-content/2`, so
 it is always known which contract produced it.
 
 ## What the model is given
