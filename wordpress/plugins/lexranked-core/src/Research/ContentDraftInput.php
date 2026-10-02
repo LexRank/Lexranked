@@ -26,16 +26,19 @@ final class ContentDraftInput {
 	/** Fact statuses (Etap J): verified by LexRanked, backed by a source, or computed by the backend. */
 	public const FACT_STATUSES  = array( 'verified', 'sourced', 'computed' );
 	public const MAX_PARAGRAPHS = 6;
-	public const MAX_FAQ        = 10;
-	public const MAX_FACTS      = 300;
-	public const MAX_ISSUES     = 100;
-	public const SEVERITIES     = array( 'error', 'warning' );
+
+	/** Bullet points per section (articles). */
+	public const MAX_BULLETS = 10;
+	public const MAX_FAQ     = 10;
+	public const MAX_FACTS   = 300;
+	public const MAX_ISSUES  = 100;
+	public const SEVERITIES  = array( 'error', 'warning' );
 
 	/**
 	 * Validate.
 	 *
 	 * @param array<string, mixed> $input Raw payload.
-	 * @return array{content_type: string, target_id: int|null, target_term: int|null, target_taxonomy: string|null, title: string, summary: string, sections: array<int, array{heading: string, paragraphs: array<int, string>}>, faq: array<int, array{question: string, answer: string}>, qa_status: string, issues: array<int, array<string, string>>, facts: array<int, array{id: string, label: string, value: string, status: string, origin: string}>, model: string, prompt_version: string}
+	 * @return array{content_type: string, target_id: int|null, target_term: int|null, target_taxonomy: string|null, title: string, summary: string, sections: array<int, array{heading: string, paragraphs: array<int, string>, bullets: array<int, string>}>, faq: array<int, array{question: string, answer: string}>, qa_status: string, issues: array<int, array<string, string>>, facts: array<int, array{id: string, label: string, value: string, status: string, origin: string}>, model: string, prompt_version: string}
 	 * @throws ValidationException When invalid.
 	 */
 	public static function validate( array $input ): array {
@@ -73,9 +76,14 @@ final class ContentDraftInput {
 			if ( array() === $paragraphs ) {
 				throw new ValidationException( "sections.$i.paragraphs", 'must not be empty' );
 			}
+			$bullets = array();
+			foreach ( self::list( $section['bullets'] ?? array(), "sections.$i.bullets", self::MAX_BULLETS ) as $j => $bullet ) {
+				$bullets[] = self::text( is_array( $bullet ) ? ( $bullet['text'] ?? '' ) : $bullet, "sections.$i.bullets.$j", 400, true );
+			}
 			$sections[] = array(
 				'heading'    => self::text( $section['heading'] ?? '', "sections.$i.heading", 120, true ),
 				'paragraphs' => $paragraphs,
+				'bullets'    => $bullets,
 			);
 		}
 		$faq = array();
@@ -155,14 +163,20 @@ final class ContentDraftInput {
 	/**
 	 * Body HTML from sections (escaped here; never model-supplied markup).
 	 *
-	 * @param array<int, array{heading: string, paragraphs: array<int, string>}> $sections Sections.
+	 * The first paragraph under a heading answers it; a bullet list, when
+	 * present, follows that answer, then the remaining paragraphs.
+	 *
+	 * @param array<int, array{heading: string, paragraphs: array<int, string>, bullets?: array<int, string>}> $sections Sections.
 	 */
 	public static function to_html( array $sections ): string {
 		$html = '';
 		foreach ( $sections as $section ) {
 			$html .= '<h2>' . self::esc( $section['heading'] ) . "</h2>\n";
-			foreach ( $section['paragraphs'] as $paragraph ) {
+			foreach ( $section['paragraphs'] as $i => $paragraph ) {
 				$html .= '<p>' . self::esc( $paragraph ) . "</p>\n";
+				if ( 0 === $i && ! empty( $section['bullets'] ) ) {
+					$html .= "<ul>\n" . implode( '', array_map( static fn( string $b ): string => '<li>' . self::esc( $b ) . "</li>\n", $section['bullets'] ) ) . "</ul>\n";
+				}
 			}
 		}
 		return $html;

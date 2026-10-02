@@ -45,8 +45,8 @@ function answer(name, user) {
         summary: 'A short guide to how positions are decided.',
         summaryFactRefs: [how.id],
         sections: [
-          { heading: 'How positions are decided', paragraphs: [{ text: 'Positions follow the LexRank score, and payment never affects positions.', factRefs: [how.id] }] },
-          { heading: 'What to check yourself', paragraphs: [{ text: 'Ask who will handle your case and how you will be kept informed.', factRefs: [] }] },
+          { heading: 'How positions are decided', paragraphs: [{ text: 'Positions follow the LexRank score, and payment never affects positions.', factRefs: [how.id] }], bullets: [{ text: 'Payment never affects positions.', factRefs: [how.id] }] },
+          { heading: 'What to check yourself', paragraphs: [{ text: 'Ask who will handle your case and how you will be kept informed.', factRefs: [] }], bullets: [] },
         ],
         faq: [],
       };

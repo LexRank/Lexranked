@@ -3371,3 +3371,50 @@ h2 {
   height: 0.9rem;
   color: var(--brass-600);
 }
+
+/* Guides (blog): sidebar link lists, the "find a lawyer" band and category chips. */
+.link-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+  font-size: 0.92rem;
+}
+
+.link-list a {
+  text-decoration: none;
+  color: var(--navy-700);
+}
+
+.link-list a:hover {
+  text-decoration: underline;
+}
+
+.link-list a[aria-current="page"] {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cta-band {
+  background: linear-gradient(180deg, var(--brass-100), var(--surface));
+  border-color: var(--brass-300);
+}
+
+.chip[aria-current="page"] {
+  background: var(--navy-900);
+  border-color: var(--navy-900);
+  color: #fff;
+}
+
+.card--guide .card__thumb {
+  display: block;
+  width: calc(100% + 2 * var(--card-pad, 1.5rem));
+  max-width: none;
+  height: auto;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  margin: calc(-1 * var(--card-pad, 1.5rem)) calc(-1 * var(--card-pad, 1.5rem)) 1rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--neutral-bg);
+}

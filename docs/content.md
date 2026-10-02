@@ -73,3 +73,19 @@ GEO signals:
 
 Editorial text must follow the content rules above. AI drafts (Phase 6/7)
 land as WordPress drafts and are never auto-published.
+
+## Guides (blog) template
+
+`/articles/<slug>/` (`frontend/app/articles/[slug]/page.tsx`):
+breadcrumbs Home › Guides › Category › Guide; a table of contents built from
+the guide's own `<h2>` headings (ids added automatically); a "Find a … lawyer"
+band with the rankings for the guide's practice area (car-accident and other
+injury categories lead to personal injury rankings); related guides (same
+category first); and a sticky sidebar with the table of contents, matching
+rankings, categories with counts and more guides.
+
+Categories are WordPress categories (one per guide, from the content plan);
+`/articles/category/<slug>/` lists a category and is indexed (and in the
+sitemap) once it holds at least three indexable guides. The content plan for
+the first 100 guides is in [content-plan.md](content-plan.md).
+

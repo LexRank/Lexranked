@@ -20,10 +20,11 @@ describe('featured images', () => {
   it('builds prompts from the article with fixed no-people, no-text rules', () => {
     const prompt = buildImagePrompt({ title: 'Car Accidents in <b>Miami</b>', excerpt: 'PIP &amp; the 14-day rule.' });
     expect(prompt).toContain('"Car Accidents in Miami"');
-    expect(prompt).toContain('no people');
+    expect(prompt).toContain('LexRanked owl');
     expect(prompt).toContain('no text');
+    expect(prompt).toContain('No human people');
     expect(prompt).not.toContain('<b>');
-    expect(altText({ title: 'Car Accidents in Miami', excerpt: '' })).toBe('Illustration for the article “Car Accidents in Miami”');
+    expect(altText({ title: 'Car Accidents in Miami', excerpt: '' })).toBe('The LexRanked owl illustrating “Car Accidents in Miami”');
   });
 
   it('decodes the generated image and retries rate limits', async () => {
@@ -35,6 +36,17 @@ describe('featured images', () => {
     expect(calls).toHaveLength(2);
     expect(JSON.parse(String(calls[1]!.init.body))).toMatchObject({ model: 'img-model', prompt: 'p', n: 1 });
     expect((calls[1]!.init.headers as Record<string, string>).Authorization).toBe('Bearer sk-test');
+  });
+
+  it('sends the owl as a reference image to the edits endpoint', async () => {
+    const { impl, calls } = fakeFetch(() => ({ json: { data: [{ b64_json: PNG }] } }));
+    const gen = new OpenAIImageGenerator({ apiKey: 'k', model: 'img', fetchImpl: impl });
+    await gen.generate('p', { bytes: new Uint8Array([1, 2, 3]), filename: 'lexranked-owl.png', type: 'image/png' });
+    expect(calls[0]!.url).toBe('https://api.openai.com/v1/images/edits');
+    const form = calls[0]!.init.body as FormData;
+    expect(form.get('model')).toBe('img');
+    expect((form.get('image[]') as File).name).toBe('lexranked-owl.png');
+    expect((calls[0]!.init.headers as Record<string, string>)['Content-Type']).toBeUndefined();
   });
 
   it('fails clearly without image data', async () => {
@@ -57,7 +69,7 @@ describe('featured images', () => {
     const upload = calls.find((c) => c.url === 'https://cms.test/wp-json/wp/v2/media')!;
     expect((upload.init.headers as Record<string, string>)['Content-Disposition']).toBe('attachment; filename="pip-in-florida.png"');
     const meta = calls.find((c) => c.url.endsWith('/wp/v2/media/55'))!;
-    expect(JSON.parse(String(meta.init.body))).toMatchObject({ alt_text: 'Illustration for the article “PIP in Florida”' });
+    expect(JSON.parse(String(meta.init.body))).toMatchObject({ alt_text: 'The LexRanked owl illustrating “PIP in Florida”' });
     const attach = calls.find((c) => c.url.endsWith('/wp/v2/posts/7') && c.init.method === 'POST')!;
     expect(JSON.parse(String(attach.init.body))).toEqual({ featured_media: 55 });
 
@@ -68,5 +80,49 @@ describe('featured images', () => {
     expect(parseArgs(['--post', '10', '--post', '12', '--force'])).toEqual({ posts: [10, 12], force: true });
     expect(parseArgs(['--post', 'x'])).toEqual({ posts: [], force: false });
     expect(wpJsonBase('https://wp.lexranked.com/wp-json/lexranked/v1/')).toBe('https://wp.lexranked.com/wp-json');
+  });
+});
+
+describe('model choice', () => {
+  const list = (ids: string[]) => (async () => new Response(JSON.stringify({ data: ids.map((id) => ({ id })) }), { status: 200 })) as unknown as typeof fetch;
+
+  it('picks the first preferred model the key can use', async () => {
+    const { resolveModel, TEXT_MODEL_PREFERENCE } = await import('../src/ai/models.js');
+    const newestCheap = TEXT_MODEL_PREFERENCE[0];
+    expect(await resolveModel('text', { apiKey: 'k', fetchImpl: list(['gpt-4o-mini', newestCheap, 'some-flagship']) })).toBe(newestCheap);
+    expect(await resolveModel('text', { apiKey: 'k', fetchImpl: list(['gpt-4o-mini', 'gpt-4.1-mini']) })).toBe('gpt-4.1-mini');
+    expect(await resolveModel('image', { apiKey: 'k', fetchImpl: list(['gpt-image-1', 'gpt-image-1-mini']) })).toBe('gpt-image-1-mini');
+  });
+
+  it('honours an explicit override and fails clearly when nothing fits', async () => {
+    const { resolveModel, ModelError } = await import('../src/ai/models.js');
+    expect(await resolveModel('text', { apiKey: 'k', override: 'my-model', fetchImpl: list([]) })).toBe('my-model');
+    await expect(resolveModel('image', { apiKey: 'k', fetchImpl: list(['text-only']) })).rejects.toBeInstanceOf(ModelError);
+  });
+});
+
+describe('seed rows with professional facts', () => {
+  it('parses experience, languages, education and awards and turns them into claims', async () => {
+    const { parseSeedCsv } = await import('../src/providers/csvSeed.js');
+    const { rowClaims } = await import('../src/pipeline/discovery.js');
+    const csv = [
+      'entity_type,name,source_url,source_type,retrieved_at,years_experience,languages,education,awards',
+      'lawyer,Joel Brown,https://bar.test/1,bar_association,2026-10-02,55,Spanish; Italian,"University of Florida | | 1970","Board Certified in Civil Trial Law | The Florida Bar | 1989; Civil Trial Law (NBTA) | NBTA |"',
+      'lawyer,Bad,https://bar.test/2,bar_association,2026-10-02,many,,,',
+    ].join('\n');
+    const [ok, bad] = parseSeedCsv(csv);
+    expect(bad).toMatchObject({ ok: false, error: 'years_experience must be a whole number of years' });
+    if (!ok?.ok) throw new Error('row 1 should parse');
+    expect(ok.row).toMatchObject({
+      years_experience: 55,
+      languages: ['Spanish', 'Italian'],
+      education: [{ institution: 'University of Florida', degree: '', year: '1970' }],
+      awards: [
+        { name: 'Board Certified in Civil Trial Law', issuer: 'The Florida Bar', year: '1989' },
+        { name: 'Civil Trial Law (NBTA)', issuer: 'NBTA', year: '' },
+      ],
+    });
+    const fields = rowClaims(ok.row, 7, undefined).map((c) => c.field_name);
+    expect(fields).toEqual(expect.arrayContaining(['years_experience', 'languages', 'education', 'awards']));
   });
 });

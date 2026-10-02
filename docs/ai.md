@@ -23,8 +23,8 @@ anything. Nothing the model produces is published or decides a ranking position.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `OPENAI_API_KEY` | — | API key. Required together with `OPENAI_MODEL` |
-| `OPENAI_MODEL` | — | Model ID that supports Structured Outputs. No default, so the choice is explicit and reviewable |
+| `OPENAI_API_KEY` | — | API key. Enables AI |
+| `OPENAI_MODEL` | picked at startup | Optional override. Without it the worker lists the models the key can use and takes the first of `TEXT_MODEL_PREFERENCE` in `src/ai/models.ts`: the current cost-efficient tier (good quality, low price; not the flagship), then older fallbacks. The choice is logged at startup. Update the list when a new generation ships |
 | `OPENAI_BASE_URL` | `https://api.openai.com/v1` | https only (localhost allowed for tests) |
 | `OPENAI_MAX_CALLS_PER_JOB` | 200 | Cost cap per job attempt |
 | `OPENAI_TIMEOUT_MS` | 60000 | Per request |
@@ -126,7 +126,7 @@ and sets it as the featured image:
 
 ```bash
 cd workers/research && npm run build
-OPENAI_API_KEY=… OPENAI_IMAGE_MODEL=… \
+OPENAI_API_KEY=… \
 LEXRANKED_API_URL=https://cms.example.com/wp-json/lexranked/v1 \
 LEXRANKED_WORKER_USER=editor-account LEXRANKED_WORKER_APP_PASSWORD='…' \
 node dist/images-cli.js --post 42 [--post 43] [--force]
@@ -139,5 +139,7 @@ node dist/images-cli.js --post 42 [--post 43] [--force]
 - The image is uploaded to the media library with alt text
   ("Illustration for the article “…”") and set as the featured image.
   Posts that already have one are skipped unless `--force`.
+- The image model is picked the same way from `IMAGE_MODEL_PREFERENCE`
+  (override: `OPENAI_IMAGE_MODEL`).
 - The WordPress user needs `upload_files` and `edit_posts` (an editor).
 

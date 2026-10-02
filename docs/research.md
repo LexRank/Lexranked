@@ -115,6 +115,14 @@ the job **created** (matched, existing profiles are never touched),
   published when there are at least *Minimum entities for a ranking*
   published, non-demo profiles and no ranking for that pair exists in any
   status. The engine calculates positions; editorial text can be added later.
+- Evidence about profiles that are already published (a later job adding,
+  say, a board certification as an award) is approved and applied when it
+  comes from an official (tier 1) source, was not AI-extracted, targets a
+  profile field and the field is empty or already has that value; anything
+  that would change a shown value stays in the review queue.
+- Seed datasets may carry `years_experience`, `languages` (`a; b`),
+  `education` and `awards` (`Name | Issuer | Year; …`), read from the same
+  source as the row.
 - Unchanged: AI content drafts are never published automatically, claims
   stay pending, payment never affects anything, and every publication is in
   the audit log (`research.auto_published`, `research.ranking_created`).

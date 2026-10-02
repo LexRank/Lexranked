@@ -3,8 +3,11 @@
  * article's title and excerpt, uploaded to the WordPress media library with
  * alt text and set as the post's featured image.
  *
- * Rules (a lawyer-ranking site must never suggest fake people or endorsements):
- * - illustrations only: no people, faces, hands, text, logos or seals;
+ * Rules:
+ * - the LexRanked owl (docs/brand/lexranked-owl.png) is the character of
+ *   every image, passed to the API as a reference so it stays consistent;
+ * - simple scenes, no text of any kind, no human people (a lawyer-ranking
+ *   site must not suggest real people or endorsements);
  * - posts that already have a featured image are skipped unless forced;
  * - the API key is only ever placed in the Authorization header.
  */
@@ -17,10 +20,12 @@ export interface ArticleInput {
 }
 
 const STYLE =
-  'Editorial illustration for a legal-information website. Calm, modern, flat vector style with soft shading, ' +
-  'navy, slate and warm brass palette, generous negative space, landscape composition. ' +
-  'Strictly no people, no faces, no hands, no silhouettes of people, no text, no letters, no numbers, ' +
-  'no logos, no flags with text, no official seals or badges.';
+  'Featured image for a legal-information guide. The main character is the LexRanked owl from the reference image: ' +
+  'a blue owl with round gold glasses, a navy suit and white shirt. Keep the character exactly as in the reference (same colours, glasses, suit, proportions). ' +
+  'Show the owl in one simple scene with at most two or three props that represent the topic. ' +
+  'Clean flat illustration, soft shading, light plain background, navy, blue and warm gold palette, generous empty space, landscape composition. ' +
+  'Absolutely no text, letters, numbers, words, logos, labels, signs or captions anywhere in the image (blank book covers and screens). ' +
+  'No human people.';
 
 function plain(text: string): string {
   return text
@@ -34,12 +39,12 @@ function plain(text: string): string {
 export function buildImagePrompt(article: ArticleInput): string {
   const title = plain(article.title).slice(0, 200);
   const excerpt = plain(article.excerpt).slice(0, 400);
-  return `${STYLE}\n\nSubject: a symbolic, object-based scene that represents this article: "${title}". ${excerpt ? `Context: ${excerpt}` : ''}`.trim();
+  return `${STYLE}\n\nThe scene represents this article: "${title}". ${excerpt ? `Context: ${excerpt}` : ''}`.trim();
 }
 
 /** Alt text that describes what the image is for, not what a model claims it shows. */
 export function altText(article: ArticleInput): string {
-  return `Illustration for the article “${plain(article.title).slice(0, 150)}”`;
+  return `The LexRanked owl illustrating “${plain(article.title).slice(0, 150)}”`;
 }
 
 export interface ImageGeneratorOptions {
@@ -64,18 +69,30 @@ export class OpenAIImageGenerator {
     this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
   }
 
-  /** PNG bytes for the prompt. */
-  async generate(prompt: string): Promise<Uint8Array> {
-    const url = `${(this.opts.baseUrl ?? 'https://api.openai.com/v1').replace(/\/+$/, '')}/images/generations`;
-    const body = JSON.stringify({ model: this.opts.model, prompt, size: this.opts.size ?? '1536x1024', n: 1 });
+  /** PNG bytes for the prompt; with a reference image the character is kept from it (images/edits). */
+  async generate(prompt: string, reference?: { bytes: Uint8Array; filename: string; type: string }): Promise<Uint8Array> {
+    const base = (this.opts.baseUrl ?? 'https://api.openai.com/v1').replace(/\/+$/, '');
+    const size = this.opts.size ?? '1536x1024';
+    const url = `${base}/images/${reference ? 'edits' : 'generations'}`;
+    const makeBody = (): string | FormData => {
+      if (!reference) return JSON.stringify({ model: this.opts.model, prompt, size, n: 1 });
+      const form = new FormData();
+      form.append('model', this.opts.model);
+      form.append('prompt', prompt);
+      form.append('size', size);
+      form.append('n', '1');
+      form.append('image[]', new Blob([reference.bytes], { type: reference.type }), reference.filename);
+      return form;
+    };
     const retries = this.opts.retries ?? 2;
     for (let attempt = 0; ; attempt++) {
       let res: Response;
       try {
         res = await this.fetchImpl(url, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${this.opts.apiKey}`, 'Content-Type': 'application/json' },
-          body,
+          // FormData sets its own multipart boundary header.
+          headers: reference ? { Authorization: `Bearer ${this.opts.apiKey}` } : { Authorization: `Bearer ${this.opts.apiKey}`, 'Content-Type': 'application/json' },
+          body: makeBody(),
           signal: AbortSignal.timeout(this.opts.timeoutMs ?? 120_000),
         });
       } catch (err) {
@@ -169,14 +186,14 @@ export type FeaturedImageOutcome = { status: 'skipped'; reason: string } | { sta
 /** Generate, upload and attach a featured image for one post. */
 export async function addFeaturedImage(
   postId: number,
-  deps: { wp: WordPressMedia; images: OpenAIImageGenerator; force?: boolean },
+  deps: { wp: WordPressMedia; images: OpenAIImageGenerator; force?: boolean; reference?: { bytes: Uint8Array; filename: string; type: string } },
 ): Promise<FeaturedImageOutcome> {
   const post = await deps.wp.post(postId);
   if (post.featuredMedia > 0 && !deps.force) {
     return { status: 'skipped', reason: `post ${postId} already has featured image ${post.featuredMedia}` };
   }
   const article = { title: post.title, excerpt: post.excerpt };
-  const bytes = await deps.images.generate(buildImagePrompt(article));
+  const bytes = await deps.images.generate(buildImagePrompt(article), deps.reference);
   const slug = plain(post.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || `post-${postId}`;
   const media = await deps.wp.upload(bytes, `${slug}.png`, altText(article), plain(post.title));
   await deps.wp.setFeatured(postId, media.id);

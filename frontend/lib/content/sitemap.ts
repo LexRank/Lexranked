@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo/urls";
+import { categoryCounts } from "./articles";
 import type { ArticleSummary, CityDto, LawFirmSummary, LawyerSummary, PracticeAreaDto, RankingSummary, StateDto } from "@/types/api";
 import { articleEligibility, indexPageIndexable, listingEligibility, MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
 
@@ -86,6 +87,9 @@ export function buildSitemap(input: SitemapInput): MetadataRoute.Sitemap {
   const articles = (input.articles ?? []).filter((a) => articleEligibility(a).indexable);
   if (articles.length > 0) entries.push(entry("/articles/", undefined, 0.6));
   for (const article of articles) entries.push(entry(article.path, article.updatedAt, 0.6));
+  for (const category of categoryCounts(articles)) {
+    if (indexPageIndexable(category.count)) entries.push(entry(`/articles/category/${category.slug}/`, undefined, 0.5));
+  }
 
   // De-duplicate by URL (first wins) for safety.
   const seen = new Set<string>();
