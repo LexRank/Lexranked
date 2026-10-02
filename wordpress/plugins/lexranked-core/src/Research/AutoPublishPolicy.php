@@ -127,6 +127,22 @@ final class AutoPublishPolicy {
 	}
 
 	/**
+	 * Whether new evidence about an already-published profile can be approved
+	 * and applied without an editor: it comes from an official (tier 1)
+	 * source, was not extracted by AI, targets a field stored on the profile
+	 * and does not change a value already shown (the field is empty or
+	 * already has this value). Anything else waits in the review queue.
+	 *
+	 * @param int    $tier           Source tier.
+	 * @param string $method         Claim method (seed, structured_data, ai, …).
+	 * @param bool   $profile_field  The field is stored on the profile (not name / location / practice areas).
+	 * @param bool   $empty_or_equal The profile's current value is empty or equal to the claim.
+	 */
+	public static function approve_claim_for_published( int $tier, string $method, bool $profile_field, bool $empty_or_equal ): bool {
+		return 1 === $tier && 'ai' !== $method && $profile_field && $empty_or_equal;
+	}
+
+	/**
 	 * Decide whether to create a ranking for a city and practice area.
 	 *
 	 * @param int  $published_entities Published entities of the type in both terms.

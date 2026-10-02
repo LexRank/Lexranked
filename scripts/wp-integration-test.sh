@@ -357,10 +357,19 @@ check "the doubtful profiles' records stay pending" '. >= 2' "$(wp post list --p
 check "official sources behind them are published" '. == 3' "$(wp post list --post_type=lr_source --post_status=publish --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
 check "a ranking is created once the city has enough profiles" '. == 1' "$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Personal Injury Lawyers in Hialeah, Florida' --format=count)"
 expect "published autonomous profiles appear in the public API" 'map(.name) | (index("Avery Autotest") != null) and (index("Dana Autotest") == null)' "$API/lawyers?city=hialeah&per_page=100"
+cat >"$DATA_DIR/autonomy-awards.csv" <<'CSV'
+entity_type,name,city,state,practice_area,website,source_url,source_type,retrieved_at,phone,bar_state,bar_number,bar_status,years_experience,awards
+lawyer,Avery Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2001,bar_association,2026-09-01,,FL,2001,active,12,Board Certified in Civil Trial Law | The Florida Bar | 2020
+CSV
+awards_job="$(curl -sS -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-awards","fetch_websites":false}}' "$API/research/jobs" | jq -r '.id')"
+run_worker && pass "worker adds facts to a published profile" || fail "awards job failed (see $DATA_DIR/worker.log)"
+check "official facts on a published profile are approved automatically" '[.log[].message] | any(test("Approved [0-9]+ facts from official sources"))' "$(wp lexranked research-status "$awards_job" --format=json)"
+expect "the certification shows as an award on the profile" '.professional.awards | any(.name == "Board Certified in Civil Trial Law")' "$API/lawyers/avery-autotest"
 again="$(wp lexranked research-auto-publish "$AUTO_JOB")"
 check "re-applying the rules creates nothing twice" 'test("0 published, 2 kept as drafts, 0 verification records and 0 sources published, 0 rankings created")' "\"$(tail -n1 <<<"$again")\""
 # Remove the autonomous-research records so later sections see the same data as before.
 auto_ids="$(wp post list --post_type=lr_lawyer,lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --field=ID --format=csv | tr -dc '0-9\n')"
+auto_ids+=" $(wp post list --post_type=lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$awards_job" --field=ID --format=csv | tr -dc '0-9\n')"
 auto_ids+=" $(wp post list --post_type=lr_ranking --post_status=any --title='Best Personal Injury Lawyers in Hialeah, Florida' --field=ID --format=csv | tr -dc '0-9\n')"
 # shellcheck disable=SC2086 # Word splitting on IDs is intended.
 wp post delete $auto_ids --force >/dev/null

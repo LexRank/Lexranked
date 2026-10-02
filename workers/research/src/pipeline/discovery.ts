@@ -37,9 +37,19 @@ export function rowClaims(row: SeedRow, entityId: number, sourceId: number | und
     ['phone', row.phone],
   ];
   if (row.entity_type === 'lawyer') {
-    fields.push(['bar_state', row.bar_state], ['bar_number', row.bar_number], ['bar_status', row.bar_status]);
+    fields.push(
+      ['bar_state', row.bar_state],
+      ['bar_number', row.bar_number],
+      ['bar_status', row.bar_status],
+      ['years_experience', row.years_experience],
+      ['languages', row.languages],
+      ['education', row.education],
+      ['awards', row.awards],
+    );
   }
-  return fields.filter(([, v]) => v !== undefined && v !== '').map(([field_name, value]) => ({ ...base, field_name, value }));
+  return fields
+    .filter(([, v]) => v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0))
+    .map(([field_name, value]) => ({ ...base, field_name, value }));
 }
 
 /** Verification requests; the server decides the final status by source tier. */

@@ -88,3 +88,29 @@ describe('model choice', () => {
     await expect(resolveModel('image', { apiKey: 'k', fetchImpl: list(['text-only']) })).rejects.toBeInstanceOf(ModelError);
   });
 });
+
+describe('seed rows with professional facts', () => {
+  it('parses experience, languages, education and awards and turns them into claims', async () => {
+    const { parseSeedCsv } = await import('../src/providers/csvSeed.js');
+    const { rowClaims } = await import('../src/pipeline/discovery.js');
+    const csv = [
+      'entity_type,name,source_url,source_type,retrieved_at,years_experience,languages,education,awards',
+      'lawyer,Joel Brown,https://bar.test/1,bar_association,2026-10-02,55,Spanish; Italian,"University of Florida | | 1970","Board Certified in Civil Trial Law | The Florida Bar | 1989; Civil Trial Law (NBTA) | NBTA |"',
+      'lawyer,Bad,https://bar.test/2,bar_association,2026-10-02,many,,,',
+    ].join('\n');
+    const [ok, bad] = parseSeedCsv(csv);
+    expect(bad).toMatchObject({ ok: false, error: 'years_experience must be a whole number of years' });
+    if (!ok?.ok) throw new Error('row 1 should parse');
+    expect(ok.row).toMatchObject({
+      years_experience: 55,
+      languages: ['Spanish', 'Italian'],
+      education: [{ institution: 'University of Florida', degree: '', year: '1970' }],
+      awards: [
+        { name: 'Board Certified in Civil Trial Law', issuer: 'The Florida Bar', year: '1989' },
+        { name: 'Civil Trial Law (NBTA)', issuer: 'NBTA', year: '' },
+      ],
+    });
+    const fields = rowClaims(ok.row, 7, undefined).map((c) => c.field_name);
+    expect(fields).toEqual(expect.arrayContaining(['years_experience', 'languages', 'education', 'awards']));
+  });
+});

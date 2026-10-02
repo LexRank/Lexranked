@@ -166,6 +166,14 @@ final class AutoPublishPolicyTest extends TestCase {
 		$this->assertFalse( AutoPublishPolicy::publish_record_for_published( 'verified', array( 'expired', 'verified' ) ) );
 	}
 
+	public function testOfficialEvidenceOnPublishedProfilesFillsOnlyEmptyFields(): void {
+		$this->assertTrue( AutoPublishPolicy::approve_claim_for_published( 1, 'seed', true, true ) );
+		$this->assertFalse( AutoPublishPolicy::approve_claim_for_published( 2, 'seed', true, true ), 'Not an official source' );
+		$this->assertFalse( AutoPublishPolicy::approve_claim_for_published( 1, 'ai', true, true ), 'AI-extracted' );
+		$this->assertFalse( AutoPublishPolicy::approve_claim_for_published( 1, 'seed', false, true ), 'Name, location or practice areas' );
+		$this->assertFalse( AutoPublishPolicy::approve_claim_for_published( 1, 'seed', true, false ), 'Would change a shown value' );
+	}
+
 	public function testRankingIsCreatedOnlyAboveTheThresholdAndOnce(): void {
 		$this->assertSame(
 			array(

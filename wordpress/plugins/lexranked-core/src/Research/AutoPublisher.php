@@ -14,6 +14,7 @@ use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\PostTypes\Ranking;
 use LexRanked\Core\PostTypes\Source;
 use LexRanked\Core\PostTypes\VerificationRecord;
+use LexRanked\Core\Repository\ClaimRepository;
 use LexRanked\Core\Security\AuditLog;
 use LexRanked\Core\Services;
 use LexRanked\Core\Taxonomies\Location;
@@ -58,7 +59,7 @@ final class AutoPublisher {
 	 * Apply the policy to everything the job created.
 	 *
 	 * @param int $job_id Job ID.
-	 * @return array{published: array<int, int>, held: array<int, array<int, string>>, sources: int, verifications: int, rankings: array<int, int>}
+	 * @return array{published: array<int, int>, held: array<int, array<int, string>>, sources: int, verifications: int, claims: int, rankings: array<int, int>}
 	 */
 	public function run( int $job_id ): array {
 		$summary = array(
@@ -66,6 +67,7 @@ final class AutoPublisher {
 			'held'          => array(),
 			'sources'       => 0,
 			'verifications' => 0,
+			'claims'        => 0,
 			'rankings'      => array(),
 		);
 
@@ -153,6 +155,7 @@ final class AutoPublisher {
 			}
 		}
 
+		$summary['claims']   = $this->approve_claims( $job_id );
 		$summary['sources']  = $this->publish_sources( $job_id, $backing );
 		$summary['rankings'] = $this->ensure_rankings( $job_id, $summary['published'] );
 
@@ -161,15 +164,77 @@ final class AutoPublisher {
 			'info',
 			'auto_publish',
 			sprintf(
-				'Autonomous research: %d published, %d kept as drafts, %d verification records and %d sources published, %d rankings created.',
+				'Autonomous research: %d published, %d kept as drafts, %d verification records and %d sources published, %d rankings created, %d facts approved on published profiles.',
 				count( $summary['published'] ),
 				count( $summary['held'] ),
 				$summary['verifications'],
 				$summary['sources'],
-				count( $summary['rankings'] )
+				count( $summary['rankings'] ),
+				$summary['claims']
 			)
 		);
 		return $summary;
+	}
+
+	/**
+	 * Approve and apply the job's evidence about already-published profiles
+	 * that AutoPublishPolicy::approve_claim_for_published allows.
+	 *
+	 * @param int $job_id Job ID.
+	 * @return int Claims approved.
+	 */
+	private function approve_claims( int $job_id ): int {
+		$tiers    = $this->services->settings->source_tiers();
+		$approved = 0;
+		$touched  = array();
+		foreach ( $this->services->claims->pending_review( 1000 ) as $claim ) {
+			if ( (int) $claim['job_id'] !== $job_id ) {
+				continue;
+			}
+			$post = get_post( (int) $claim['entity_id'] );
+			if ( ! $post instanceof \WP_Post || 'publish' !== $post->post_status ) {
+				continue;
+			}
+			$type    = LawFirm::SLUG === $post->post_type ? $this->services->law_firm : $this->services->lawyer;
+			$field   = (string) $claim['field_name'];
+			$current = null === $type->field( $field ) ? null : ( $this->services->entities->record( $post, $type )['fields'][ $field ] ?? null );
+			$empty   = null === $current || '' === $current || array() === $current;
+			$allowed = AutoPublishPolicy::approve_claim_for_published(
+				$tiers->tier_for( (string) $claim['source_type'] ),
+				(string) $claim['method'],
+				null !== $type->field( $field ) && ! in_array( $field, array( 'name', 'city', 'state', 'practice_areas' ), true ),
+				$empty || wp_json_encode( $current ) === wp_json_encode( $claim['value'] )
+			);
+			if ( ! $allowed ) {
+				continue;
+			}
+			$this->services->claims->set_review_status( (int) $claim['claim_id'], ClaimRepository::REVIEW_APPROVED );
+			if ( $empty ) {
+				$this->services->entities->save_fields( $post->ID, $type, array( $field => $claim['value'] ) );
+			}
+			++$approved;
+			$touched[ $post->ID ] = true;
+			AuditLog::log(
+				'research.claim_auto_approved',
+				'lr_claim',
+				(int) $claim['claim_id'],
+				array(
+					'entity_id' => $post->ID,
+					'field'     => $field,
+				)
+			);
+		}//end foreach
+		$pending = $this->services->claims->pending_review( 1000 );
+		foreach ( array_keys( $touched ) as $entity_id ) {
+			if ( array() === array_filter( $pending, static fn( array $c ): bool => (int) $c['entity_id'] === $entity_id ) ) {
+				delete_post_meta( $entity_id, ResearchIngest::META_REVIEW );
+			}
+			$this->services->entity_index->index( $entity_id );
+		}
+		if ( $approved > 0 ) {
+			$this->log->add( $job_id, 'info', 'auto_publish', sprintf( 'Approved %d facts from official sources on published profiles (only empty or unchanged fields).', $approved ) );
+		}
+		return $approved;
 	}
 
 	/**
