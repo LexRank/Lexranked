@@ -1,0 +1,68 @@
+# Local development stack: WordPress (CMS + LexRanked Core plugin) and MariaDB.
+# The Next.js frontend runs on the host with `npm run dev` (see README).
+# This file is for local development only; production hosting is described in docs/deployment.md.
+
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${LOCAL_DB_NAME:-lexranked}
+      MARIADB_USER: ${LOCAL_DB_USER:-lexranked}
+      MARIADB_PASSWORD: ${LOCAL_DB_PASSWORD:?set LOCAL_DB_PASSWORD in .env}
+      MARIADB_ROOT_PASSWORD: ${LOCAL_DB_ROOT_PASSWORD:?set LOCAL_DB_ROOT_PASSWORD in .env}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  wordpress:
+    image: wordpress:6-php8.3-apache
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${LOCAL_WP_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${LOCAL_DB_NAME:-lexranked}
+      WORDPRESS_DB_USER: ${LOCAL_DB_USER:-lexranked}
+      WORDPRESS_DB_PASSWORD: ${LOCAL_DB_PASSWORD:?set LOCAL_DB_PASSWORD in .env}
+      WORDPRESS_DEBUG: "1"
+      # "local" enables Application Passwords over plain HTTP (localhost only).
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_ENVIRONMENT_TYPE', 'local' );
+      # Instant frontend refresh (optional locally; see docs/operations.md).
+      LEXRANKED_REVALIDATE_SECRET: ${LEXRANKED_REVALIDATE_SECRET:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - wp_data:/var/www/html
+      - ${LEXRANKED_PLUGIN_DIR:-./wordpress/plugins/lexranked-core}:/var/www/html/wp-content/plugins/lexranked-core
+
+  # WP-CLI, e.g. `docker compose run --rm wpcli wp plugin list`.
+  wpcli:
+    image: wordpress:cli-php8.3
+    profiles: ["cli"]
+    user: "33:33"
+    depends_on:
+      - wordpress
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      LEXRANKED_REVALIDATE_SECRET: ${LEXRANKED_REVALIDATE_SECRET:-}
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${LOCAL_DB_NAME:-lexranked}
+      WORDPRESS_DB_USER: ${LOCAL_DB_USER:-lexranked}
+      WORDPRESS_DB_PASSWORD: ${LOCAL_DB_PASSWORD:?set LOCAL_DB_PASSWORD in .env}
+    volumes:
+      - wp_data:/var/www/html
+      - ${LEXRANKED_PLUGIN_DIR:-./wordpress/plugins/lexranked-core}:/var/www/html/wp-content/plugins/lexranked-core
+
+volumes:
+  db_data:
+  wp_data:

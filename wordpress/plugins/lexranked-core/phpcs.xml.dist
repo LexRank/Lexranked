@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<ruleset name="LexRanked Core">
+	<description>WordPress Coding Standards for LexRanked Core.</description>
+
+	<file>lexranked-core.php</file>
+	<file>uninstall.php</file>
+	<file>src</file>
+	<file>tests</file>
+
+	<exclude-pattern>vendor/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg value="sp"/>
+	<arg name="colors"/>
+
+	<config name="minimum_wp_version" value="6.5"/>
+	<config name="testVersion" value="8.2-"/>
+
+	<rule ref="WordPress">
+		<!-- PSR-4 file names (Plugin.php) instead of class-plugin.php so the
+		     autoloader and Composer share one mapping. -->
+		<exclude name="WordPress.Files.FileName"/>
+	</rule>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="lexranked-core"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Exception messages are never rendered as HTML: the admin UI escapes
+	     them with esc_html() at output time. -->
+	<rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped">
+		<severity>0</severity>
+	</rule>
+
+	<!-- LexRanked queries are bounded by design (small, curated datasets;
+	     see docs/architecture.md). Meta/tax queries are the data model. -->
+	<rule ref="WordPress.DB.SlowDBQuery">
+		<severity>0</severity>
+	</rule>
+	<rule ref="WordPress.WP.PostsPerPage">
+		<severity>0</severity>
+	</rule>
+
+	<rule ref="PHPCompatibilityWP"/>
+
+	<!-- False positives: PHP 8.1 enum methods may use $this and self. -->
+	<rule ref="PHPCompatibility.Variables.ForbiddenThisUseContexts.OutsideObjectContext">
+		<exclude-pattern>src/Domain/*</exclude-pattern>
+		<exclude-pattern>src/Commercial/ClaimStatus.php</exclude-pattern>
+		<exclude-pattern>src/Entity/EntityType.php</exclude-pattern>
+		<exclude-pattern>src/Commercial/Product.php</exclude-pattern>
+	</rule>
+	<rule ref="PHPCompatibility.FunctionDeclarations.NewParamTypeDeclarations.SelfOutsideClassScopeFound">
+		<exclude-pattern>src/Domain/*</exclude-pattern>
+		<exclude-pattern>src/Commercial/ClaimStatus.php</exclude-pattern>
+		<exclude-pattern>src/Entity/EntityType.php</exclude-pattern>
+		<exclude-pattern>src/Commercial/Product.php</exclude-pattern>
+	</rule>
+
+	<!-- Tests use PHPUnit's camelCase conventions. -->
+	<rule ref="WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+	<rule ref="Squiz.Commenting">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+	<rule ref="Generic.Commenting.DocComment">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+</ruleset>

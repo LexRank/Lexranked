@@ -1,0 +1,346 @@
+# From ranking site to professional-services knowledge base
+
+LexRanked is moving from *ranking website + profiles + AI content* to a
+**structured knowledge base** that collects, normalises, verifies and
+orders facts about lawyers, and only then derives rankings, comparisons and
+text from them. This document maps the target architecture onto what exists
+and sets the implementation order. It extends the existing architecture: nothing is
+rebuilt from scratch.
+
+```
+RESEARCH → ENTITY DISCOVERY → ENTITY RESOLUTION → SOURCE COLLECTION → FACT EXTRACTION
+→ CLAIMS → VERIFICATION → NORMALISATION → DERIVED METRICS → {DATA QUALITY, RANKING ENGINE}
+→ PAGE ELIGIBILITY → PUBLIC PAGE → {SUMMARY, COMPARE, SOURCES} → AI INTERPRETATION
+```
+
+Data flows one way: **data → evidence → ranking → page → AI summary**. AI
+never researches from memory, never invents facts and never decides a
+position. Payment never enters the organic path (docs/commercial.md).
+
+## Layers
+
+| Layer | Meaning | Where |
+|---|---|---|
+| Entity | a thing we describe, with a stable `entity_id` | `lr_entities` (Etap A ✅) |
+| Attribute | a named property with a type, unit, layer and freshness rule | `Attribute\Attributes` registry, `GET /attributes` (Etap B ✅) |
+| Claim / evidence | entity + attribute + raw value + normalised value + source + date + confidence + verification | `lr_claims`, keyed by `lr_entity_id` (Etap B ✅) |
+| Fact | one resolved, normalised value per entity and attribute, with status and the claim/source it rests on | `lr_facts` (Etap B ✅) |
+| Source | a document we read: type, tier (+ label), publisher, domain, status, first retrieved, last checked | `lr_source` posts (Etap B ✅) |
+| Raw → normalised → derived → interpretation | `"(305) 555-0101"` → `+13055550101`; `review_count = 387` → fact 387 → `review_strength = 18.7/20` → "strong review profile" | claim `value` → claim `value_normalized` / `lr_facts` → score components → AI text |
+| Score | versioned, component-based, snapshotted | `lr_ranking_snapshots` (Phase 4) |
+| Ranking | a function over entities in a context | `lr_ranking` + engine |
+| Comparison | a function over two or more entities | `Compare\ComparisonEngine`, `GET /compare` (Etap E ✅) |
+
+## Status of each change (1–46)
+
+✅ done · ◐ partly there · ○ planned (stage)
+
+| # | Change | Status | Notes |
+|---|---|---|---|
+| 1–2 | Entity as the primary object; types LAWYER, LAW_FIRM, LOCATION, PRACTICE_AREA | ✅ A | `lr_entities`: stable `entity_id`, `entity_type`, `canonical_name`, `slug`, `status`, `created_at`, `updated_at`. Identity never depends on the name (below) |
+| 3 | Attributes linkable to evidence | ✅ B | Each entity type has one field schema, and evidence claims reference its fields. Etap B adds an attribute registry (type, unit, applicable entity types, which layer) |
+| 4 | Claim / evidence layer | ✅ B | `lr_claims` already stores entity, field, value, source, `retrieved_at`, confidence, verification and review status, method and research job. Etap B keys claims by `entity_id` and covers term entities |
+| 5 | Sources as objects with tiers | ✅ B | Source posts have URL, type and tier (1–5, configurable). Etap B adds domain, publisher, `last_checked_at`, status and the requested source types (directory, editorial, social, other) |
+| 6 | Data vs interpretation | ✅ B / J | Raw claims, facts, derived components and AI text are separate layers. AI text is a draft built from numbered facts that carry their status (verified / sourced / computed) and origin |
+| 7 | Ranking from evidence, never from AI | ✅ D | The engine reads resolved entity fields (from claims via FactResolver), never AI output. AI claims are capped at 0.6 and need review. Etap B makes the path claims → verified facts → normalised attributes explicit |
+| 8 | Score components | ✅ | 7 components with points, maximum, explanation and missing inputs, plus `score_version` and `calculated_at`, stored per snapshot |
+| 9 | "Why this ranking / why ranked here" | ✅ D | Methodology section and per-entry breakdown exist. Etap D renders a per-entity "why ranked here" from components |
+| 10, 25 | Comparison engine and pages | ✅ E | `GET /compare`, `/compare/?lawyer=…&lawyer=…` (noindex, not in the sitemap), structured data only; linked from rankings and profiles |
+| 11–13 | Contextual ("best for") rankings, context model, context URLs | ✅ F | `case_type`, `client_type`, `language` qualifiers proven by facts; `/rankings/{state}/{city}/{practice}/{context}/` only above the data threshold; `wp lexranked contexts` reports what the data supports, never creates pages |
+| 14–15 | Page eligibility engine, no thin programmatic SEO | ✅ G | One backend engine (`pe-1.0`) decides for every page type whether it exists and whether it is indexed: minimum entities, verified entities, real (non-demo) data, evidence coverage, words and context. Checks are explained, published at `GET /page-eligibility` and on the methodology page, and drive rendering, robots meta and the sitemap |
+| 16–18 | Profile structure, per-fact freshness, source panel | ✅ H | "Sources & verification" lists every fact grouped by category (credentials, experience, practice, reviews, location, contact, languages) with its source, tier and its own "Verified …" or "Checked …" date, stale flags and conflicts. The header shows "Data last verified"; the raw evidence table stays one click away |
+| 19 | AI-readable structured summary | ✅ H/I | Profiles and firms: `aiSummary` from their facts (H). Rankings: the answer-first summary. Hubs: the market summary computed by the backend (I) |
+| 20 | Schema.org from entity data only | ✅ H | Person, LegalService, ItemList, BreadcrumbList and FAQPage are emitted only when their data exists; `hasCredential` only for an active bar admission shown on the page. There is no review markup, and generated related questions are not marked up |
+| 21–24 | Directory-grade ranking layout, key attributes on cards, `ContextualAttributes`, data-driven related questions | ✅ F/H | H1 → answer → ranking with key attributes, verification and "Why #N?" → comparison links → **Sources** → methodology → FAQ → **Related questions** (asked only when the ranking's data answers them) → about → related rankings |
+| 26 | Ranking snapshots | ✅ | Every calculation is an immutable run; `/rankings/{id}/history` |
+| 27 | Explaining position changes from snapshot diffs | ✅ D | Movement is known. Etap D diffs components between runs ("review data changed, competitor gained") |
+| 28 | Research pipeline discover → … → update rankings | ◐ B | Discover, match, sources, extract, claims, verify, resolve into drafts and recalculate all exist (Phase 5). Normalisation and metrics become explicit in B |
+| 29–30 | Entity resolution with identifiers; AI only advisory | ✅ A/B | The deterministic matcher uses name, name key, domain and city, and now **former names** (A). Etap B adds phone, address, email and bar-number signals. AI stays a note to the reviewer |
+| 31–32 | Data Quality Score, never a hidden boost | ✅ C | Today "data quality" is an open 5-point component. Etap C adds a separate, displayed Data Quality % (completeness, freshness, source quality, verification coverage, consistency) that is not a ranking |
+| 33 | Coverage statistics | ✅ I | Hubs show "N lawyers · N law firms · N with verified professional data", computed by the backend. Nothing is shown that cannot be counted from the database |
+| 34–35 | Market statistics computed by the backend | ✅ I | `Market\MarketStatistics` (`mkt-1.0`) returns lawyers, firms, verified counts, average rating, median review count and median experience, each with its sample size (withheld below 3), plus the most common practice area, data-verified date and calculation time. `GET /market`, `wp lexranked market`. A template summary states only these numbers; AI may rephrase it but never computes |
+| 36 | Research provenance | ✅ B | Claims and candidates carry `job_id`; the job log exists; snapshots store the exact inputs. Etap B links fact → claim → source → job end-to-end |
+| 37–38 | AI interpretation layer | ✅ J | One contract (`interp/1`): the model may summarize, explain, compare, classify and write from supplied facts only. It never invents, researches from memory, computes numbers or decides positions. Facts come from backend computations (snapshots, explanations, contexts, eligibility, market statistics, sources). QA rejects computed numbers, overstated verification and ranking decisions; output stays a draft. See [ai-interpretation.md](ai-interpretation.md) |
+| 39–40 | Semantic internal linking | ✅ H/I | Profiles: firm, city, state, areas, rankings, comparisons, related lawyers. Rankings: city, practice area, profiles, narrower rankings, comparisons, **market statistics** (linking to the hub), related rankings. Hubs group their lawyers by practice area or city |
+| 41–42 | Live methodology, score versioning | ✅ H | `GET /methodology`: active version, last calculation, schedule, source tiers, freshness windows. The page shows "Methodology LexRank v1.1 · Scores updated …"; old snapshots keep their version |
+| 43 | Benchmark structure, not competitors' text | rule | Structure, coverage, freshness, entity depth and transparency are benchmarked; no competitor content or design is copied |
+| 45 | What not to do | rule | No mass pages, no bulk AI articles, no auto-publishing, no fake reviews, no paid ranking, no LLM facts or ranks |
+
+## Implementation order
+
+| Stage | Scope | Status |
+|---|---|---|
+| **A** | Entity model | ✅ |
+| **B** | Attributes, claims keyed by entity, source objects, fact layers, resolution identifiers, provenance | ✅ |
+| **C** | Data Quality Score | ✅ |
+| **D** | Per-entity "why ranked here", snapshot-diff explanations, methodology v1.1 on the fact layer | ✅ |
+| **E** | Comparison engine | ✅ |
+| **F** | Contextual rankings | ✅ |
+| **G** | Unified page eligibility engine | ✅ |
+| **H** | AI-readable page architecture | ✅ |
+| **I** | Market statistics and coverage | ✅ |
+| **J** | AI interpretation layer | ✅ |
+
+## Etap A: entity model (implemented)
+
+- **`lr_entities`**: `entity_id` (own sequence, never reused), `entity_type`
+  (`lawyer`, `law_firm`, `location`, `practice_area`), `canonical_name`,
+  `slug`, `status` (`active`, `draft`, `archived`, `merged`),
+  `wp_object` + `wp_id` (the WordPress post or term holding the content),
+  `merged_into`, `created_at`, `updated_at`.
+- **Identity is not the name.**
+  - A rename or slug change updates the row and keeps the ID.
+  - The former name and slug are kept in **`lr_entity_aliases`**, as current or former aliases with first/last seen.
+  - Trashing or deleting archives the entity; the ID stays reserved and returns when the profile is restored.
+  - `merged_into` is reserved for entity resolution (Etap B): resolving follows it to the surviving entity.
+- **Sync**: WordPress hooks keep the registry current (post saves and deletes, term create/edit/delete). The schema-v7 migration registers everything that already exists (`wp lexranked entities --backfill` does the same on demand).
+- **API 1.8**:
+  - `entityId` on lawyer, firm, state, city and practice-area DTOs;
+  - `GET /entities/{entity_id}`;
+  - `GET /entities/resolve?type&slug` (current or former slug).
+- **Frontend**: a request for a former slug gets a **308** to the entity's current page (profiles, states, cities, practice areas), so links and search results survive renames.
+- **Research**: the candidate matcher also matches **former names**, so "Smith Law" found after a rename to "Smith Law Group" is the same entity, not a new one.
+- Claims gained `lr_entity_id` in Etap B. Snapshots and placements still reference the CMS record ID (`id` in the API); snapshots are immutable history, and each entry carries `entity.entityId`.
+
+## Etap B: attributes, evidence, facts, sources (implemented)
+
+**Attribute registry**: `src/Attribute/Attributes.php`, the data dictionary.
+- Every fact an entity can have: key, label, value type, entity types, category, unit, and freshness rule (bar status 30 days, review data 7, website 30, other profile data 90).
+- Every derived metric: the LexRank score and its components.
+- Exposed at `GET /attributes`.
+- A unit test keeps it equal to the traceable fields of each entity schema.
+- Text (summaries, AI) is deliberately **not** an attribute.
+
+**Evidence (`lr_claims`)**
+- Each claim now carries `lr_entity_id`, so evidence is keyed by entity, not by CMS record.
+- It keeps both values:
+  - `value` is the **raw** value exactly as the source published it;
+  - `value_normalized` is the **normalised** one.
+- Normalisation (`Normalizer`) examples: phones become E.164, URLs are canonical, bar numbers lose punctuation and leading zeros, ZIP/ZIP+4, codes are upper-case, practice areas become taxonomy slugs, lists are de-duplicated.
+- A value that cannot be normalised stays raw; nothing is guessed.
+
+**Fact layer (`lr_facts`)**: one row per entity and attribute.
+- The value is chosen by the existing resolution rules: best source tier, then verification status, recency and confidence.
+- Conflicts are detected on **normalised** values, so two formats of one phone number agree.
+- Status: `verified`, `unverified` or `conflict`. Conflicts are left for an editor; nothing is averaged.
+- Each row stores the claim and source it rests on, the number of supporting claims, `observed_at` and `verified_at`.
+- Facts are rebuilt automatically whenever an entity's evidence changes (new claim, review decision, re-retrieval); `wp lexranked facts-rebuild` rebuilds them on demand.
+- Profile API (`facts[]`): each fact has its source (name, publisher, URL, type, tier, tier label), status, dates and its own **freshness**, for example "Bar status → Florida Bar → verified Sep 20, fresh for 30 days". This is the data for the per-fact source panel (Etap H).
+
+**Sources are objects**
+- New fields: `publisher`, `retrieved_at` (first read), `last_checked_at` (refreshed each time research re-reads the URL), and `status` (active / unreachable / moved / retired).
+- The domain is derived from the URL.
+- New types: `professional_association` (tier 2), `editorial` (4), `social` (5), `other` (5).
+- Tier labels: 1 Official / regulatory, 2 Official business / professional, 3 Reputable third-party directory, 4 Review platform / editorial, 5 Secondary / unclassified.
+- Existing tiers are unchanged. A source's status never makes its claims true: each claim is verified on its own.
+
+**Entity resolution**: the candidate matcher weighs identifiers.
+
+| Signal | Strength | Result |
+|---|---|---|
+| state + bar number (official) | strong | match, even if the name is spelled differently; the same name with a **different** bar number is a different lawyer |
+| email | strong | match |
+| phone | strong for firms (same state), weak for lawyers (shared firm lines) | firm: match · lawyer: match only with the same name, otherwise "possible duplicate" (review) |
+| street address + ZIP | strong for firms | match |
+| website domain | strong for firms (as before) | match |
+| name alone | weak | review, never an automatic merge |
+
+- The worker sends phone and bar number with candidates.
+- The index is refreshed when research applies facts.
+- `wp lexranked duplicates` lists existing profiles that share an identifier. Nothing is merged automatically.
+- The AI match review stays an advisory note.
+
+**Provenance**: `wp lexranked provenance <entity> [--attribute=]` prints, for each fact:
+- the fact and its status;
+- the claim (raw value, method, verification, confidence, date);
+- the source (type, tier);
+- the research job;
+- the value the ranking engine used in its latest run.
+
+That is research job → source → claim → fact → entity → ranking input.
+
+**The engine is unchanged in Etap B**
+- It still reads the resolved entity fields, which research fills from the same evidence.
+- Switching it to read `lr_facts` directly (point 7) changes scores. It therefore comes as methodology **v1.1** in Etap D, and old snapshots keep v1.0 (point 42).
+
+## Etap C: Data Quality Score (implemented)
+
+A separate, published percentage of **how well a profile is documented**. It says nothing about how good the lawyer is.
+
+| Dimension | Weight | Measures |
+|---|---|---|
+| Completeness | 30 % | expected facts on record **with a source**; core facts (city, state, practice areas, bar status; website for firms) count double |
+| Freshness | 20 % | facts checked within their freshness window (bar status 30 days, review data 7, website 30, other 90) |
+| Source quality | 20 % | tier of the source behind each fact: tier 1 = 100 … tier 5 = 20 |
+| Verification coverage | 20 % | half verified facts, half the required verification checks (identity, license, bar status for lawyers) |
+| Consistency | 10 % | facts whose best sources agree (no unresolved conflicts) |
+
+**Method**
+- `Quality\DataQuality` is pure and versioned (`dq-1.0`); weights sum to 100.
+- It is computed from the fact layer, the profile and verification records.
+- It is stored on the entity registry (`quality_score`, `quality_json`, `quality_at`).
+- It is recomputed when facts, the profile or its verification records change, and **daily**, because data ages.
+
+**What editors get**
+- The result lists what is missing.
+- It flags what is filled in on the profile but **not backed by evidence** (`unsourced`); an unsourced value never counts as complete.
+- It also lists stale facts and conflicts.
+
+**Where it appears**
+- Profile API: `dataQuality`.
+- `GET /data-quality`: the model plus a site-wide summary.
+- The profile page shows a panel labelled "not part of the ranking".
+- The methodology page shows the live model.
+- `wp lexranked quality [<entity>] [--recompute]`.
+
+**Not a hidden ranking (point 32)**
+- The ranking engine cannot read the Data Quality Score; a token-level test enforces this.
+- The LexRank score keeps its own, separately published 5-point "data quality" component. That component is a disclosed part of the methodology.
+- The two numbers are never combined or multiplied.
+
+## Etap D: explanations and evidence-based scoring (implemented)
+
+- **Methodology v1.1** (now active): same weights as v1.0, inputs read from the fact layer. Unsourced or conflicting values count as missing. Old snapshots keep v1.0. Details: docs/ranking-methodology.md.
+- **Why ranked here** on every entry: strongest and weakest components against the ranking average, the gap to the entry above, missing inputs.
+- **Change explanations** from snapshot differences: methodology, own component and input deltas, competitors that moved past or dropped below, entries that joined or left. Nothing is guessed: every reason is a stored difference.
+- Demo data now carries evidence for every scored attribute, so v1.1 produces the same order as v1.0 on demo data.
+- Fixed ordering issue: when evidence is stored and a ranking calculated in the same request, pending fact rebuilds are flushed first. New evidence also schedules a recalculation.
+
+## Etap E: comparison engine (implemented)
+
+- **`Compare\ComparisonEngine`** (pure, `cmp-1.0`) compares 2–4 entities of one type. Its input is the same public detail DTOs the profiles use, so a comparison can never show more than a profile does.
+- **Lawyer rows**: LexRank score, client rating, review count, years of experience, practice areas, location, law firm, bar status, bar state, education, awards, languages, verification, data freshness and data quality.
+- **Firm rows**: LexRank score, rating, review count, practice areas, location, lawyers listed, verification, data freshness and data quality.
+- **Cells.** Each cell holds the stored value with its status (verified, unverified, conflict, directory or derived), source, tier label and check date, or "not on record". Nothing is estimated.
+- **"Higher" / "Highest"** is marked only on numeric rows, and only when:
+  - every value is on record and none is in conflict;
+  - exactly one entity is ahead (ties get no mark);
+  - for LexRank scores, all scores come from the same methodology version.
+- **Notes.** A rating from fewer than 10 reviews is flagged. Firm size and text rows never get a "highest".
+- **Shared rankings.** Rankings where every compared entity appears, with their positions from the same snapshot run.
+- **Summary** comes from fixed templates:
+  - stated differences ("has more reviews on record (900 vs 387)");
+  - shared practice areas and shared ranking positions;
+  - conflicts and gaps.
+  It never states a verdict ("better", "recommend"), and no LLM is involved.
+- **Commercial status** (claimed, premium, placements) is not a dimension and is never read. A test forbids the engine from referencing it.
+- **API 1.12**:
+  - `GET /compare?type=lawyer|law_firm&entities=12,34` takes stable entity IDs and follows merges. Unknown, unpublished or wrong-type entities return 404; fewer than 2 or more than 4 distinct IDs return 400.
+  - Profile ranking positions carry `neighbors` (the entries directly above and below).
+- **Frontend `/compare/?lawyer=…&lawyer=…` (or `firm=`)**:
+  - **noindex, follow**, never in the sitemap: any pair can be built on request, and indexing every combination would be thin programmatic SEO. Indexable `/compare/a-vs-b/` pages wait for the page eligibility engine (Etap G).
+  - Linked from ranking pages ("Compare #1 and #2", "Compare the top 3") and from profiles ("Compare with #N …").
+
+
+## Etap F: contextual rankings (implemented)
+
+- **Context model.** A ranking may add a qualifier to its location and practice area: `context_type` (`case_type` | `client_type` | `language`) and `context_value`. For example `{ location: Miami, practice_area: Personal Injury, case_type: car-accidents }`.
+  - Case types are sub-areas of the practice area in the taxonomy.
+  - Client types come from a fixed list: individuals, businesses, families, seniors, veterans, immigrants, employees.
+  - There are no free-form keyword contexts.
+- **Evidence.** Qualification reads the fact layer: new facts `case_types` and `client_types` (lawyers and firms), plus the existing `languages`. Only a sourced, non-conflicting fact qualifies. Snapshots store the qualifier and each entry's evidence, and entries expose `qualification` (value, status, source).
+- **Scores unchanged.** The context selects entities and never changes a score (enforced by a token test). Case types are their own fact, so they never dilute practice-area relevance.
+- **Threshold.** `ContextEligibility` requires:
+  - at least `min_entities` qualified (default 5);
+  - at least `min_verified` qualified by verified facts (default 3);
+  - fewer than the broader ranking, so the page cannot duplicate it.
+
+  Below the threshold the page is a 404 and stays out of the sitemap; the API explains why. Etap G generalises this into the page eligibility engine.
+- **URLs**: `/rankings/florida/miami/personal-injury/car-accidents/`, `…/spanish-speaking/`, `…/for-businesses/`. Breadcrumbs lead to the broader ranking, which lists its eligible "Narrower rankings".
+- **No keyword-driven pages.** `wp lexranked contexts` lists, for every ranking, the contexts the data could support, with counts and reasons. It only reports; an editor decides whether to create a ranking.
+- **`ContextualAttributes`** (spec §22–23) chooses card attributes by context:
+  - ordinary ranking: experience, practice area, bar status verified;
+  - contextual ranking: the context with its evidence status, then practice area and experience.
+
+  Entries carry `keyFacts` (the inputs they were scored on). Missing values are omitted.
+- **Fix.** Ranking pages showed "LexRank v1.0" while entries used v1.1. The label now comes from the entries' stored score version.
+- **Demo data**:
+  - "Best Car Accident Lawyers in Miami" passes the threshold: 5 of 8 qualify, 4 verified.
+  - "Best Spanish-speaking Personal Injury Lawyers in Miami" does not (3 of 8, 0 verified), so it has no page.
+- **API 1.13**: `context` on rankings; `keyFacts` and `qualification` on entries; `caseTypes` and `clientTypes` on profiles; ranking `path` includes the context segment.
+
+
+## Etap G: page eligibility engine (implemented)
+
+- **`Eligibility\PageEligibility` (`pe-1.0`, pure)** answers CAN_THIS_PAGE_EXIST? from data, never from keywords or search volume (enforced by a test). It returns `exists`, `indexable`, the checks (value, requirement, level, pass) and human reasons.
+- **Two levels.**
+  - **exist**: without it the page is a 404, is not linked and is left out of the sitemap.
+  - **index**: the page renders but is noindex until its data is real, verified and sourced.
+  - A page that cannot exist lists only what stops it from existing.
+- **Rules**:
+
+  | Page | Exist | Index |
+  |---|---|---|
+  | State / city / practice area | ≥ 3 published lawyers | ≥ 3 real (non-demo); ≥ 1 verified; evidence coverage ≥ 50% |
+  | Ranking | ≥ `min_entities` entries (default 5); contextual: context confirmed (Etap F) | real data; ≥ 3 verified entries; coverage ≥ 60% |
+  | Profile | published | real; coverage ≥ 40% |
+  | Guide | published | real; ≥ 300 words |
+  | Comparison | 2–4 entities | never, until an editor curates it |
+  | Listing | always | ≥ 1 real profile |
+
+  **Evidence coverage** is the Data Quality completeness dimension: the share of expected facts backed by a source. It decides which pages exist; it is still never a ranking input.
+- **Wiring.** `EligibilityService` gathers the counts: published entities, demo flags, verification policy results and stored coverage. Every DTO carries its decision:
+  - rankings get the full decision, and it now decides `isThin` and `indexable`;
+  - state, city and practice-area DTOs and lawyer, firm and article summaries get the compact form;
+  - profile details get the full decision;
+  - comparisons get it too.
+
+  The frontend's `eligibility.ts` and the sitemap use the CMS decision and keep their old rules only as a fallback for older APIs.
+- **Transparency.**
+  - `GET /page-eligibility` publishes the rules, and the methodology page shows them live under "When a page exists".
+  - `wp lexranked pages` lists every ranking, hub and profile with exists / indexed / reasons.
+
+
+## Etap H: AI-readable pages (implemented)
+
+- **Profiles** follow the brief's structure: identity → at a glance → score → rankings and comparisons → credentials → verification → sources & verification → related.
+  - **"At a glance"** is `aiSummary` (`Content\StructuredSummary`, `sum-1.0`, pure): an answer-first paragraph plus structured statements (value, verified / sourced / derived, date, source), built only from the profile's facts. A fact is called "verified" only when its fact status is verified. Missing or conflicting facts are left out. Commercial status is never read.
+  - **"Sources & verification"** (spec §16–18) shows each fact with its source, tier and its own date, e.g. "Bar status → Example State Bar Registry → Verified September 26, 2026". It flags stale facts and conflicts.
+  - The header shows **"Data last verified"**.
+- **Rankings** add:
+  - **Sources**: every source behind the entries' facts, with how many facts and entities it supports, best tier first (`sources` on the ranking DTO).
+  - **Related questions**: how the ranking was calculated, who is verified, who has the most reviews, narrower "best for" rankings, and the difference between #1 and #2 (with a comparison link). Each is answered from the ranking's data, asked only when the data exists, and not marked up as FAQPage.
+- **Live methodology**: `GET /methodology` provides the active version, the last calculation time, the schedule, the source tiers and the freshness windows. The page shows them with the version and "Scores updated …".
+- **Schema.org**: `hasCredential` is emitted only for an active bar admission that the page shows.
+- **Hubs** group the listed lawyers by practice area (city and state hubs) or by city (practice-area hubs). Each group links to its ranking when one exists, and is shown only when there is more than one group.
+- **API 1.15**: `aiSummary` on lawyer and firm details, `sources` on ranking details, and `GET /methodology`.
+
+
+## Etap I: market statistics and coverage (implemented)
+
+- **`Market\MarketStatistics` (`mkt-1.0`, pure)** computes the statistics for any market: a city, a state, a practice area, or a combination.
+- **Figures**:
+  - lawyers, law firms, and lawyers and firms with verified professional data;
+  - average client rating, median review count and median experience;
+  - practice-area counts and the most common one;
+  - the latest verification date and the calculation time.
+- **Rules**:
+  - Counts come from published profiles. "Verified" means the profile passed its required verification checks.
+  - Ratings, review counts and experience come only from facts with a source and no conflict, and only from lawyers: firm figures would double-count their lawyers' clients.
+  - Each figure carries its sample size. Below 3 it is **withheld** (null, with a note), never estimated.
+- **Summary**: `MarketStatistics::summary()` turns these numbers into a fixed-template paragraph, e.g. "LexRanked tracks 8 lawyers and 3 law firms in personal injury law in Miami, Florida. 5 of the lawyers have verified professional data. …". It never states a withheld figure. The Etap J AI layer may rephrase it but never computes a number.
+- **API 1.16**: `GET /market?location=&practice_area=` returns `{scope, stats, summary}`; an unknown slug is 404. `wp lexranked market` prints the same.
+- **Frontend**:
+  - **Hubs** show coverage in the header, lead with the computed summary (this completes the Etap H hub summaries) and have a "Market statistics" section.
+  - **Rankings** show their market, e.g. "Personal Injury market in Miami", linking to the hub.
+  - Withheld figures are shown as "Withheld".
+
+
+## Etap J: AI interpretation layer (implemented)
+
+Details are in [ai-interpretation.md](ai-interpretation.md).
+
+- **Contract `interp/1`** (`workers/research/src/ai/interpretation.ts`).
+  - The tasks are summarize, explain, compare, classify and write.
+  - Shared rules close every prompt: interpret supplied facts only; never research, recall, estimate, compute a number, or decide or judge a position; say "verified" only for verified facts.
+  - Drafts record `interp/1+<page prompt>` as their prompt version (ranking, hub, profile and article prompts are now v2).
+- **Facts from the backend, not from the worker.**
+  - Rankings: verified entries (from page eligibility), the "best for" context, sources, market statistics and the engine's "Why #N" explanations.
+  - Hubs: market-wide figures from `/market`, replacing counts the worker used to derive from the few profiles shown.
+  - Profiles: each statement's evidence status from `aiSummary`.
+  - Every fact carries `status` (verified / sourced / computed) and `origin`. The plugin stores both with the draft and shows them on the draft screen.
+- **QA guards.**
+  - New: `overstated_verification` ("verified" on a sourced fact) and `ranking_decision` ("should be ranked higher", "better lawyer", "we recommend", "you should hire").
+  - Existing: `unsupported_number` rejects any number the model computed itself.
+  - Output is still a draft that an editor applies. Nothing is published automatically.
+

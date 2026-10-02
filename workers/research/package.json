@@ -1,0 +1,24 @@
+{
+  "name": "@lexranked/research-worker",
+  "version": "0.5.0",
+  "private": true,
+  "description": "LexRanked research worker: claims research jobs from WordPress, gathers source-backed evidence, submits it for server-side validation.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "lexranked-research": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "start": "node dist/cli.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "typescript": "^5",
+    "vitest": "^5.0.1"
+  }
+}
