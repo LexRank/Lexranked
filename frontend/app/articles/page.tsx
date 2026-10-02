@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { ArticleCard } from "@/components/cards";
 import { ListingPage, parsePage } from "@/components/ListingPage";
 import { articleEligibility, listingEligibility } from "@/lib/content/eligibility";
-import { load } from "@/lib/data/loaders";
+import { GuideCategories } from "@/components/GuideCategories";
+import { categoryCounts } from "@/lib/content/articles";
+import { allArticles, load } from "@/lib/data/loaders";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getArticles } from "@/lib/wordpress/api";
 
@@ -30,15 +32,17 @@ export default async function ArticlesPage(props: PageProps<"/articles">) {
   const page = parsePage((await props.searchParams).page);
   const result = await fetchPage(page);
   const items = result.ok ? result.data.data : [];
+  const all = await load(allArticles);
   return (
     <ListingPage
+      nav={<GuideCategories categories={categoryCounts(all.ok ? all.data : [])} />}
       crumbs={[
         { name: "Home", path: "/" },
         { name: "Guides", path: "/articles/" },
       ]}
       eyebrow="Editorial"
       title="Guides"
-      lead="Practical guides written and reviewed by our editors. Every fact about lawyers and rankings links back to sourced data."
+      lead="Practical guides to finding, checking and hiring a lawyer, by topic. Every fact about lawyers and rankings links back to sourced data."
       ok={result.ok}
       hasDemo={items.some((a) => a.isDemo)}
       empty={items.length === 0}

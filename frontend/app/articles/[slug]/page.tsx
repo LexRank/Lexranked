@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { ArticleCard, RankingCard } from "@/components/cards";
 import { JsonLd } from "@/components/JsonLd";
 import { MethodologyPanel } from "@/components/Methodology";
 import { PageHeader } from "@/components/PageHeader";
 import { DemoNotice } from "@/components/ui";
+import { addHeadingIds, categoryCounts, rankingsForArticle, relatedArticles } from "@/lib/content/articles";
 import { articleEligibility } from "@/lib/content/eligibility";
-import { formatDate } from "@/lib/format";
+import { allArticles, allRankings, load } from "@/lib/data/loaders";
+import { formatDate, isoDate } from "@/lib/format";
 import { articleJsonLd } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getArticle } from "@/lib/wordpress/api";
@@ -43,6 +46,15 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
   // Only the canonical slug URL exists (the API also resolves numeric IDs).
   if (decodeURIComponent(slug) !== article.slug) notFound();
 
+  const [articlesResult, rankingsResult] = await Promise.all([load(allArticles), load(allRankings)]);
+  const all = articlesResult.ok ? articlesResult.data : [];
+  const related = relatedArticles(article, all, 3);
+  const latest = all.filter((a) => a.id !== article.id && !related.some((r) => r.id === a.id)).slice(0, 4);
+  const categories = categoryCounts(all);
+  const rankings = rankingsForArticle(article, rankingsResult.ok ? rankingsResult.data : [], article.relatedRankingId, 3);
+  const { html, toc } = addHeadingIds(article.body);
+  const category = article.categories.find((c) => c.slug !== "uncategorized") ?? null;
+
   const published = formatDate(article.publishedAt);
   const updated = formatDate(article.updatedAt);
   const reviewed = formatDate(article.reviewedAt);
@@ -53,9 +65,10 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
         crumbs={[
           { name: "Home", path: "/" },
           { name: "Guides", path: "/articles/" },
+          ...(category ? [{ name: category.name, path: `/articles/category/${category.slug}/` }] : []),
           { name: article.title, path: article.path },
         ]}
-        eyebrow={article.categories[0] ? `Guide · ${article.categories[0].name}` : "Guide"}
+        eyebrow={category ? `Guide · ${category.name}` : "Guide"}
         title={article.title}
         lead={article.excerpt}
       >
@@ -64,7 +77,11 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
             By <strong>{article.author.name}</strong>
           </span>
           {published && <span>Published {published}</span>}
-          {updated && updated !== published && <span>Updated {updated}</span>}
+          {updated && updated !== published && (
+            <span>
+              Updated <time dateTime={isoDate(article.updatedAt)}>{updated}</time>
+            </span>
+          )}
           <span>{article.readingMinutes} min read</span>
         </div>
       </PageHeader>
@@ -77,25 +94,99 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
             <img src={article.image.url} width={article.image.width} height={article.image.height} alt={article.image.alt} style={{ width: "100%", height: "auto", borderRadius: "var(--radius)" }} />
           )}
           <div className="card editorial">
-            <div className="prose editorial__body" dangerouslySetInnerHTML={{ __html: article.body }} />
+            <div className="prose editorial__body" dangerouslySetInnerHTML={{ __html: html }} />
           </div>
-          {(article.reviewedBy || reviewed) && (
-            <p className="card__meta">
-              Editorially reviewed{article.reviewedBy ? ` by ${article.reviewedBy}` : ""}
-              {reviewed ? ` on ${reviewed}` : ""}. LexRanked guides are general information, not legal advice.
-            </p>
+          <p className="card__meta">
+            {article.reviewedBy || reviewed ? (
+              <>
+                Editorially reviewed{article.reviewedBy ? ` by ${article.reviewedBy}` : ""}
+                {reviewed ? ` on ${reviewed}` : ""}.{" "}
+              </>
+            ) : null}
+            LexRanked guides are general information, not legal advice.
+          </p>
+
+          {rankings.length > 0 && (
+            <section aria-labelledby="find-lawyer-heading" className="card cta-band">
+              <h2 id="find-lawyer-heading" style={{ fontSize: "1.35rem", marginTop: 0 }}>
+                {rankings[0]?.practiceArea ? `Find a ${rankings[0].practiceArea.name.toLowerCase()} lawyer` : "Find a lawyer"}
+              </h2>
+              <p className="muted" style={{ marginTop: 0 }}>
+                Rankings built from verified licence records and cited sources. Payment never changes a position.
+              </p>
+              <div className="grid grid--2">
+                {rankings.map((r) => (
+                  <RankingCard key={r.id} ranking={r} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {related.length > 0 && (
+            <section aria-labelledby="related-guides-heading">
+              <h2 id="related-guides-heading" style={{ fontSize: "1.35rem" }}>
+                Related guides
+              </h2>
+              <div className="grid grid--3">
+                {related.map((a) => (
+                  <ArticleCard key={a.id} article={a} />
+                ))}
+              </div>
+            </section>
           )}
         </article>
         <aside className="stack">
           <div className="aside-sticky stack">
-            {article.relatedRanking?.path && (
+            {toc.length > 1 && (
+              <nav className="card toc" aria-label="On this page">
+                <p className="panel-title">On this page</p>
+                <ol>
+                  {toc.map((t) => (
+                    <li key={t.id}>
+                      <a href={`#${t.id}`}>{t.label}</a>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            )}
+            {rankings[0]?.path && (
               <div className="card">
-                <p className="panel-title">Related ranking</p>
-                <p style={{ margin: "0 0 0.75rem" }}>{article.relatedRanking.title}</p>
-                <Link className="link-arrow" href={article.relatedRanking.path}>
-                  View the ranking
-                </Link>
+                <p className="panel-title">Find a lawyer</p>
+                <ul className="link-list">
+                  {rankings.map((r) => (
+                    <li key={r.id}>
+                      <Link href={r.path as string}>{r.title}</Link>
+                    </li>
+                  ))}
+                </ul>
               </div>
+            )}
+            {categories.length > 0 && (
+              <nav className="card" aria-label="Guide categories">
+                <p className="panel-title">Categories</p>
+                <ul className="link-list">
+                  {categories.map((c) => (
+                    <li key={c.slug}>
+                      <Link href={`/articles/category/${c.slug}/`} aria-current={c.slug === category?.slug ? "page" : undefined}>
+                        {c.name}
+                      </Link>{" "}
+                      <span className="muted">({c.count})</span>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
+            {latest.length > 0 && (
+              <nav className="card" aria-label="More guides">
+                <p className="panel-title">More guides</p>
+                <ul className="link-list">
+                  {latest.map((a) => (
+                    <li key={a.id}>
+                      <Link href={a.path}>{a.title}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
             )}
             <MethodologyPanel compact />
           </div>
