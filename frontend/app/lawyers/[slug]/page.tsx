@@ -6,6 +6,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
+import { PhoneLine, profileActive } from "@/components/profile/Contact";
+import { cityPageExists } from "@/lib/content/hubs";
 import { FirmCard, LawyerCard } from "@/components/cards";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { JsonLd } from "@/components/JsonLd";
@@ -28,10 +30,10 @@ export function generateStaticParams() {
 
 const loadLawyer = cache((slug: string) => getLawyer(slug));
 
-function crumbs(lawyer: LawyerDetail): Crumb[] {
+function crumbs(lawyer: LawyerDetail, cityPage: boolean): Crumb[] {
   const list: Crumb[] = [{ name: "Home", path: "/" }];
   if (lawyer.location?.stateSlug && lawyer.location.state) list.push({ name: lawyer.location.state, path: `/states/${lawyer.location.stateSlug}/` });
-  if (lawyer.location?.citySlug && lawyer.location.city) list.push({ name: lawyer.location.city, path: `/cities/${lawyer.location.citySlug}/` });
+  if (cityPage && lawyer.location?.citySlug && lawyer.location.city) list.push({ name: lawyer.location.city, path: `/cities/${lawyer.location.citySlug}/` });
   else list.push({ name: "Lawyers", path: "/lawyers/" });
   list.push({ name: lawyer.name, path: lawyer.path });
   return list;
@@ -43,7 +45,9 @@ export async function generateMetadata(props: PageProps<"/lawyers/[slug]">): Pro
   if (!lawyer) return { robots: { index: false } };
   const where = formatLocation(lawyer.location);
   const practice = lawyer.practiceAreas[0]?.name;
-  const title = [lawyer.name, practice && where ? `${practice} Lawyer in ${where}` : where].filter(Boolean).join(" – ");
+  // "Name – Miami Personal Injury Lawyer": the query people type, short enough not to be cut.
+  const place = lawyer.location?.city ?? lawyer.location?.state ?? null;
+  const title = [lawyer.name, practice ? `${place ? `${place} ` : ""}${practice} Lawyer` : where].filter(Boolean).join(" – ");
   const facts = [
     lawyer.firm ? `${lawyer.title ?? "Attorney"} at ${lawyer.firm.name}` : null,
     lawyer.ranking.score !== null ? `LexRank score ${lawyer.ranking.score.toFixed(2)}` : null,
@@ -68,6 +72,7 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
   if (lawyer.slug !== slug) permanentRedirect(lawyer.path); // numeric IDs → canonical slug URL
 
   const city = lawyer.location?.citySlug ?? undefined;
+  const cityPage = await cityPageExists(city);
   const practice = lawyer.practiceAreas[0]?.slug;
   const [related, firms] = await Promise.all([
     load(async () => (await getLawyers({ city, practice_area: practice, per_page: 7 })).data.filter((l) => l.id !== lawyer.id).slice(0, 4)),
@@ -83,7 +88,7 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
       <JsonLd data={lawyerJsonLd(lawyer)} />
       <header className="page-header">
         <div className="container">
-          <Breadcrumbs crumbs={crumbs(lawyer)} />
+          <Breadcrumbs crumbs={crumbs(lawyer, cityPage)} />
           <div className="profile-head" style={{ marginTop: "1.5rem" }}>
             <div className="profile-head__id">
               <Monogram name={lawyer.name} size="lg" />
@@ -289,11 +294,7 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
                   </a>
                 </dd>
               )}
-              {lawyer.contact.phone && (
-                <dd>
-                  <a href={`tel:${lawyer.contact.phone.replace(/[^\d+]/g, "")}`}>{lawyer.contact.phone}</a>
-                </dd>
-              )}
+              {lawyer.contact.phone && <PhoneLine phone={lawyer.contact.phone} active={profileActive(lawyer.commercial)} />}
               {!lawyer.contact.website && !lawyer.contact.phone && <dd className="muted">No verified contact details yet.</dd>}
             </dl>
           </div>
@@ -327,7 +328,7 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
                   </Link>
                 </li>
               )}
-              {lawyer.location?.citySlug && (
+              {cityPage && lawyer.location?.citySlug && (
                 <li>
                   <Link className="chip" href={`/cities/${lawyer.location.citySlug}/`}>
                     Lawyers in {lawyer.location.city}

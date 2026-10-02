@@ -81,10 +81,19 @@ describe("sitemap", () => {
         "/practice-areas/personal-injury/",
       ]),
     );
-    for (const excluded of ["/rankings/texas/", "/rankings/florida/", "/lawyers/test-lawyer-4/", "/law-firms/test-firm-2/", "/search/", "/status/"]) {
+    // One state, one city, one ranking: the index pages are still thin.
+    for (const excluded of ["/rankings/texas/", "/rankings/florida/", "/lawyers/test-lawyer-4/", "/law-firms/test-firm-2/", "/search/", "/status/", "/rankings/", "/states/", "/cities/", "/practice-areas/"]) {
       expect(urls).not.toContain(excluded);
     }
     expect(new Set(urls).size).toBe(urls.length);
+  });
+
+  it("lists index pages once they link to enough pages", () => {
+    const city = (n: number) => ({ id: n, slug: `c${n}`, name: `C${n}`, path: `/cities/c${n}/`, state: { slug: "florida", name: "Florida", code: "FL" }, lawyerCount: 4, lawFirmCount: 0, eligibility: { exists: true, indexable: true, reasons: [] } });
+    const urls = (cities: ReturnType<typeof city>[]) =>
+      buildSitemap({ lawyers: [], lawFirms: [], rankings: [], states: [], cities, practiceAreas: [] }).map((e) => e.url.replace("https://lexranked.com", ""));
+    expect(urls([city(1), city(2)])).not.toContain("/cities/");
+    expect(urls([city(1), city(2), city(3)])).toContain("/cities/");
   });
 
   it("omits hubs whose real lawyers are below the minimum", () => {

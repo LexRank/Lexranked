@@ -1,4 +1,5 @@
 import { redirectIfMoved } from "@/lib/content/moved";
+import { practiceAreaJsonLd } from "@/lib/seo/jsonld";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -64,6 +65,7 @@ export default async function PracticeAreaPage(props: PageProps<"/practice-areas
       ]}
       path={a.path}
       eyebrow="Practice area"
+      about={[practiceAreaJsonLd({ name: a.name, slug: a.slug })]}
       title={`Top-rated ${a.name.toLowerCase()} lawyers`}
       lead={a.description || `${a.name} lawyers and law firms, ranked by location with the LexRank methodology.`}
       counts={a}

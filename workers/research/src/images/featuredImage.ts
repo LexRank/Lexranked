@@ -1,0 +1,184 @@
+/**
+ * Featured images for editorial articles: an OpenAI image generated from the
+ * article's title and excerpt, uploaded to the WordPress media library with
+ * alt text and set as the post's featured image.
+ *
+ * Rules (a lawyer-ranking site must never suggest fake people or endorsements):
+ * - illustrations only: no people, faces, hands, text, logos or seals;
+ * - posts that already have a featured image are skipped unless forced;
+ * - the API key is only ever placed in the Authorization header.
+ */
+
+export class ImageError extends Error {}
+
+export interface ArticleInput {
+  title: string;
+  excerpt: string;
+}
+
+const STYLE =
+  'Editorial illustration for a legal-information website. Calm, modern, flat vector style with soft shading, ' +
+  'navy, slate and warm brass palette, generous negative space, landscape composition. ' +
+  'Strictly no people, no faces, no hands, no silhouettes of people, no text, no letters, no numbers, ' +
+  'no logos, no flags with text, no official seals or badges.';
+
+function plain(text: string): string {
+  return text
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&[a-z#0-9]+;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Prompt from the article's own title and excerpt plus the fixed style and safety rules. */
+export function buildImagePrompt(article: ArticleInput): string {
+  const title = plain(article.title).slice(0, 200);
+  const excerpt = plain(article.excerpt).slice(0, 400);
+  return `${STYLE}\n\nSubject: a symbolic, object-based scene that represents this article: "${title}". ${excerpt ? `Context: ${excerpt}` : ''}`.trim();
+}
+
+/** Alt text that describes what the image is for, not what a model claims it shows. */
+export function altText(article: ArticleInput): string {
+  return `Illustration for the article “${plain(article.title).slice(0, 150)}”`;
+}
+
+export interface ImageGeneratorOptions {
+  apiKey: string;
+  model: string;
+  baseUrl?: string;
+  size?: string;
+  timeoutMs?: number;
+  retries?: number;
+  fetchImpl?: typeof fetch;
+  sleep?: (ms: number) => Promise<void>;
+}
+
+const RETRYABLE = new Set([408, 429, 500, 502, 503, 504]);
+
+export class OpenAIImageGenerator {
+  private readonly fetchImpl: typeof fetch;
+  private readonly sleep: (ms: number) => Promise<void>;
+
+  constructor(private readonly opts: ImageGeneratorOptions) {
+    this.fetchImpl = opts.fetchImpl ?? fetch;
+    this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+  }
+
+  /** PNG bytes for the prompt. */
+  async generate(prompt: string): Promise<Uint8Array> {
+    const url = `${(this.opts.baseUrl ?? 'https://api.openai.com/v1').replace(/\/+$/, '')}/images/generations`;
+    const body = JSON.stringify({ model: this.opts.model, prompt, size: this.opts.size ?? '1536x1024', n: 1 });
+    const retries = this.opts.retries ?? 2;
+    for (let attempt = 0; ; attempt++) {
+      let res: Response;
+      try {
+        res = await this.fetchImpl(url, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${this.opts.apiKey}`, 'Content-Type': 'application/json' },
+          body,
+          signal: AbortSignal.timeout(this.opts.timeoutMs ?? 120_000),
+        });
+      } catch (err) {
+        if (attempt < retries) {
+          await this.sleep(2000 * 2 ** attempt);
+          continue;
+        }
+        throw new ImageError(`Image request failed: ${(err as Error).message}`);
+      }
+      if (RETRYABLE.has(res.status) && attempt < retries) {
+        await this.sleep(2000 * 2 ** attempt);
+        continue;
+      }
+      if (!res.ok) {
+        throw new ImageError(`Image API returned HTTP ${res.status}`);
+      }
+      const json = (await res.json()) as { data?: Array<{ b64_json?: string }> };
+      const b64 = json.data?.[0]?.b64_json;
+      if (!b64) throw new ImageError('Image API returned no image data');
+      return new Uint8Array(Buffer.from(b64, 'base64'));
+    }
+  }
+}
+
+export interface MediaOptions {
+  /** WordPress REST base, e.g. https://cms.example.com/wp-json */
+  wpJsonUrl: string;
+  user: string;
+  appPassword: string;
+  fetchImpl?: typeof fetch;
+}
+
+export interface WpPost {
+  id: number;
+  title: string;
+  excerpt: string;
+  featuredMedia: number;
+}
+
+/** The few /wp/v2 calls this needs: read a post, upload media, set the featured image. */
+export class WordPressMedia {
+  private readonly fetchImpl: typeof fetch;
+  private readonly auth: string;
+  private readonly base: string;
+
+  constructor(opts: MediaOptions) {
+    this.fetchImpl = opts.fetchImpl ?? fetch;
+    this.auth = 'Basic ' + Buffer.from(`${opts.user}:${opts.appPassword}`).toString('base64');
+    this.base = opts.wpJsonUrl.replace(/\/+$/, '');
+  }
+
+  private async call<T>(path: string, init: RequestInit): Promise<T> {
+    const res = await this.fetchImpl(`${this.base}${path}`, { ...init, headers: { Authorization: this.auth, ...(init.headers ?? {}) } });
+    if (!res.ok) throw new ImageError(`WordPress ${path} returned HTTP ${res.status}`);
+    return (await res.json()) as T;
+  }
+
+  async post(id: number): Promise<WpPost> {
+    const p = await this.call<{ id: number; title: { raw?: string; rendered: string }; excerpt: { raw?: string; rendered: string }; featured_media: number }>(
+      `/wp/v2/posts/${id}?context=edit`,
+      { method: 'GET' },
+    );
+    return { id: p.id, title: p.title.raw ?? p.title.rendered, excerpt: p.excerpt.raw ?? p.excerpt.rendered, featuredMedia: p.featured_media };
+  }
+
+  async upload(bytes: Uint8Array, filename: string, alt: string, title: string): Promise<{ id: number; url: string }> {
+    const media = await this.call<{ id: number; source_url: string }>('/wp/v2/media', {
+      method: 'POST',
+      headers: { 'Content-Type': 'image/png', 'Content-Disposition': `attachment; filename="${filename}"` },
+      body: bytes,
+    });
+    await this.call(`/wp/v2/media/${media.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alt_text: alt, title, caption: '' }),
+    });
+    return { id: media.id, url: media.source_url };
+  }
+
+  async setFeatured(postId: number, mediaId: number): Promise<void> {
+    await this.call(`/wp/v2/posts/${postId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ featured_media: mediaId }),
+    });
+  }
+}
+
+export type FeaturedImageOutcome = { status: 'skipped'; reason: string } | { status: 'created'; mediaId: number; url: string };
+
+/** Generate, upload and attach a featured image for one post. */
+export async function addFeaturedImage(
+  postId: number,
+  deps: { wp: WordPressMedia; images: OpenAIImageGenerator; force?: boolean },
+): Promise<FeaturedImageOutcome> {
+  const post = await deps.wp.post(postId);
+  if (post.featuredMedia > 0 && !deps.force) {
+    return { status: 'skipped', reason: `post ${postId} already has featured image ${post.featuredMedia}` };
+  }
+  const article = { title: post.title, excerpt: post.excerpt };
+  const bytes = await deps.images.generate(buildImagePrompt(article));
+  const slug = plain(post.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || `post-${postId}`;
+  const media = await deps.wp.upload(bytes, `${slug}.png`, altText(article), plain(post.title));
+  await deps.wp.setFeatured(postId, media.id);
+  return { status: 'created', mediaId: media.id, url: media.url };
+}

@@ -110,6 +110,10 @@ Articles are normal **WordPress Posts** (**Posts → Add New**) and appear at
 
 ## Text on state, city and practice-area pages
 
+The same text can be written through the editorial API (`/editorial/*`,
+see `docs/api.md`) by any user with editor rights, for example the
+LexRanked assistant's editor account. Changes are audit-logged.
+
 Open the location or practice area (**LexRanked → Locations / Practice
 Areas → Edit**). The fields below the standard ones are:
 *Page summary* (above the list), *Guide* (below the list, basic HTML),
