@@ -15,7 +15,7 @@ import { relatedQuestions } from "@/lib/content/relatedQuestions";
 import { allRankings } from "@/lib/data/loaders";
 import { formatDate, isoDate, pluralize } from "@/lib/format";
 import { methodologyLabel } from "@/lib/methodology";
-import { rankingJsonLd, rankingPageJsonLd, type Crumb } from "@/lib/seo/jsonld";
+import { placeJsonLd, practiceAreaJsonLd, rankingJsonLd, rankingPageJsonLd, type Crumb } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getMarket, getPlacements, getRanking } from "@/lib/wordpress/api";
 import { MarketStats } from "@/components/MarketStats";
@@ -118,6 +118,8 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
             dateModified: ranking.updatedAt,
             reviewedBy: ranking.editorial.reviewedBy,
             reviewedAt: ranking.editorial.reviewedAt,
+            hasList: ranking.entries.length > 0,
+            about: [placeJsonLd(ranking.location), practiceAreaJsonLd(ranking.practiceArea)],
           }),
         ]}
       />
@@ -188,7 +190,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
 
           <PlacementBlock placements={sponsored} product="sponsored" />
 
-          <RankingSources sources={ranking.sources ?? []} noun={noun} />
+          <RankingSources sources={ranking.sources ?? []} noun={noun} rankedCount={ranking.entries.length} />
           {market && (
             <MarketStats
               market={market}

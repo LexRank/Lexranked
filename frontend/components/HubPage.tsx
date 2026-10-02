@@ -3,7 +3,7 @@ import type { CityDto, LawFirmSummary, LawyerSummary, MarketDto, PlacementDto, R
 import { MarketStats } from "./MarketStats";
 import { PlacementBlock } from "./commercial/Commercial";
 import { pluralize } from "@/lib/format";
-import type { Crumb } from "@/lib/seo/jsonld";
+import type { Crumb, JsonLdObject } from "@/lib/seo/jsonld";
 import { collectionPageJsonLd, rankingPageJsonLd } from "@/lib/seo/jsonld";
 import { formatDate } from "@/lib/format";
 import { EditorialBody, FaqSection } from "./ranking/RankingContent";
@@ -31,6 +31,7 @@ export function HubPage({
   featured = [],
   groupBy,
   market,
+  about = [],
 }: {
   crumbs: Crumb[];
   path: string;
@@ -52,15 +53,22 @@ export function HubPage({
   groupBy?: "practice" | "city";
   /** Market statistics computed by the CMS for this hub (Etap I). */
   market?: MarketDto | null;
+  /** schema.org nodes the page is about (place, practice area). */
+  about?: Array<JsonLdObject | undefined>;
 }) {
   const groups = groupBy ? hubGroups(lawyers, rankings, groupBy) : [];
   const reviewed = formatDate(content?.reviewedAt ?? null);
   const hasDemo = lawyers.some((l) => l.isDemo) || rankings.some((r) => r.isDemo);
   return (
     <>
-      <JsonLd data={collectionPageJsonLd(title, path, lead)} />
+      <JsonLd
+        data={collectionPageJsonLd(title, path, content?.summary ?? lead, {
+          about,
+          items: [...lawyers, ...firms].map((e) => ({ name: e.name, path: e.path })),
+        })}
+      />
       {content && (content.reviewedBy || content.reviewedAt) && (
-        <JsonLd data={rankingPageJsonLd({ name: title, path, description: content.summary ?? lead, dateModified: null, reviewedBy: content.reviewedBy, reviewedAt: content.reviewedAt })} />
+        <JsonLd data={rankingPageJsonLd({ name: title, path, description: content.summary ?? lead, dateModified: null, reviewedBy: content.reviewedBy, reviewedAt: content.reviewedAt, about })} />
       )}
       <PageHeader crumbs={crumbs} eyebrow={eyebrow} title={title} lead={lead}>
         <div className="page-header__meta">

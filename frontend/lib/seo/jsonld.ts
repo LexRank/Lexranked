@@ -116,13 +116,45 @@ export function lawyerJsonLd(lawyer: LawyerDetail): JsonLdObject {
     // Only when the page shows an active bar admission (Etap H: schema mirrors visible data).
     hasCredential:
       lawyer.professional.barState && lawyer.professional.barStatus === "active"
-        ? {
+        ? compact({
             "@type": "EducationalOccupationalCredential",
             credentialCategory: "license",
             name: `Bar admission (${lawyer.professional.barState})`,
-          }
+            recognizedBy: barRegulator(lawyer.professional.barState),
+          })
+        : undefined,
+    identifier:
+      lawyer.professional.barState && lawyer.professional.barNumber
+        ? { "@type": "PropertyValue", propertyID: `${lawyer.professional.barState} bar number`, value: lawyer.professional.barNumber }
         : undefined,
   });
+}
+
+/** State bars LexRanked reads as official sources (shown on profiles as the evidence source). */
+const BAR_REGULATORS: Record<string, { name: string; url: string }> = {
+  FL: { name: "The Florida Bar", url: "https://www.floridabar.org/" },
+};
+
+function barRegulator(state: string): JsonLdObject | undefined {
+  const bar = BAR_REGULATORS[state.toUpperCase()];
+  return bar ? { "@type": "Organization", name: bar.name, url: bar.url } : undefined;
+}
+
+/** Node id of a profile, matching the @id its own page declares. */
+export function entityNodeId(entityType: string, path: string): string {
+  return `${absoluteUrl(path)}${entityType === "law_firm" ? "#organization" : "#person"}`;
+}
+
+/** City (inside its state) or state a page is about. */
+export function placeJsonLd(location: Pick<LocationDto, "city" | "state"> | null): JsonLdObject | undefined {
+  if (!location?.state) return undefined;
+  const state = { "@type": "State", name: location.state, containedInPlace: { "@type": "Country", name: "United States" } };
+  return location.city ? { "@type": "City", name: location.city, containedInPlace: state } : state;
+}
+
+/** Practice area a page is about, linked to its hub. */
+export function practiceAreaJsonLd(area: { name: string; slug: string } | null): JsonLdObject | undefined {
+  return area ? { "@type": "DefinedTerm", name: area.name, url: absoluteUrl(`/practice-areas/${area.slug}/`) } : undefined;
 }
 
 export function lawFirmJsonLd(firm: LawFirmDetail): JsonLdObject {
@@ -151,6 +183,7 @@ export function rankingJsonLd(ranking: RankingDetail, path: string): JsonLdObjec
   return compact({
     "@context": "https://schema.org",
     "@type": "ItemList",
+    "@id": `${absoluteUrl(path)}#list`,
     name: ranking.title,
     url: absoluteUrl(path),
     numberOfItems: ranking.entries.length,
@@ -160,19 +193,50 @@ export function rankingJsonLd(ranking: RankingDetail, path: string): JsonLdObjec
       position: entry.position,
       name: entry.entity.name,
       url: absoluteUrl(entry.entity.path),
+      // The same node the profile page declares, so the ranking links into the entity graph.
+      item: {
+        "@type": entry.entity.type === "law_firm" ? "LegalService" : "Person",
+        "@id": entityNodeId(entry.entity.type, entry.entity.path),
+        name: entry.entity.name,
+        url: absoluteUrl(entry.entity.path),
+      },
     })),
   });
 }
 
-export function collectionPageJsonLd(name: string, path: string, description: string): JsonLdObject {
-  return {
+/**
+ * CollectionPage for hubs. `items` lists the profiles shown on the page (in
+ * page order) as its main entity; `about` names the place / practice area.
+ */
+export function collectionPageJsonLd(
+  name: string,
+  path: string,
+  description: string,
+  extra: { items?: Array<{ name: string; path: string }>; about?: Array<JsonLdObject | undefined>; dateModified?: string | null } = {},
+): JsonLdObject {
+  const url = absoluteUrl(path);
+  const items = extra.items ?? [];
+  return compact({
     "@context": "https://schema.org",
     "@type": "CollectionPage",
+    "@id": `${url}#webpage`,
     name,
-    url: absoluteUrl(path),
+    url,
     description,
+    inLanguage: "en-US",
     isPartOf: { "@id": `${siteUrl}/#website` },
-  };
+    publisher: { "@id": `${siteUrl}/#organization` },
+    about: (extra.about ?? []).filter((a): a is JsonLdObject => a !== undefined),
+    dateModified: extra.dateModified ?? undefined,
+    mainEntity:
+      items.length > 0
+        ? {
+            "@type": "ItemList",
+            numberOfItems: items.length,
+            itemListElement: items.map((item, i) => ({ "@type": "ListItem", position: i + 1, name: item.name, url: absoluteUrl(item.path) })),
+          }
+        : undefined,
+  });
 }
 
 /** FAQPage for editorial FAQs (plain-text answers only). */
@@ -197,12 +261,19 @@ export function rankingPageJsonLd(input: {
   dateModified: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
+  /** The ranking's ItemList is the page's main entity. */
+  hasList?: boolean;
+  about?: Array<JsonLdObject | undefined>;
 }): JsonLdObject {
+  const url = absoluteUrl(input.path);
   return compact({
     "@context": "https://schema.org",
     "@type": "WebPage",
+    "@id": `${url}#webpage`,
     name: input.name,
-    url: absoluteUrl(input.path),
+    url,
+    mainEntity: input.hasList ? { "@id": `${url}#list` } : undefined,
+    about: (input.about ?? []).filter((a): a is JsonLdObject => a !== undefined),
     description: input.description,
     inLanguage: "en-US",
     isPartOf: { "@id": `${siteUrl}/#website` },

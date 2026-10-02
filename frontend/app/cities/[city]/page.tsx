@@ -1,4 +1,5 @@
 import { redirectIfMoved } from "@/lib/content/moved";
+import { placeJsonLd } from "@/lib/seo/jsonld";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -66,6 +67,7 @@ export default async function CityPage(props: PageProps<"/cities/[city]">) {
     <HubPage
       groupBy="practice"
       crumbs={crumbs}
+      about={[placeJsonLd({ city: c.name, state: c.state.name })]}
       path={c.path}
       eyebrow={c.state.name ? `City · ${c.state.name}` : "City"}
       title={`Top-rated lawyers in ${label(c)}`}

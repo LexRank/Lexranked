@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { FaqItem, RankingDetail, RankingSourceDto } from "@/types/api";
 import type { RelatedQuestion } from "@/lib/content/relatedQuestions";
+import { groupRankingSources } from "@/lib/content/rankingSources";
 import type { RankingFacts } from "@/lib/content/rankingFacts";
 import { formatCount, formatDate, isoDate } from "@/lib/format";
 import { METHODOLOGY_VERSION } from "@/lib/methodology";
@@ -132,9 +133,10 @@ export function OnThisPage({ links }: { links: Array<{ href: string; label: stri
   );
 }
 
-/** Sources behind the ranked entries' facts (spec §21 "Sources"), best tier first. */
-export function RankingSources({ sources, noun }: { sources: RankingSourceDto[]; noun: string }) {
-  if (sources.length === 0) return null;
+/** Sources behind the ranked entries' facts (spec §21 "Sources"), grouped by site, best tier first. */
+export function RankingSources({ sources, noun, rankedCount = 0 }: { sources: RankingSourceDto[]; noun: string; rankedCount?: number }) {
+  const groups = groupRankingSources(sources, rankedCount);
+  if (groups.length === 0) return null;
   return (
     <section id="sources" className="card" aria-labelledby="sources-heading">
       <h2 id="sources-heading" style={{ fontSize: "1.4rem" }}>
@@ -145,20 +147,21 @@ export function RankingSources({ sources, noun }: { sources: RankingSourceDto[];
         and when it was last checked.
       </p>
       <ul className="weights" style={{ gap: "0.5rem" }}>
-        {sources.map((s) => (
-          <li key={s.id} className="ranking-source">
+        {groups.map((g) => (
+          <li key={g.key} className="ranking-source">
             <span>
-              {s.url && /^https?:\/\//.test(s.url) ? (
-                <a href={s.url} rel="nofollow noopener noreferrer" target="_blank">
-                  {s.name}
+              {g.url ? (
+                <a href={g.url} rel="nofollow noopener noreferrer" target="_blank">
+                  {g.name}
                 </a>
               ) : (
-                s.name
+                g.name
               )}
-              {s.tierLabel && <span className="muted"> · {s.tierLabel}</span>}
+              {g.tierLabel && <span className="muted"> · {g.tierLabel}</span>}
+              {g.pages > 1 && <span className="muted"> · {g.pages} profile pages</span>}
             </span>
             <span className="muted">
-              {s.facts} {s.facts === 1 ? "fact" : "facts"} for {s.entities} {s.entities === 1 ? noun : `${noun}s`}
+              {g.facts} {g.facts === 1 ? "fact" : "facts"} for {g.entities} {g.entities === 1 ? noun : `${noun}s`}
             </span>
           </li>
         ))}

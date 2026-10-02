@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import { buildMetadata, clampDescription } from "@/lib/seo/metadata";
 import {
   breadcrumbJsonLd,
+  collectionPageJsonLd,
   compact,
   faqJsonLd,
   lawFirmJsonLd,
   lawyerJsonLd,
+  placeJsonLd,
+  practiceAreaJsonLd,
   rankingJsonLd,
   rankingPageJsonLd,
   serializeJsonLd,
@@ -126,6 +129,56 @@ describe("JSON-LD", () => {
     const ld = rankingPageJsonLd({ name: "R", path: "/rankings/x/", description: "d", dateModified: "2026-09-26T00:00:00Z", reviewedBy: "Jane Editor", reviewedAt: "2026-09-20" });
     expect(ld).toMatchObject({ "@type": "WebPage", dateModified: "2026-09-26T00:00:00Z", lastReviewed: "2026-09-20", reviewedBy: { "@type": "Person", name: "Jane Editor" } });
     expect(rankingPageJsonLd({ name: "R", path: "/r/", description: "d", dateModified: null, reviewedBy: null, reviewedAt: null })).not.toHaveProperty("reviewedBy");
+  });
+
+  it("links ranking entries to the profile nodes and names what the page is about", () => {
+    const ranking = rankingDetail();
+    const ld = rankingJsonLd(ranking, "/rankings/florida/miami/personal-injury/");
+    const first = ranking.entries[0]!;
+    expect(ld["@id"]).toBe("https://lexranked.com/rankings/florida/miami/personal-injury/#list");
+    expect((ld.itemListElement as Array<{ item: Record<string, string> }>)[0]!.item).toEqual({
+      "@type": "Person",
+      "@id": `https://lexranked.com${first.entity.path}#person`,
+      name: first.entity.name,
+      url: `https://lexranked.com${first.entity.path}`,
+    });
+    const page = rankingPageJsonLd({
+      name: "R",
+      path: "/rankings/florida/miami/personal-injury/",
+      description: "d",
+      dateModified: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      hasList: true,
+      about: [placeJsonLd({ city: "Miami", state: "Florida" }), practiceAreaJsonLd({ name: "Personal Injury", slug: "personal-injury" }), undefined],
+    });
+    expect(page.mainEntity).toEqual({ "@id": "https://lexranked.com/rankings/florida/miami/personal-injury/#list" });
+    expect(page.about).toEqual([
+      { "@type": "City", name: "Miami", containedInPlace: { "@type": "State", name: "Florida", containedInPlace: { "@type": "Country", name: "United States" } } },
+      { "@type": "DefinedTerm", name: "Personal Injury", url: "https://lexranked.com/practice-areas/personal-injury/" },
+    ]);
+    expect(placeJsonLd(null)).toBeUndefined();
+  });
+
+  it("gives hub pages their listed profiles as the main entity", () => {
+    const ld = collectionPageJsonLd("Miami", "/cities/miami/", "d", {
+      items: [{ name: "A", path: "/lawyers/a/" }, { name: "B", path: "/lawyers/b/" }],
+      about: [placeJsonLd({ city: null, state: "Florida" })],
+    });
+    expect(ld).toMatchObject({
+      "@type": "CollectionPage",
+      "@id": "https://lexranked.com/cities/miami/#webpage",
+      publisher: { "@id": "https://lexranked.com/#organization" },
+      about: [{ "@type": "State", name: "Florida" }],
+      mainEntity: { "@type": "ItemList", numberOfItems: 2, itemListElement: [{ position: 1, url: "https://lexranked.com/lawyers/a/" }, { position: 2 }] },
+    });
+    expect(collectionPageJsonLd("X", "/x/", "d")).not.toHaveProperty("mainEntity");
+  });
+
+  it("identifies a lawyer by bar number and names the regulator", () => {
+    const ld = lawyerJsonLd(lawyerDetail());
+    expect(ld.identifier).toEqual({ "@type": "PropertyValue", propertyID: "FL bar number", value: "TEST-1" });
+    expect((ld.hasCredential as Record<string, unknown>).recognizedBy).toEqual({ "@type": "Organization", name: "The Florida Bar", url: "https://www.floridabar.org/" });
   });
 
   it("declares the site search action", () => {
