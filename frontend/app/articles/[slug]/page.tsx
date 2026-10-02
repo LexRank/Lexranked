@@ -7,7 +7,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { MethodologyPanel } from "@/components/Methodology";
 import { PageHeader } from "@/components/PageHeader";
 import { DemoNotice } from "@/components/ui";
-import { addHeadingIds, categoryCounts, guideImage, rankingsForArticle, relatedArticles } from "@/lib/content/articles";
+import { addHeadingIds, categoryCounts, guideImage, rankingsForArticle, relatedArticles, wrapTables } from "@/lib/content/articles";
 import { articleEligibility } from "@/lib/content/eligibility";
 import { allArticles, allRankings, load } from "@/lib/data/loaders";
 import { formatDate, isoDate } from "@/lib/format";
@@ -53,7 +53,7 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
   const latest = all.filter((a) => a.id !== article.id && !related.some((r) => r.id === a.id)).slice(0, 4);
   const categories = categoryCounts(all);
   const rankings = rankingsForArticle(article, rankingsResult.ok ? rankingsResult.data : [], article.relatedRankingId, 3);
-  const { html, toc } = addHeadingIds(article.body);
+  const { html, toc } = addHeadingIds(wrapTables(article.body));
   const image = guideImage(article);
   const category = article.categories.find((c) => c.slug !== "uncategorized") ?? null;
 

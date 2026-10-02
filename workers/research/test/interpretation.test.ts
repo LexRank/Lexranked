@@ -64,7 +64,7 @@ describe('AI interpretation layer (Etap J)', () => {
     expect(system).toMatch(/Never compute new numbers/);
     expect(system).toMatch(/Never decide, change, predict or judge a position/);
     expect(system).toMatch(/do not research, recall from memory/);
-    expect(promptVersion('ranking-content/2')).toBe('interp/1+ranking-content/2');
+    expect(promptVersion('ranking-content/2')).toBe('interp/2+ranking-content/2');
   });
 
   it('builds ranking facts from what the backend computed', () => {

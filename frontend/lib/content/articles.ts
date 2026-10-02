@@ -60,6 +60,11 @@ export function addHeadingIds(html: string): { html: string; toc: TocEntry[] } {
   return { html: out, toc };
 }
 
+/** Wrap each <table> so wide tables scroll sideways on phones instead of breaking the layout. */
+export function wrapTables(html: string): string {
+  return html.replace(/<table[\s\S]*?<\/table>/gi, (table) => `<div class="table-scroll">${table}</div>`);
+}
+
 const indexable = (a: ArticleSummary) => articleEligibility(a).indexable || a.isDemo;
 
 /** Other guides, same category first, newest first within each group. */
