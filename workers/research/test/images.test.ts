@@ -70,3 +70,21 @@ describe('featured images', () => {
     expect(wpJsonBase('https://wp.lexranked.com/wp-json/lexranked/v1/')).toBe('https://wp.lexranked.com/wp-json');
   });
 });
+
+describe('model choice', () => {
+  const list = (ids: string[]) => (async () => new Response(JSON.stringify({ data: ids.map((id) => ({ id })) }), { status: 200 })) as unknown as typeof fetch;
+
+  it('picks the first preferred model the key can use', async () => {
+    const { resolveModel, TEXT_MODEL_PREFERENCE } = await import('../src/ai/models.js');
+    const newestCheap = TEXT_MODEL_PREFERENCE[0];
+    expect(await resolveModel('text', { apiKey: 'k', fetchImpl: list(['gpt-4o-mini', newestCheap, 'some-flagship']) })).toBe(newestCheap);
+    expect(await resolveModel('text', { apiKey: 'k', fetchImpl: list(['gpt-4o-mini', 'gpt-4.1-mini']) })).toBe('gpt-4.1-mini');
+    expect(await resolveModel('image', { apiKey: 'k', fetchImpl: list(['gpt-image-1', 'gpt-image-1-mini']) })).toBe('gpt-image-1-mini');
+  });
+
+  it('honours an explicit override and fails clearly when nothing fits', async () => {
+    const { resolveModel, ModelError } = await import('../src/ai/models.js');
+    expect(await resolveModel('text', { apiKey: 'k', override: 'my-model', fetchImpl: list([]) })).toBe('my-model');
+    await expect(resolveModel('image', { apiKey: 'k', fetchImpl: list(['text-only']) })).rejects.toBeInstanceOf(ModelError);
+  });
+});

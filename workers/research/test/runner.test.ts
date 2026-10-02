@@ -190,11 +190,12 @@ describe('config and logging', () => {
     expect(() => loadConfig({ LEXRANKED_API_URL: 'https://x.test', LEXRANKED_WORKER_USER: 'w', LEXRANKED_WORKER_APP_PASSWORD: 'p', LEXRANKED_WORKER_JOB_TYPES: 'ranking_recalculation' })).toThrow(/Unsupported/);
   });
 
-  it('enables AI only with both key and model, and gates AI job types on it', () => {
+  it('enables AI with a key (model chosen at startup unless set), and gates AI job types on it', () => {
     const base = { LEXRANKED_API_URL: 'https://x.test/wp-json/lexranked/v1', LEXRANKED_WORKER_USER: 'w', LEXRANKED_WORKER_APP_PASSWORD: 'p' };
     expect(loadConfig(base).ai).toBeNull();
     expect(loadConfig(base).jobTypes).toEqual(['candidate_discovery', 'source_refresh']);
-    expect(() => loadConfig({ ...base, OPENAI_API_KEY: 'sk-x' })).toThrow(/both/);
+    expect(loadConfig({ ...base, OPENAI_API_KEY: 'sk-x' }).ai).toMatchObject({ model: '' });
+    expect(() => loadConfig({ ...base, OPENAI_MODEL: 'm' })).toThrow(/OPENAI_API_KEY/);
     expect(() => loadConfig({ ...base, LEXRANKED_WORKER_JOB_TYPES: 'content_generation' })).toThrow(/OPENAI/);
     expect(() => loadConfig({ ...base, OPENAI_API_KEY: 'sk-x', OPENAI_MODEL: 'm', OPENAI_BASE_URL: 'http://evil.example/v1' })).toThrow(/https/);
     const cfg = loadConfig({ ...base, OPENAI_API_KEY: 'sk-x', OPENAI_MODEL: 'm' });
