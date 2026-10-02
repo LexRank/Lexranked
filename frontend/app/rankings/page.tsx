@@ -5,15 +5,21 @@ import { PageHeader } from "@/components/PageHeader";
 import { DemoNotice, EmptyState, UnavailableNotice } from "@/components/ui";
 import { allRankings, load } from "@/lib/data/loaders";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { indexPageIndexable } from "@/lib/content/eligibility";
 import type { RankingSummary } from "@/types/api";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = buildMetadata({
-  title: "Lawyer Rankings by State, City and Practice Area",
-  description: "Browse LexRanked lawyer and law firm rankings across the United States, calculated with a transparent, source-backed methodology.",
-  path: "/rankings/",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  // Thin until it links to enough pages (MIN_INDEX_PAGE_ENTRIES); still followed.
+  const result = await load(allRankings);
+  return buildMetadata({
+    title: "Lawyer Rankings by State, City and Practice Area",
+    description: "Browse LexRanked lawyer and law firm rankings across the United States, calculated with a transparent, source-backed methodology.",
+    path: "/rankings/",
+    noindex: !indexPageIndexable(result.ok ? result.data.filter((r) => r.path && !r.isThin).length : 0),
+  });
+}
 
 function groupByState(rankings: RankingSummary[]): Array<[string, RankingSummary[]]> {
   const groups = new Map<string, RankingSummary[]>();

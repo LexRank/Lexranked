@@ -67,7 +67,8 @@ export function relatedQuestions(ranking: RankingDetail, all: RankingSummary[] =
 
   const second = entries[1];
   const behind = second?.why?.behind;
-  if (second && behind) {
+  // Only when there is a difference to explain (a tie has none).
+  if (second && behind && behind.scoreGap > 0) {
     const first = entries[0]!;
     const gaps = behind.components.filter((c) => c.delta > 0).slice(0, 2).map((c) => c.label.toLowerCase());
     const href = compareHref(ranking.entityType === "law_firm" ? "law_firm" : "lawyer", [first.entity.entityId, second.entity.entityId]);

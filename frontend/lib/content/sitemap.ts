@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo/urls";
 import type { ArticleSummary, CityDto, LawFirmSummary, LawyerSummary, PracticeAreaDto, RankingSummary, StateDto } from "@/types/api";
-import { articleEligibility, listingEligibility, MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
+import { articleEligibility, indexPageIndexable, listingEligibility, MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
 
 /**
  * Pure sitemap assembly: only indexable pages. Excludes demo data, thin
@@ -18,7 +18,10 @@ export interface SitemapInput {
   articles?: ArticleSummary[];
 }
 
-export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/", "/rankings/", "/states/", "/cities/", "/practice-areas/"];
+export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/"];
+
+/** Index pages, listed once they link to enough pages (indexPageIndexable). */
+export const INDEX_PATHS = { rankings: "/rankings/", states: "/states/", cities: "/cities/", practiceAreas: "/practice-areas/" } as const;
 
 /** Listing pages that are noindex until they list real profiles (see listingEligibility). */
 export const LISTING_PATHS = { lawyers: "/lawyers/", lawFirms: "/law-firms/" } as const;
@@ -70,6 +73,15 @@ export function buildSitemap(input: SitemapInput): MetadataRoute.Sitemap {
   for (const area of input.practiceAreas) {
     if (hubIndexable(area, (l) => l.practiceAreas.some((p) => p.slug === area.slug))) entries.push(entry(area.path, undefined, 0.6));
   }
+
+  const exists = (hubs: Array<{ eligibility?: { exists: boolean } }>) => hubs.filter((h) => h.eligibility?.exists).length;
+  const indexes: Array<[string, number]> = [
+    [INDEX_PATHS.rankings, input.rankings.filter((r) => r.path && !r.isThin).length],
+    [INDEX_PATHS.states, exists(input.states)],
+    [INDEX_PATHS.cities, exists(input.cities)],
+    [INDEX_PATHS.practiceAreas, exists(input.practiceAreas)],
+  ];
+  for (const [path, count] of indexes) if (indexPageIndexable(count)) entries.push(entry(path, undefined, 0.6));
 
   const articles = (input.articles ?? []).filter((a) => articleEligibility(a).indexable);
   if (articles.length > 0) entries.push(entry("/articles/", undefined, 0.6));

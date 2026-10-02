@@ -66,3 +66,10 @@ export function articleEligibility(article: { isDemo: boolean; wordCount: number
   if (decided) return decided;
   return { exists: true, indexable: !article.isDemo && article.wordCount >= MIN_ARTICLE_WORDS };
 }
+
+/** Index pages (/states/, /cities/, /practice-areas/, /rankings/) are thin until they link to this many pages. */
+export const MIN_INDEX_PAGE_ENTRIES = 3;
+
+export function indexPageIndexable(existingPages: number): boolean {
+  return existingPages >= MIN_INDEX_PAGE_ENTRIES;
+}
