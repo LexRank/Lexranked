@@ -58,9 +58,11 @@ below it:
 | Above | "At a glance" facts: ranked, verified, average rating, reviews | Data |
 | — | **The ranking** | Engine / API |
 | Below | Guide (H2 sections) | Ranking post content (WordPress editor) |
-| Below | Why this ranking? | Methodology |
-| Below | FAQ (`FAQPage` JSON-LD) | Ranking field `faq` (`Question \| Answer` per line) |
+| Below | FAQ (`FAQPage` JSON-LD): editorial questions about the practice area and place first, then questions the ranking's data answers, with one short "How were these ranked?" linking to `/methodology/` | Ranking field `faq` (`Question \| Answer` per line) + `lib/content/relatedQuestions.ts` |
 | Below | About this ranking: updated date, methodology, editorial review, independence | Data + `reviewed_by` / `reviewed_at` |
+
+The methodology is explained on `/methodology/`; content pages only link to
+it (sidebar "How we rank", one FAQ question) instead of repeating it.
 
 GEO signals:
 - a quotable factual summary with named entities, dates and numbers;

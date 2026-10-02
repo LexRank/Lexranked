@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { FaqItem, RankingDetail, RankingSourceDto } from "@/types/api";
-import type { RelatedQuestion } from "@/lib/content/relatedQuestions";
 import { groupRankingSources } from "@/lib/content/rankingSources";
 import type { RankingFacts } from "@/lib/content/rankingFacts";
 import { formatCount, formatDate, isoDate } from "@/lib/format";
@@ -52,7 +51,7 @@ export function EditorialBody({ html }: { html: string }) {
   );
 }
 
-export function FaqSection({ items }: { items: FaqItem[] }) {
+export function FaqSection({ items }: { items: Array<FaqItem & { link?: { href: string; label: string } }> }) {
   if (items.length === 0) return null;
   const ld = faqJsonLd(items);
   return (
@@ -62,9 +61,17 @@ export function FaqSection({ items }: { items: FaqItem[] }) {
       </h2>
       <div className="faq">
         {items.map((item, i) => (
-          <details key={i} className="faq__item" open={i === 0}>
+          <details key={item.question} className="faq__item" open={i === 0}>
             <summary>{item.question}</summary>
-            <p>{item.answer}</p>
+            <p>
+              {item.answer}
+              {item.link && (
+                <>
+                  {" "}
+                  <Link href={item.link.href}>{item.link.label}</Link>
+                </>
+              )}
+            </p>
           </details>
         ))}
       </div>
@@ -170,30 +177,3 @@ export function RankingSources({ sources, noun, rankedCount = 0 }: { sources: Ra
   );
 }
 
-/** Questions the ranking's own data answers (spec §24); not marked up as FAQPage. */
-export function RelatedQuestions({ items }: { items: RelatedQuestion[] }) {
-  if (items.length === 0) return null;
-  return (
-    <section id="related-questions" aria-labelledby="related-questions-heading">
-      <h2 id="related-questions-heading" style={{ fontSize: "1.5rem" }}>
-        Related questions
-      </h2>
-      <div className="faq">
-        {items.map((q) => (
-          <details key={q.question} className="faq__item">
-            <summary>{q.question}</summary>
-            <p>
-              {q.answer}
-              {q.link && (
-                <>
-                  {" "}
-                  <Link href={q.link.href}>{q.link.label}</Link>
-                </>
-              )}
-            </p>
-          </details>
-        ))}
-      </div>
-    </section>
-  );
-}

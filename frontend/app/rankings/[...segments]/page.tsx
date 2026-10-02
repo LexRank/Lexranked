@@ -10,7 +10,7 @@ import { DemoNotice } from "@/components/ui";
 import { rankingEligibility } from "@/lib/content/eligibility";
 import { resolveRanking } from "@/lib/content/rankings";
 import { rankingAnswer, rankingFacts } from "@/lib/content/rankingFacts";
-import { AboutRanking, EditorialBody, FaqSection, OnThisPage, RankingOverview, RankingSources, RelatedQuestions } from "@/components/ranking/RankingContent";
+import { AboutRanking, EditorialBody, FaqSection, OnThisPage, RankingOverview, RankingSources } from "@/components/ranking/RankingContent";
 import { relatedQuestions } from "@/lib/content/relatedQuestions";
 import { allRankings } from "@/lib/data/loaders";
 import { formatDate, isoDate, pluralize } from "@/lib/format";
@@ -93,15 +93,14 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
   const noun = ranking.entityType === "law_firm" ? "firm" : "lawyer";
   const facts = rankingFacts(ranking);
   const answer = rankingAnswer(ranking, facts);
-  const questions = relatedQuestions(ranking, rankings);
+  // One FAQ: editorial questions about the practice area and place first, then what this ranking's data answers.
+  const faq = [...ranking.faq, ...relatedQuestions(ranking, rankings)];
   const toc = [
     { href: "#ranking", label: "The ranking" },
     ...(ranking.body.trim() ? [{ href: "#guide", label: "Guide" }] : []),
     ...((ranking.sources ?? []).length > 0 ? [{ href: "#sources", label: "Sources" }] : []),
     ...(market && market.stats.lawyers > 0 ? [{ href: "#market", label: "Market statistics" }] : []),
-    { href: "#methodology", label: "Why this ranking?" },
-    ...(ranking.faq.length > 0 ? [{ href: "#faq", label: "FAQ" }] : []),
-    ...(questions.length > 0 ? [{ href: "#related-questions", label: "Related questions" }] : []),
+    ...(faq.length > 0 ? [{ href: "#faq", label: "FAQ" }] : []),
     { href: "#about", label: "About this ranking" },
     ...(related.length > 0 ? [{ href: "#related", label: "Related rankings" }] : []),
   ];
@@ -159,8 +158,8 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
                 The ranking
               </h2>
               <p className="muted" style={{ fontSize: "0.9rem", margin: 0 }}>
-                Ordered by organic LexRank score. Paid placements, where they exist, are always labelled and never affect a score or
-                position.
+                Ordered by organic LexRank score; paid placements are labelled and never affect a position.{" "}
+                <Link href="/methodology/">How we rank</Link>
               </p>
               {context && <ContextNote context={context} noun={noun} />}
             </div>
@@ -201,22 +200,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
 
           <EditorialBody html={ranking.body} />
 
-          <section id="methodology" className="card" aria-labelledby="why-this-ranking">
-            <h2 id="why-this-ranking" style={{ fontSize: "1.5rem" }}>
-              Why this ranking?
-            </h2>
-            <p className="muted">
-              LexRank evaluates publicly available and verified information including reputation, review strength, professional
-              experience, practice-area relevance, professional credentials, local relevance and data quality. Ratings are adjusted for
-              review volume, so a few perfect reviews cannot outrank hundreds of strong ones. Missing information is never guessed.
-            </p>
-            <Link className="link-arrow" href="/methodology/">
-              Read the full methodology
-            </Link>
-          </section>
-
-          <FaqSection items={ranking.faq} />
-          <RelatedQuestions items={questions} />
+          <FaqSection items={faq} />
           <AboutRanking ranking={ranking} facts={facts} />
           <div className="card">
             <p className="panel-title">Explore</p>
