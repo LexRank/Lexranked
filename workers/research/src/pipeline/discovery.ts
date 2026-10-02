@@ -52,10 +52,15 @@ export function rowVerifications(row: SeedRow, entityId: number, sourceId: numbe
     notes: `Seed dataset row ${row.line}; source read ${row.retrieved_at.slice(0, 10)}.`,
     ...(sourceId !== undefined ? { source_id: sourceId } : {}),
   };
-  return [
+  const checks: VerificationInput[] = [
     { ...base, verification_type: 'license', status: row.bar_status.toLowerCase() === 'active' ? 'verified' : 'failed' },
     { ...base, verification_type: 'bar_status', status: 'verified' },
   ];
+  // The regulator's record ties this name to a unique bar number: that identifies the person.
+  if (row.bar_state && row.bar_number) {
+    checks.push({ ...base, verification_type: 'identity', status: 'verified' });
+  }
+  return checks;
 }
 
 export async function runDiscovery(ctx: JobContext): Promise<PipelineResult> {

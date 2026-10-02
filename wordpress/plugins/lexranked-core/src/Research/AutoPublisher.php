@@ -27,7 +27,9 @@ use LexRanked\Core\Taxonomies\PracticeArea;
  * publish it together with its verified verification records and the
  * sources behind them, or keep everything as a draft and record why. Then a ranking is
  * created for each city and practice area that now has enough published
- * profiles and no ranking yet. Positions are still calculated by the engine.
+ * profiles and no ranking yet. Verified checks about profiles that were
+ * already published are published too, unless a published record of the same
+ * check contradicts them. Positions are still calculated by the engine.
  */
 final class AutoPublisher {
 
@@ -131,6 +133,26 @@ final class AutoPublisher {
 			}
 		}//end foreach
 
+		// New official checks about profiles that were already published.
+		$handled = array_column( $backing, 'id' );
+		foreach ( $records as $check ) {
+			$entity = get_post( $check['entity_id'] );
+			if ( in_array( $check['id'], $handled, true ) || in_array( $check['entity_id'], $summary['published'], true ) ) {
+				continue;
+			}
+			if ( ! $entity instanceof \WP_Post || 'publish' !== $entity->post_status || 'pending' !== $check['post_status'] ) {
+				continue;
+			}
+			if ( ! AutoPublishPolicy::publish_record_for_published( $check['status'], $this->published_statuses( $check['entity_id'], $check['type'] ) ) ) {
+				continue;
+			}
+			if ( $this->publish_post( $check['id'] ) ) {
+				++$summary['verifications'];
+				$backing[] = $check;
+				$this->log->add( $job_id, 'info', 'auto_publish', sprintf( 'Published verified %s check for #%d.', $check['type'], $check['entity_id'] ), array( 'entity_id' => $check['entity_id'] ) );
+			}
+		}
+
 		$summary['sources']  = $this->publish_sources( $job_id, $backing );
 		$summary['rankings'] = $this->ensure_rankings( $job_id, $summary['published'] );
 
@@ -148,6 +170,38 @@ final class AutoPublisher {
 			)
 		);
 		return $summary;
+	}
+
+	/**
+	 * Statuses of an entity's published records for one check.
+	 *
+	 * @param int    $entity_id Entity post ID.
+	 * @param string $type      Verification type.
+	 * @return array<int, string>
+	 */
+	private function published_statuses( int $entity_id, string $type ): array {
+		$v     = $this->services->verification;
+		$posts = get_posts(
+			array(
+				'post_type'        => VerificationRecord::SLUG,
+				'post_status'      => 'publish',
+				'posts_per_page'   => -1,
+				'no_found_rows'    => true,
+				'suppress_filters' => false,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Two exact keys on a short list.
+				'meta_query'       => array(
+					array(
+						'key'   => (string) $v->field( 'entity_id' )?->meta_key(),
+						'value' => $entity_id,
+					),
+					array(
+						'key'   => (string) $v->field( 'verification_type' )?->meta_key(),
+						'value' => $type,
+					),
+				),
+			)
+		);
+		return array_map( fn( \WP_Post $p ): string => (string) ( $this->services->entities->record( $p, $v )['fields']['status'] ?? '' ), $posts );
 	}
 
 	/**

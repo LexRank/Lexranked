@@ -112,6 +112,21 @@ final class AutoPublishPolicy {
 	}
 
 	/**
+	 * Whether a new check about an already-published profile can be published:
+	 * it is verified (tier 1 is enforced by VerificationRules) and no published
+	 * record of the same check says otherwise.
+	 *
+	 * @param string             $record_status      Status of the new record.
+	 * @param array<int, string> $published_statuses Statuses of published records of the same check.
+	 */
+	public static function publish_record_for_published( string $record_status, array $published_statuses ): bool {
+		if ( VerificationStatus::Verified->value !== $record_status ) {
+			return false;
+		}
+		return array() === array_intersect( $published_statuses, array( VerificationStatus::Failed->value, VerificationStatus::Expired->value ) );
+	}
+
+	/**
 	 * Decide whether to create a ranking for a city and practice area.
 	 *
 	 * @param int  $published_entities Published entities of the type in both terms.

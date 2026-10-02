@@ -67,7 +67,7 @@ describe('runOnce — candidate discovery', () => {
     expect(job.processedCount).toBe(6);
     expect(job.stats).toMatchObject({ candidates_created: 4, candidates_needs_review: 1, rows_invalid: 1 });
     expect(wp.requests.filter((r) => r.endsWith('/heartbeat'))).toHaveLength(3);
-    expect(wp.verifications.size).toBe(4); // license + bar_status for the two active bar-sourced lawyers.
+    expect(wp.verifications.size).toBe(6); // license + bar_status + identity for the two active bar-sourced lawyers.
     // Resolution identifiers travel with candidates (the CMS weighs them; a bar number is strong).
     const jordan = wp.candidateItems.find((c) => String(c.name).startsWith('Jordan'));
     expect(jordan?.identifiers).toEqual({ phone: '+1 305 555 0101', bar_state: 'FL', bar_number: '1001' });
@@ -168,6 +168,16 @@ describe('row mapping', () => {
       ['bar_status', 'verified'],
     ]);
     expect(rowVerifications({ ...row, source_type: 'review_platform' }, 7, undefined)).toEqual([]);
+  });
+
+  it('verifies identity only when the official record gives a bar number', () => {
+    const withNumber = { ...row, bar_state: 'FL', bar_number: '1001' };
+    expect(rowVerifications(withNumber, 7, undefined).map((v) => [v.verification_type, v.status])).toEqual([
+      ['license', 'failed'],
+      ['bar_status', 'verified'],
+      ['identity', 'verified'],
+    ]);
+    expect(rowVerifications({ ...withNumber, source_type: 'professional_directory' }, 7, undefined)).toEqual([]);
   });
 });
 

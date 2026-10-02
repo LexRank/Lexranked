@@ -157,6 +157,15 @@ final class AutoPublishPolicyTest extends TestCase {
 		$this->assertFalse( AutoPublishPolicy::publish_source( 1, false ) );
 	}
 
+	public function testNewChecksOnPublishedProfilesNeedNoContradiction(): void {
+		$this->assertTrue( AutoPublishPolicy::publish_record_for_published( 'verified', array() ) );
+		$this->assertTrue( AutoPublishPolicy::publish_record_for_published( 'verified', array( 'verified' ) ) );
+		$this->assertFalse( AutoPublishPolicy::publish_record_for_published( 'pending', array() ) );
+		$this->assertFalse( AutoPublishPolicy::publish_record_for_published( 'failed', array() ) );
+		$this->assertFalse( AutoPublishPolicy::publish_record_for_published( 'verified', array( 'failed' ) ) );
+		$this->assertFalse( AutoPublishPolicy::publish_record_for_published( 'verified', array( 'expired', 'verified' ) ) );
+	}
+
 	public function testRankingIsCreatedOnlyAboveTheThresholdAndOnce(): void {
 		$this->assertSame(
 			array(
