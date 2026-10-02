@@ -433,9 +433,14 @@ check "hub content job drafted the Miami page" '.status == "completed" and (.sta
 check "article content job drafted an article" '.status == "completed" and (.stats.drafts_ready + .stats.drafts_need_review) == 1' "$(wp lexranked research-status "$ART_JOB" --format=json)"
 HUB_DRAFT="$(wp post list --post_type=lr_content_draft --post_status=any --meta_key=_lr_content_type --meta_value=hub_content --field=ID --posts_per_page=1 | tail -1)"
 check "hub draft targets the city term" '. == "lr_location"' "\"$(wp post meta get "$HUB_DRAFT" _lr_target_taxonomy)\""
+HUB_TERM="$(wp post meta get "$HUB_DRAFT" _lr_target_term)"
+HUB_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/terms/location/$HUB_TERM" | jq -c '{summary: (.summary // ""), body: (.body // ""), faq, reviewed_by: (.reviewedBy // ""), reviewed_at: (.reviewedAt // "")}')"
 expect "editors see the hub draft with its QA status" "any(.[]; .id == $HUB_DRAFT and .contentType == \"hub_content\" and .canApply)" "$API/editorial/drafts" -u "itEditor:$ED_PW"
 expect "an editor applies the hub draft through the API" '.status == "applied" or .status == "partial"' "$API/editorial/drafts/$HUB_DRAFT/apply" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"acknowledge":true}'
 expect "applying twice changes nothing" '.status == "already"' "$API/editorial/drafts/$HUB_DRAFT/apply" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"acknowledge":true}'
+expect "the applied draft text is on the hub" '(.summary | length) > 0' "$API/editorial/terms/location/$HUB_TERM" -u "itEditor:$ED_PW"
+# Restore the seeded hub text that the frontend checks rely on.
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$HUB_BEFORE" "$API/editorial/terms/location/$HUB_TERM"
 check "the generator creates no WordPress posts (only content drafts)" '. == "2"' "\"$(wp post list --post_type=post --post_status=any --format=count)\""
 if grep -q "sk-fake-it-only" "$DATA_DIR/worker.log"; then fail "worker logged the OpenAI key"; else pass "OpenAI key never logged"; fi
 kill "$AI_PID" >/dev/null 2>&1 || true
@@ -476,7 +481,7 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "ranking shows #1 entry" "/rankings/florida/miami/personal-injury/" "Avery Example (Demo)"
   page_has "ranking has ItemList JSON-LD" "/rankings/florida/miami/personal-injury/" '"@type":"ItemList"'
   page_has "demo ranking is noindex" "/rankings/florida/miami/personal-injury/" 'content="noindex, follow"'
-  page_has "ranking explains methodology" "/rankings/florida/miami/personal-injury/" "Why this ranking?"
+  page_has "ranking links the methodology" "/rankings/florida/miami/personal-injury/" "How we rank"
   page_has "ranking has answer-first summary from data" "/rankings/florida/miami/personal-injury/" "the top-ranked personal injury lawyers in Miami, Florida are Avery Example (Demo)"
   page_has "ranking shows editorial summary" "/rankings/florida/miami/personal-injury/" "Demo content: this sample ranking compares"
   page_has "ranking shows editorial body below the list" "/rankings/florida/miami/personal-injury/" "What to ask a personal injury lawyer"
