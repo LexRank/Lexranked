@@ -59,6 +59,19 @@ final class ContentDraftInputTest extends TestCase {
 		$this->assertSame( ContentDraft::QA_READY, $draft['qa_status'] );
 		$this->assertSame( array( 'Scores use methodology v1.0.' ), $draft['sections'][0]['paragraphs'] );
 		$this->assertSame( "<h2>How the ranking works</h2>\n<p>Scores use methodology v1.0.</p>\n", ContentDraftInput::to_html( $draft['sections'] ) );
+		$this->assertSame(
+			"<h2>What to bring</h2>\n<p>Bring your documents.</p>\n<ul>\n<li>Police report</li>\n<li>&lt;b&gt;Bills&lt;/b&gt;</li>\n</ul>\n<p>More detail.</p>\n",
+			ContentDraftInput::to_html(
+				array(
+					array(
+						'heading'    => 'What to bring',
+						'paragraphs' => array( 'Bring your documents.', 'More detail.' ),
+						'bullets'    => array( 'Police report', '<b>Bills</b>' ),
+					),
+				)
+			),
+			'Bullets follow the answering paragraph and are escaped'
+		);
 		$this->assertSame( 'A / B', ContentDraftInput::faq_for_field( $draft['faq'] )[0]['answer'] );
 	}
 

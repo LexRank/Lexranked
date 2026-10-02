@@ -9,10 +9,41 @@ The plan's ranking URLs map to LexRanked rankings:
 only to rankings that exist; the guide template adds the matching rankings
 automatically (`frontend/lib/content/articles.ts`).
 
-Rules for every guide: facts from primary sources (statutes, courts, bars,
-agencies) cited at the end; state-specific points named as such; no "best"
-claims beyond what a ranking's data shows; general information, not legal
-advice; one WordPress category per guide (the plan's Category).
+## Editorial standard (every guide)
+
+1. **Complete.** The guide answers its topic fully and every question a
+   reader searching for it would ask (the plan's "Questions" are the
+   minimum, plus "People also ask"-style follow-ups). No thin sections.
+2. **Answer first.** Directly under the H1 lead and under every H2/H3, the
+   first one or two sentences answer that heading; detail follows below.
+   FAQ answers also start with the direct answer.
+3. **Helpful elements.** Use them wherever they make the answer easier to
+   use: a "short version" bullet list at the top, numbered steps,
+   checklists, comparison tables (fee models, deadlines by claim type,
+   process stages), and definition boxes. A guide without at least one list
+   or table needs a reason.
+4. **Researched and true.** Every legal rule, number, deadline, fee or
+   procedure is checked against a primary source (statute, court rule,
+   state bar, agency) before publishing, with the current version and its
+   effective date; secondary sources only to find primary ones. The
+   sources are linked at the end. Anything state-specific names the state;
+   national guides say how rules vary instead of stating one state's rule
+   as general.
+5. **Honest.** No "best" claims beyond what a ranking's data shows; no
+   invented statistics, quotes or case results; general information, not
+   legal advice (stated on the page).
+6. **Structure.** One WordPress category (the plan's Category); a clear
+   title with the primary keyword; a 150–160 character excerpt that answers
+   the question; internal links to related guides and the matching rankings
+   (the template adds rankings automatically); update date set when facts
+   are rechecked (see the plan's Update column).
+
+Who writes: guides need outside facts (statutes, deadlines, fees), so they
+are researched and written by the editorial assistant with web research and
+primary sources. The AI content generator (`content_generation` with
+`kind: article`) only writes from LexRanked's own data and is for guides
+about rankings and profiles; it also follows rules 1–3 (answer-first
+paragraphs, bullet lists).
 
 Status: ✅ published · 🟡 draft · blank = not started. Published so far:
 `personal-injury-claims-miami-florida-law` (Personal Injury, overlaps 11/15),
