@@ -11,6 +11,9 @@ Verified data + ranking data + methodology + sources
 ```
 
 - Content is generated only after research and only from stored data.
+- This applies to AI content drafts. Research profiles follow their own
+  rules: with **Autonomous research** on, profiles that pass every check are
+  published automatically ([research.md](research.md#autonomous-research)).
 - **Nothing is auto-published.** QA failure → `needs_review`; QA pass →
   `ready_for_review`; both remain WordPress drafts.
 

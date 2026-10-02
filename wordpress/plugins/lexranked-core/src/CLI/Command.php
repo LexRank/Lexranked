@@ -18,6 +18,7 @@ use LexRanked\Core\Ranking\ContextDiscovery;
 use LexRanked\Core\Ranking\ContextEligibility;
 use LexRanked\Core\Ranking\RankingQualifier;
 use LexRanked\Core\REST\DTO\RankingMapper;
+use LexRanked\Core\Research\AutoPublisher;
 use LexRanked\Core\Research\JobException;
 use LexRanked\Core\Research\JobPolicy;
 use LexRanked\Core\Services;
@@ -1181,6 +1182,51 @@ final class Command {
 		foreach ( $job['log'] as $entry ) {
 			\WP_CLI::line( sprintf( '  %s %-7s %-10s %s', $entry['createdAt'], $entry['level'], $entry['stage'], $entry['message'] ) );
 		}
+	}
+
+	/**
+	 * Apply the autonomous-research publication rules to a completed job now.
+	 *
+	 * Publishes the job's drafts that pass every check (with their verification
+	 * records and sources), keeps the rest as drafts with the reason, and
+	 * creates missing rankings. Works whether or not "Autonomous research" is
+	 * on, so an administrator can apply the rules to a job on demand.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <id>
+	 * : Job ID.
+	 *
+	 * @subcommand research-auto-publish
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function research_auto_publish( array $args, array $assoc_args ): void {
+		unset( $assoc_args );
+		$id = (int) ( $args[0] ?? 0 );
+		try {
+			$job = $this->services->jobs->view( $id );
+		} catch ( JobException $e ) {
+			\WP_CLI::error( $e->getMessage() );
+		}
+		if ( 'completed' !== $job['status'] ) {
+			\WP_CLI::error( sprintf( 'Job %d is %s; only completed jobs can be published.', $id, (string) $job['status'] ) );
+		}
+		$summary = ( new AutoPublisher( $this->services, $this->services->research_log ) )->run( $id );
+		foreach ( $summary['held'] as $entity_id => $reasons ) {
+			\WP_CLI::line( sprintf( '  kept #%d as draft: %s', $entity_id, implode( '; ', $reasons ) ) );
+		}
+		\WP_CLI::success(
+			sprintf(
+				'%d published, %d kept as drafts, %d verification records and %d sources published, %d rankings created.',
+				count( $summary['published'] ),
+				count( $summary['held'] ),
+				$summary['verifications'],
+				$summary['sources'],
+				count( $summary['rankings'] )
+			)
+		);
 	}
 
 	/**

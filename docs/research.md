@@ -9,10 +9,13 @@
 1. **WordPress is the source of truth.** Workers only *propose*: every
    submission is validated, deduplicated and applied by fixed rules inside
    the `lexranked-core` plugin.
-2. **Nothing is published automatically.** New lawyers and firms are created
-   as **drafts**; evidence about published profiles waits in an editorial
-   review queue; research-created sources and verification records are
-   `pending` posts.
+2. **Nothing is published without passing fixed rules.** New lawyers and
+   firms are created as **drafts**; evidence about published profiles waits
+   in an editorial review queue; research-created sources and verification
+   records are `pending` posts. With **Autonomous research** on (off by
+   default, see below), a completed job publishes only what passes every
+   check of `AutoPublishPolicy`; anything doubtful stays a draft with the
+   reason.
 3. **Every fact has a source.** A claim without a source URL/record and
    a retrieval date is rejected. Candidates must name the source they came
    from.
@@ -55,6 +58,7 @@ Seed dataset (curated CSV) ──► Candidates ──► Deterministic matching
 | Plugin `Research/VerificationRules` | Pure | caps `verified` by source tier per verification type |
 | Plugin `Research/ResearchIngest` | Intake | sources, candidates, claims, verifications, draft creation, applying facts |
 | Plugin `Research/ResearchLog` | Log | per-job log (redacted context) |
+| Plugin `Research/AutoPublishPolicy` · `AutoPublisher` | Autonomous research | pure publish / keep-as-draft rules; applies them when a job completes |
 | Plugin `REST/ResearchController` | API | private `/research/*` endpoints (see [api.md](api.md#research-api-private)) |
 | Plugin `Admin/ResearchAdmin` | Admin | job progress/log box, **LexRanked → Research review** page |
 | `workers/research` | TypeScript worker | claims jobs, runs pipelines, heartbeats, reports outcome |
@@ -75,14 +79,48 @@ Seed dataset (curated CSV) ──► Candidates ──► Deterministic matching
 types wait until **AI assistance** is enabled in Settings.
 
 Create jobs in **LexRanked → Research Jobs** (set parameters as JSON and the
-scope with the taxonomy boxes) or with WP-CLI:
+scope with the taxonomy boxes), through the API when **Autonomous research**
+is on (`POST /research/jobs`, `candidate_discovery` and `source_refresh`
+only), or with WP-CLI:
 
 ```bash
 wp lexranked research-job candidate_discovery --params='{"dataset":"florida-personal-injury"}' --location=miami
 wp lexranked research-status 42          # progress, stats, log
 wp lexranked research-run                # run due internal jobs now
 wp lexranked research-reindex            # rebuild the matching index
+wp lexranked research-auto-publish 42    # apply the autonomous-research rules to a completed job
 ```
+
+## Autonomous research
+
+**LexRanked → Settings → Autonomous research** (off by default). When it is
+on, research workers may create `candidate_discovery` and `source_refresh`
+jobs through the API, and every completed job is passed to `AutoPublisher`
+(a job can opt out with `"auto_publish": false`). For each lawyer or firm
+the job **created** (matched, existing profiles are never touched),
+`AutoPublishPolicy` decides:
+
+| Entity | Published only when all of these hold |
+|---|---|
+| Lawyer | still a draft, not demo, no conflicting facts (sources disagree → doubt), a name, a city under a state, at least one practice area, bar state + bar number, bar status `active`, and **license** and **bar status** checks `verified` (only a tier-1 source can verify them, see Verification) with no failed or expired record for the same check |
+| Law firm | the same general checks, a website, and a `verified` **business** check |
+
+- Published: the profile, its verification records and the sources behind
+  them (tier ≤ 2) are published; scores and rankings recalculate as usual.
+- Kept: the profile stays a draft; the reasons are stored in
+  `_lr_auto_publish_hold` and logged on the job ("Kept #… as a draft: …").
+  Its records and sources stay pending for an editor.
+- Rankings: for each city and practice area of a newly published profile,
+  a ranking ("Best Personal Injury Lawyers in Miami, Florida") is created and
+  published when there are at least *Minimum entities for a ranking*
+  published, non-demo profiles and no ranking for that pair exists in any
+  status. The engine calculates positions; editorial text can be added later.
+- Unchanged: AI content drafts are never published automatically, claims
+  stay pending, payment never affects anything, and every publication is in
+  the audit log (`research.auto_published`, `research.ranking_created`).
+
+Re-applying the rules (`wp lexranked research-auto-publish <job>`) is
+idempotent: published items are skipped and held drafts are re-checked.
 
 ## Job lifecycle, leases and retries
 
@@ -157,7 +195,8 @@ status and business need a **tier 1** source; location, website and
 practice area tier ≤ 2; review data tier ≤ 4. A `verified` request from a
 weaker source is recorded as `pending` (and logged as downgraded). Records
 get `verified_at`, `expires_at` from the freshness rules, `verified_by =
-research:job-<id>`, and are created as **pending** posts an editor publishes.
+research:job-<id>`, and are created as **pending** posts an editor publishes
+(or that autonomous research publishes with a profile that passes every check).
 
 ## Worker (`workers/research`)
 

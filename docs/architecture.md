@@ -35,7 +35,7 @@ Cloudflare ──▶ Vercel ──▶ Next.js frontend ──▶ LexRanked REST 
 | REST API (`lexranked/v1`) | Stable DTOs, validation, pagination, permissions | Return raw `WP_Post` objects or private fields |
 | `lexranked-core` plugin | Entities, evidence, verification, ranking engine, admin UI, audit logs | Depend on a theme |
 | WordPress | Storage, users/capabilities, editorial workflow | Serve the public site |
-| Workers (`workers/`) | Long-running research, recalculation, drafting, QA | Write directly to the database, publish content, or decide rankings with an LLM |
+| Workers (`workers/`) | Long-running research, recalculation, drafting, QA | Write directly to the database, publish content (only the plugin publishes, by fixed rules), or decide rankings with an LLM |
 
 ## Repository layout
 

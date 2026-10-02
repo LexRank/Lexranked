@@ -16,6 +16,8 @@ use LexRanked\Core\Research\JobException;
 use LexRanked\Core\Research\ResearchIngest;
 use LexRanked\Core\Security\Capabilities;
 use LexRanked\Core\Services;
+use LexRanked\Core\Taxonomies\Location;
+use LexRanked\Core\Taxonomies\PracticeArea;
 
 /**
  * Private endpoints for research workers (capability `lexranked_research`).
@@ -26,6 +28,9 @@ use LexRanked\Core\Services;
  * Responses are never cached.
  */
 final class ResearchController extends RestController {
+
+	/** Job types a worker may create itself when autonomous research is on (no AI types). */
+	public const CREATABLE_TYPES = array( 'candidate_discovery', 'source_refresh' );
 
 	public const LEASE_HEADER = 'x-lexranked-lease';
 
@@ -67,6 +72,47 @@ final class ResearchController extends RestController {
 							'enum' => ResearchJob::JOB_TYPES,
 						),
 						'minItems' => 1,
+					),
+				),
+			)
+		);
+		register_rest_route(
+			$ns,
+			'/research/jobs',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create' ),
+				'permission_callback' => $perm,
+				'args'                => array(
+					'job_type'       => array(
+						'type'     => 'string',
+						'required' => true,
+						'enum'     => self::CREATABLE_TYPES,
+					),
+					'params'         => array(
+						'type'    => 'object',
+						'default' => array(),
+					),
+					'title'          => array(
+						'type'      => 'string',
+						'maxLength' => 200,
+						'default'   => '',
+					),
+					'locations'      => array(
+						'type'    => 'array',
+						'items'   => array(
+							'type'    => 'string',
+							'pattern' => '^[a-z0-9]+(-[a-z0-9]+)*$',
+						),
+						'default' => array(),
+					),
+					'practice_areas' => array(
+						'type'    => 'array',
+						'items'   => array(
+							'type'    => 'string',
+							'pattern' => '^[a-z0-9]+(-[a-z0-9]+)*$',
+						),
+						'default' => array(),
 					),
 				),
 			)
@@ -308,6 +354,42 @@ final class ResearchController extends RestController {
 		return $this->run(
 			fn(): array => array( 'job' => $this->services->jobs->claim( (string) $request['worker'], (array) $request['types'] ) )
 		);
+	}
+
+	/**
+	 * POST /research/jobs — only when Settings → "Autonomous research" is on.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function create( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( ! $this->services->settings->get( 'research_autonomy' ) ) {
+			return new \WP_Error( 'lexranked_forbidden', 'Creating research jobs through the API requires "Autonomous research" in LexRanked → Settings.', array( 'status' => 403 ) );
+		}
+		$type   = (string) $request['job_type'];
+		$params = (array) $request['params'];
+		if ( 'candidate_discovery' === $type && ( ! is_string( $params['dataset'] ?? null ) || 1 !== preg_match( '/^[a-z0-9][a-z0-9_-]{0,63}$/', $params['dataset'] ) ) ) {
+			return new \WP_Error( 'lexranked_invalid_param', 'candidate_discovery needs params.dataset (a dataset name: lowercase letters, digits, "-" or "_").', array( 'status' => 400 ) );
+		}
+		$scope = array();
+		foreach ( array(
+			'locations'      => Location::SLUG,
+			'practice_areas' => PracticeArea::SLUG,
+		) as $key => $taxonomy ) {
+			$scope[ $key ] = array();
+			foreach ( (array) $request[ $key ] as $slug ) {
+				$term = get_term_by( 'slug', (string) $slug, $taxonomy );
+				if ( ! $term instanceof \WP_Term ) {
+					return new \WP_Error( 'lexranked_invalid_param', sprintf( 'Unknown %s "%s".', 'locations' === $key ? 'location' : 'practice area', $slug ), array( 'status' => 400 ) );
+				}
+				$scope[ $key ][] = (int) $term->term_id;
+			}
+		}
+		try {
+			$id = $this->services->jobs->create( $type, $params, trim( wp_strip_all_tags( (string) $request['title'] ) ), $scope['locations'], $scope['practice_areas'] );
+		} catch ( \RuntimeException $e ) {
+			return new \WP_Error( 'lexranked_job_not_created', 'The research job could not be created.', array( 'status' => 500 ) );
+		}
+		return $this->run( fn(): array => $this->services->jobs->view( $id ) );
 	}
 
 	/**

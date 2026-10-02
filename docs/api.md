@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.16.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.17.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -306,6 +306,7 @@ See [research.md](research.md) for the semantics.
 
 | Method & path | Body / params | Returns |
 |---|---|---|
+| `POST /research/jobs` | `{job_type: candidate_discovery\|source_refresh, params?, title?, locations?[slug], practice_areas?[slug]}` | Job (`pending`); `403` unless **Autonomous research** is on; `candidate_discovery` needs `params.dataset` (API 1.17) |
 | `POST /research/jobs/claim` | `{worker, types[]}` | `{job: Job + token}` or `{job: null}`; `503 lexranked_claim_busy` when another claim holds the lock |
 | `GET /research/jobs/{id}` | — | Job + `logCounts`, `candidateCounts` |
 | `GET /research/jobs/{id}/log` | `after` (log ID) | `[{id, level, stage, message, context, createdAt}]` |
