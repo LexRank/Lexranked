@@ -87,9 +87,11 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
   const context = ranking.context ?? null;
   // Narrower "best for" rankings that passed their data threshold (Etap F).
   const narrower = rankings.filter((r) => r.context?.parent?.id === ranking.id && !r.isThin && r.path);
-  const related = rankings
-    .filter((r) => r.id !== ranking.id && !r.isThin && !narrower.includes(r) && (r.location?.stateSlug === ranking.location?.stateSlug || r.practiceArea?.slug === ranking.practiceArea?.slug))
-    .slice(0, 4);
+  const others = rankings.filter((r) => r.id !== ranking.id && !r.isThin && !r.context && r.path && !narrower.includes(r));
+  // Internal links both ways: the same practice area in other cities, other practice areas here.
+  const samePractice = others.filter((r) => r.practiceArea?.slug === ranking.practiceArea?.slug && r.location?.citySlug !== ranking.location?.citySlug).slice(0, 12);
+  const sameCity = others.filter((r) => r.location?.citySlug && r.location.citySlug === ranking.location?.citySlug && r.practiceArea?.slug !== ranking.practiceArea?.slug).slice(0, 12);
+  const related = others.filter((r) => !samePractice.includes(r) && !sameCity.includes(r) && r.location?.stateSlug === ranking.location?.stateSlug).slice(0, 4);
   const noun = ranking.entityType === "law_firm" ? "firm" : "lawyer";
   const facts = rankingFacts(ranking);
   const answer = rankingAnswer(ranking, facts);
@@ -102,7 +104,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
     ...(market && market.stats.lawyers > 0 ? [{ href: "#market", label: "Market statistics" }] : []),
     ...(faq.length > 0 ? [{ href: "#faq", label: "FAQ" }] : []),
     { href: "#about", label: "About this ranking" },
-    ...(related.length > 0 ? [{ href: "#related", label: "Related rankings" }] : []),
+    ...(related.length + samePractice.length + sameCity.length > 0 ? [{ href: "#related", label: "Related rankings" }] : []),
   ];
 
   return (
@@ -230,14 +232,45 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
           </div>
 
 
-          {related.length > 0 && (
-            <section id="related">
+          {related.length + samePractice.length + sameCity.length > 0 && (
+            <section id="related" className="stack">
               <h2>Related rankings</h2>
-              <div className="grid grid--2">
-                {related.map((r) => (
-                  <RankingCard key={r.id} ranking={r} />
-                ))}
-              </div>
+              {samePractice.length > 0 && ranking.practiceArea && (
+                <nav aria-label={`${ranking.practiceArea.name} rankings in other cities`}>
+                  <h3 style={{ fontSize: "1.05rem" }}>{ranking.practiceArea.name} lawyers in other cities</h3>
+                  <ul className="chips">
+                    {samePractice.map((r) => (
+                      <li key={r.id}>
+                        <Link className="chip" href={r.path as string}>
+                          {r.location?.city ?? r.title}
+                          {r.location?.stateCode ? `, ${r.location.stateCode}` : ""}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              )}
+              {sameCity.length > 0 && ranking.location?.city && (
+                <nav aria-label={`Other rankings in ${ranking.location.city}`}>
+                  <h3 style={{ fontSize: "1.05rem" }}>Other practice areas in {ranking.location.city}</h3>
+                  <ul className="chips">
+                    {sameCity.map((r) => (
+                      <li key={r.id}>
+                        <Link className="chip" href={r.path as string}>
+                          {r.practiceArea?.name ?? r.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              )}
+              {related.length > 0 && (
+                <div className="grid grid--2">
+                  {related.map((r) => (
+                    <RankingCard key={r.id} ranking={r} />
+                  ))}
+                </div>
+              )}
             </section>
           )}
         </div>

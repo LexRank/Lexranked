@@ -83,4 +83,12 @@ describe("schema.org mirrors the visible profile (Etap H)", () => {
     inactive.professional = { ...inactive.professional, barStatus: "inactive" };
     expect(lawyerJsonLd(inactive).hasCredential).toBeUndefined();
   });
+
+  it("lists board certifications next to the license", () => {
+    const certified = lawyerDetail();
+    certified.professional = { ...certified.professional, awards: [{ name: "Board Certified in Civil Trial Law", issuer: "The Florida Bar", year: "2003" }, { name: "Local award", issuer: null, year: null }] };
+    const creds = lawyerJsonLd(certified).hasCredential as Array<Record<string, unknown>>;
+    expect(creds).toHaveLength(2);
+    expect(creds[1]).toMatchObject({ credentialCategory: "certification", name: "Board Certified in Civil Trial Law", recognizedBy: { "@type": "Organization", name: "The Florida Bar" } });
+  });
 });

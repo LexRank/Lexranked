@@ -114,20 +114,36 @@ export function lawyerJsonLd(lawyer: LawyerDetail): JsonLdObject {
       .map((e) => ({ "@type": "EducationalOrganization", name: e.institution })),
     award: lawyer.professional.awards.filter((a) => a.name).map((a) => a.name as string),
     // Only when the page shows an active bar admission (Etap H: schema mirrors visible data).
-    hasCredential:
-      lawyer.professional.barState && lawyer.professional.barStatus === "active"
-        ? compact({
-            "@type": "EducationalOccupationalCredential",
-            credentialCategory: "license",
-            name: `Bar admission (${lawyer.professional.barState})`,
-            recognizedBy: barRegulator(lawyer.professional.barState),
-          })
-        : undefined,
+    hasCredential: credentials(lawyer),
     identifier:
       lawyer.professional.barState && lawyer.professional.barNumber
         ? { "@type": "PropertyValue", propertyID: `${lawyer.professional.barState} bar number`, value: lawyer.professional.barNumber }
         : undefined,
   });
+}
+
+/**
+ * The bar license (only while active) and board certifications, as shown on
+ * the profile. One credential stays a single object; several become a list.
+ */
+function credentials(lawyer: LawyerDetail): JsonLdObject | JsonLdObject[] | undefined {
+  const p = lawyer.professional;
+  const out: JsonLdObject[] = [];
+  if (p.barState && p.barStatus === "active") {
+    out.push(compact({ "@type": "EducationalOccupationalCredential", credentialCategory: "license", name: `Bar admission (${p.barState})`, recognizedBy: barRegulator(p.barState) }));
+  }
+  for (const a of p.awards) {
+    if (!a.name || !/^board certified/i.test(a.name)) continue;
+    out.push(
+      compact({
+        "@type": "EducationalOccupationalCredential",
+        credentialCategory: "certification",
+        name: a.name,
+        recognizedBy: a.issuer ? { "@type": "Organization", name: a.issuer } : undefined,
+      }),
+    );
+  }
+  return out.length === 0 ? undefined : out.length === 1 ? out[0] : out;
 }
 
 /** State bars LexRanked reads as official sources (shown on profiles as the evidence source). */
