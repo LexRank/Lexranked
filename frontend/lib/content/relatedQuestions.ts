@@ -26,10 +26,11 @@ export function relatedQuestions(ranking: RankingDetail, all: RankingSummary[] =
   const version = entries[0]?.scoreVersion ? `LexRank ${entries[0].scoreVersion}` : "LexRank";
   const out: RelatedQuestion[] = [];
 
+  // The one methodology question; the methodology page has the detail.
   out.push({
     question: `How were these ${noun} ranked?`,
-    answer: `By their ${version} score: seven weighted components (reputation, review strength, experience, practice-area relevance, credentials, local relevance and data quality) calculated only from facts backed by a source. Missing facts score zero; nothing is estimated, and payment never changes a position.`,
-    link: { href: "/methodology/", label: "Read the methodology" },
+    answer: `By their ${version} score, calculated only from facts backed by a cited source. Payment never changes a position.`,
+    link: { href: "/methodology/", label: "How we rank" },
   });
 
   const verified = entries.filter((e) => e.entity.verification.status === "verified").map((e) => e.entity.name);
@@ -66,7 +67,8 @@ export function relatedQuestions(ranking: RankingDetail, all: RankingSummary[] =
 
   const second = entries[1];
   const behind = second?.why?.behind;
-  if (second && behind) {
+  // Only when there is a difference to explain (a tie has none).
+  if (second && behind && behind.scoreGap > 0) {
     const first = entries[0]!;
     const gaps = behind.components.filter((c) => c.delta > 0).slice(0, 2).map((c) => c.label.toLowerCase());
     const href = compareHref(ranking.entityType === "law_firm" ? "law_firm" : "lawyer", [first.entity.entityId, second.entity.entityId]);

@@ -138,7 +138,7 @@ describe('content_generation kinds', () => {
     const job = wp.addJob('content_generation', { kind: 'hub' });
     expect(await runOnce(deps)).toBe('completed');
     expect(wp.drafts).toHaveLength(1);
-    expect(wp.drafts[0]).toMatchObject({ content_type: 'hub_content', target_term: 7, target_taxonomy: 'lr_location', prompt_version: 'interp/1+hub-content/2' });
+    expect(wp.drafts[0]).toMatchObject({ content_type: 'hub_content', target_term: 7, target_taxonomy: 'lr_location', prompt_version: 'interp/2+hub-content/2' });
     expect(job.stats).toMatchObject({ targets_skipped_thin: 1 });
   });
 
@@ -167,8 +167,8 @@ describe('content_generation kinds', () => {
         summary: 'What the LexRank score measures and what to check yourself.',
         summaryFactRefs: [refsFor(req, 'How positions are decided')],
         sections: [
-          { heading: 'What the score measures', paragraphs: [{ text: 'Reputation carries 30% of the score under methodology v1.0.', factRefs: [refsFor(req, 'Score components and weights'), refsFor(req, 'Methodology version')] }] },
-          { heading: 'What to check yourself', paragraphs: [{ text: 'Ask who will handle your case day to day and how fees work.', factRefs: [] }] },
+          { heading: 'What the score measures', paragraphs: [{ text: 'Reputation carries 30% of the score under methodology v1.0.', factRefs: [refsFor(req, 'Score components and weights'), refsFor(req, 'Methodology version')] }], bullets: [] },
+          { heading: 'What to check yourself', paragraphs: [{ text: 'Ask who will handle your case day to day and how fees work.', factRefs: [] }], bullets: [{ text: 'Who will handle your case day to day', factRefs: [] }, { text: 'How fees and costs are charged', factRefs: [] }] },
         ],
         faq: [],
       }),
@@ -177,7 +177,8 @@ describe('content_generation kinds', () => {
     wp.publicRoutes = { '/score-versions': METHODOLOGY };
     wp.addJob('content_generation', { kind: 'article', topic: 'How to read a lawyer ranking' });
     expect(await runOnce(deps)).toBe('completed');
-    expect(wp.drafts[0]).toMatchObject({ content_type: 'article', target_id: null, content: { title: 'How to read a lawyer ranking' }, prompt_version: 'interp/1+article/2' });
+    expect(wp.drafts[0]).toMatchObject({ content_type: 'article', target_id: null, content: { title: 'How to read a lawyer ranking' }, prompt_version: 'interp/2+article/3' });
+    expect((wp.drafts[0] as { content: { sections: unknown[] } }).content.sections[1]).toMatchObject({ bullets: ['Who will handle your case day to day', 'How fees and costs are charged'] });
   });
 
   it('rejects an article job without a usable topic', async () => {

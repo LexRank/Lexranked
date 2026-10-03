@@ -10,12 +10,12 @@ import { DemoNotice } from "@/components/ui";
 import { rankingEligibility } from "@/lib/content/eligibility";
 import { resolveRanking } from "@/lib/content/rankings";
 import { rankingAnswer, rankingFacts } from "@/lib/content/rankingFacts";
-import { AboutRanking, EditorialBody, FaqSection, OnThisPage, RankingOverview, RankingSources, RelatedQuestions } from "@/components/ranking/RankingContent";
+import { AboutRanking, EditorialBody, FaqSection, OnThisPage, RankingOverview, RankingSources } from "@/components/ranking/RankingContent";
 import { relatedQuestions } from "@/lib/content/relatedQuestions";
 import { allRankings } from "@/lib/data/loaders";
 import { formatDate, isoDate, pluralize } from "@/lib/format";
 import { methodologyLabel } from "@/lib/methodology";
-import { rankingJsonLd, rankingPageJsonLd, type Crumb } from "@/lib/seo/jsonld";
+import { placeJsonLd, practiceAreaJsonLd, rankingJsonLd, rankingPageJsonLd, type Crumb } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getMarket, getPlacements, getRanking } from "@/lib/wordpress/api";
 import { MarketStats } from "@/components/MarketStats";
@@ -87,23 +87,24 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
   const context = ranking.context ?? null;
   // Narrower "best for" rankings that passed their data threshold (Etap F).
   const narrower = rankings.filter((r) => r.context?.parent?.id === ranking.id && !r.isThin && r.path);
-  const related = rankings
-    .filter((r) => r.id !== ranking.id && !r.isThin && !narrower.includes(r) && (r.location?.stateSlug === ranking.location?.stateSlug || r.practiceArea?.slug === ranking.practiceArea?.slug))
-    .slice(0, 4);
+  const others = rankings.filter((r) => r.id !== ranking.id && !r.isThin && !r.context && r.path && !narrower.includes(r));
+  // Internal links both ways: the same practice area in other cities, other practice areas here.
+  const samePractice = others.filter((r) => r.practiceArea?.slug === ranking.practiceArea?.slug && r.location?.citySlug !== ranking.location?.citySlug).slice(0, 12);
+  const sameCity = others.filter((r) => r.location?.citySlug && r.location.citySlug === ranking.location?.citySlug && r.practiceArea?.slug !== ranking.practiceArea?.slug).slice(0, 12);
+  const related = others.filter((r) => !samePractice.includes(r) && !sameCity.includes(r) && r.location?.stateSlug === ranking.location?.stateSlug).slice(0, 4);
   const noun = ranking.entityType === "law_firm" ? "firm" : "lawyer";
   const facts = rankingFacts(ranking);
   const answer = rankingAnswer(ranking, facts);
-  const questions = relatedQuestions(ranking, rankings);
+  // One FAQ: editorial questions about the practice area and place first, then what this ranking's data answers.
+  const faq = [...ranking.faq, ...relatedQuestions(ranking, rankings)];
   const toc = [
     { href: "#ranking", label: "The ranking" },
     ...(ranking.body.trim() ? [{ href: "#guide", label: "Guide" }] : []),
     ...((ranking.sources ?? []).length > 0 ? [{ href: "#sources", label: "Sources" }] : []),
     ...(market && market.stats.lawyers > 0 ? [{ href: "#market", label: "Market statistics" }] : []),
-    { href: "#methodology", label: "Why this ranking?" },
-    ...(ranking.faq.length > 0 ? [{ href: "#faq", label: "FAQ" }] : []),
-    ...(questions.length > 0 ? [{ href: "#related-questions", label: "Related questions" }] : []),
+    ...(faq.length > 0 ? [{ href: "#faq", label: "FAQ" }] : []),
     { href: "#about", label: "About this ranking" },
-    ...(related.length > 0 ? [{ href: "#related", label: "Related rankings" }] : []),
+    ...(related.length + samePractice.length + sameCity.length > 0 ? [{ href: "#related", label: "Related rankings" }] : []),
   ];
 
   return (
@@ -118,6 +119,8 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
             dateModified: ranking.updatedAt,
             reviewedBy: ranking.editorial.reviewedBy,
             reviewedAt: ranking.editorial.reviewedAt,
+            hasList: ranking.entries.length > 0,
+            about: [placeJsonLd(ranking.location), practiceAreaJsonLd(ranking.practiceArea)],
           }),
         ]}
       />
@@ -157,8 +160,8 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
                 The ranking
               </h2>
               <p className="muted" style={{ fontSize: "0.9rem", margin: 0 }}>
-                Ordered by organic LexRank score. Paid placements, where they exist, are always labelled and never affect a score or
-                position.
+                Ordered by organic LexRank score; paid placements are labelled and never affect a position.{" "}
+                <Link href="/methodology/">How we rank</Link>
               </p>
               {context && <ContextNote context={context} noun={noun} />}
             </div>
@@ -188,7 +191,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
 
           <PlacementBlock placements={sponsored} product="sponsored" />
 
-          <RankingSources sources={ranking.sources ?? []} noun={noun} />
+          <RankingSources sources={ranking.sources ?? []} noun={noun} rankedCount={ranking.entries.length} />
           {market && (
             <MarketStats
               market={market}
@@ -199,22 +202,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
 
           <EditorialBody html={ranking.body} />
 
-          <section id="methodology" className="card" aria-labelledby="why-this-ranking">
-            <h2 id="why-this-ranking" style={{ fontSize: "1.5rem" }}>
-              Why this ranking?
-            </h2>
-            <p className="muted">
-              LexRank evaluates publicly available and verified information including reputation, review strength, professional
-              experience, practice-area relevance, professional credentials, local relevance and data quality. Ratings are adjusted for
-              review volume, so a few perfect reviews cannot outrank hundreds of strong ones. Missing information is never guessed.
-            </p>
-            <Link className="link-arrow" href="/methodology/">
-              Read the full methodology
-            </Link>
-          </section>
-
-          <FaqSection items={ranking.faq} />
-          <RelatedQuestions items={questions} />
+          <FaqSection items={faq} />
           <AboutRanking ranking={ranking} facts={facts} />
           <div className="card">
             <p className="panel-title">Explore</p>
@@ -244,14 +232,45 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
           </div>
 
 
-          {related.length > 0 && (
-            <section id="related">
+          {related.length + samePractice.length + sameCity.length > 0 && (
+            <section id="related" className="stack">
               <h2>Related rankings</h2>
-              <div className="grid grid--2">
-                {related.map((r) => (
-                  <RankingCard key={r.id} ranking={r} />
-                ))}
-              </div>
+              {samePractice.length > 0 && ranking.practiceArea && (
+                <nav aria-label={`${ranking.practiceArea.name} rankings in other cities`}>
+                  <h3 style={{ fontSize: "1.05rem" }}>{ranking.practiceArea.name} lawyers in other cities</h3>
+                  <ul className="chips">
+                    {samePractice.map((r) => (
+                      <li key={r.id}>
+                        <Link className="chip" href={r.path as string}>
+                          {r.location?.city ?? r.title}
+                          {r.location?.stateCode ? `, ${r.location.stateCode}` : ""}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              )}
+              {sameCity.length > 0 && ranking.location?.city && (
+                <nav aria-label={`Other rankings in ${ranking.location.city}`}>
+                  <h3 style={{ fontSize: "1.05rem" }}>Other practice areas in {ranking.location.city}</h3>
+                  <ul className="chips">
+                    {sameCity.map((r) => (
+                      <li key={r.id}>
+                        <Link className="chip" href={r.path as string}>
+                          {r.practiceArea?.name ?? r.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              )}
+              {related.length > 0 && (
+                <div className="grid grid--2">
+                  {related.map((r) => (
+                    <RankingCard key={r.id} ranking={r} />
+                  ))}
+                </div>
+              )}
             </section>
           )}
         </div>

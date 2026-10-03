@@ -1,6 +1,6 @@
 # REST API
 
-Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.16.0`
+Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.18.0`
 (`X-LexRanked-API` response header).
 
 Public endpoints are `GET`; the private research API (below) accepts `POST`
@@ -144,7 +144,7 @@ Rules:
 
 ### AI-readable pages (API 1.15)
 - **`GET /methodology`** returns `{ active, versions[], updatedAt, schedule{recalculation, dataQuality, snapshots}, sourceTiers[{type, tier, tierLabel}], freshness[{category, maxAgeDays}], dataQuality, pageEligibility }`. `active` and `versions[]` are ScoreVersion objects; `updatedAt` is the last calculation.
-- **Lawyer and firm details** add `aiSummary{version: "sum-1.0", text, facts[{key, label, value, status: verified|sourced|derived, asOf, source}], asOf}`. It is generated from the profile's facts only.
+- **Lawyer and firm details** add `aiSummary{version: "sum-1.1", text, facts[{key, label, value, status: verified|sourced|derived, asOf, source}], asOf}`. It is generated from the profile's facts only.
 - **Ranking details** add `sources[{id, name, url, publisher, type, tier, tierLabel, facts, entities}]`: the sources behind the entries' facts, best tier first.
 
 ### `GET /page-eligibility` and `eligibility` on DTOs (API 1.14)
@@ -306,6 +306,7 @@ See [research.md](research.md) for the semantics.
 
 | Method & path | Body / params | Returns |
 |---|---|---|
+| `POST /research/jobs` | `{job_type: candidate_discovery\|source_refresh, params?, title?, locations?[slug], practice_areas?[slug]}` | Job (`pending`); `403` unless **Autonomous research** is on; `candidate_discovery` needs `params.dataset` (API 1.17) |
 | `POST /research/jobs/claim` | `{worker, types[]}` | `{job: Job + token}` or `{job: null}`; `503 lexranked_claim_busy` when another claim holds the lock |
 | `GET /research/jobs/{id}` | — | Job + `logCounts`, `candidateCounts` |
 | `GET /research/jobs/{id}/log` | `after` (log ID) | `[{id, level, stage, message, context, createdAt}]` |
@@ -328,3 +329,23 @@ See [research.md](research.md) for the semantics.
 Job DTO: `{id, title, jobType, status, params, scope{locations[], practiceAreas[]},
 cursor, processedCount, retryCount, stats, startedAt, completedAt, lockedUntil,
 nextRetryAt, worker, error}`. The lease token is returned only by `claim`.
+
+## Editorial API (private)
+
+Since API 1.18.0. What an editor does in wp-admin, over the API: page text,
+never scores, positions, facts or verification. Requires a logged-in user
+with `edit_posts`; each route also checks the capability of its admin screen
+(`edit_post` on the ranking or profile, `manage_categories` for hubs) and
+every change is written to the audit log.
+
+| Route | Body | Result |
+|---|---|---|
+| `GET /editorial/rankings/{id}` | — | `{id, title, slug, status, summary, body, faq[], reviewedBy, reviewedAt}` (raw body) |
+| `POST /editorial/rankings/{id}` | any of `title`, `slug`, `summary`, `body` (HTML, sanitized with `wp_kses_post`), `faq[{question, answer}]` (≤ 20), `reviewed_by`, `reviewed_at` (`YYYY-MM-DD`) | the ranking's editorial view; `""` clears a field |
+| `GET /editorial/terms/{location\|practice-area}/{id}` | — | `{id, taxonomy, name, slug, summary, body, faq[], reviewedBy, reviewedAt}` |
+| `POST /editorial/terms/{location\|practice-area}/{id}` | any of `summary`, `body`, `faq`, `reviewed_by`, `reviewed_at` | the hub's editorial view |
+| `POST /editorial/profiles/{id}` | `{summary}` (2–4 plain sentences) | `{id, name, summary}` |
+| `GET /editorial/drafts` | `qa_status?` | AI content drafts with `contentType`, `qaStatus`, `target`, `summary`, `faq`, `body`, `qaReport`, `canApply` |
+| `POST /editorial/drafts/{id}/apply` | `{acknowledge?}` | `{id, status: applied\|partial\|already, errors, article_id}`; `409 lexranked_needs_review` for a draft that failed QA unless `acknowledge: true` |
+
+Saving runs the same hooks as wp-admin, so the public page is revalidated.

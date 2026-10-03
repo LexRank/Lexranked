@@ -74,7 +74,7 @@ and the Cloudflare rules.
   after its lease expires.
 - Run it on a network segment without access to internal services (the
   SSRF guard blocks private addresses, but defense in depth matters).
-- AI (optional): set `OPENAI_API_KEY` and `OPENAI_MODEL` on the worker
+- AI (optional): set `OPENAI_API_KEY` on the worker (the model is picked from `src/ai/models.ts`; `OPENAI_MODEL` overrides it)
   only, set a per-job cap (`OPENAI_MAX_CALLS_PER_JOB`) and enable *AI
   assistance* in WordPress Settings. See `docs/ai.md`.
 

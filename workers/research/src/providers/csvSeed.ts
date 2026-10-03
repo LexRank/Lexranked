@@ -6,7 +6,10 @@
  *
  * Required columns: entity_type, name, source_url, source_type, retrieved_at
  * Optional columns: city, state, practice_area, website, phone,
- *                   bar_state, bar_number, bar_status, confidence
+ *                   bar_state, bar_number, bar_status, confidence,
+ *                   years_experience, languages ("Spanish; Italian"),
+ *                   education ("Institution | Degree | Year; …"),
+ *                   awards ("Name | Issuer | Year; …")
  */
 
 import { readFile } from 'node:fs/promises';
@@ -31,7 +34,20 @@ export interface SeedRow {
   bar_state?: string;
   bar_number?: string;
   bar_status?: string;
+  years_experience?: number;
+  languages?: string[];
+  education?: Array<{ institution: string; degree: string; year: string }>;
+  awards?: Array<{ name: string; issuer: string; year: string }>;
   confidence: number;
+}
+
+/** "a | b | c; d | e | f" → objects with the given keys (missing parts are ""). */
+export function objectList<K extends string>(raw: string, keys: readonly K[]): Array<Record<K, string>> {
+  return raw
+    .split(';')
+    .map((item) => item.split('|').map((p) => p.trim()))
+    .filter((parts) => parts[0] !== undefined && parts[0] !== '')
+    .map((parts) => Object.fromEntries(keys.map((k, i) => [k, parts[i] ?? ''])) as Record<K, string>);
 }
 
 export type ParsedRow = { ok: true; row: SeedRow } | { ok: false; line: number; error: string };
@@ -74,6 +90,14 @@ export function parseSeedCsv(text: string): ParsedRow[] {
       const value = rec[col];
       if (value) row[col] = value;
     }
+    if (rec.years_experience) {
+      const years = Number(rec.years_experience);
+      if (!Number.isInteger(years) || years < 0 || years > 80) return { ok: false, line, error: 'years_experience must be a whole number of years' };
+      row.years_experience = years;
+    }
+    if (rec.languages) row.languages = rec.languages.split(';').map((l) => l.trim()).filter(Boolean);
+    if (rec.education) row.education = objectList(rec.education, ['institution', 'degree', 'year'] as const);
+    if (rec.awards) row.awards = objectList(rec.awards, ['name', 'issuer', 'year'] as const);
     return { ok: true, row };
   });
 }

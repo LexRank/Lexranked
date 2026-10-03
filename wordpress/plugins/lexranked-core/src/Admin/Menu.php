@@ -242,6 +242,11 @@ final class Menu {
 			checked( (bool) $s['ai_enabled'], true, false )
 		);
 		printf(
+			'<tr><th scope="row">Autonomous research</th><td><input type="hidden" name="%1$s[research_autonomy]" value="0"><label><input type="checkbox" name="%1$s[research_autonomy]" value="1"%2$s> Let research workers create research jobs and publish results that pass every check</label><p class="description">Off by default. When a job completes, a lawyer is published only with a name, city, practice area, bar number and an active bar status, with licence and bar status verified by an official source and no conflicting facts; a law firm needs a website and a verified business record. Everything else stays a draft with the reason in the job log. Verification records and sources behind published profiles are published with them, and a ranking is created for a city and practice area once it has enough published profiles. AI content drafts are never published automatically. A job can opt out with <code>"auto_publish": false</code>.</p></td></tr>',
+			esc_attr( $name ),
+			checked( (bool) $s['research_autonomy'], true, false )
+		);
+		printf(
 			'<tr><th scope="row">Profile claims</th><td><input type="hidden" name="%1$s[claims_enabled]" value="0"><label><input type="checkbox" name="%1$s[claims_enabled]" value="1"%2$s> Accept profile claims from the public site</label><p class="description">Claims are reviewed under LexRanked → Profile claims. Confirmation emails use wp_mail(): configure a transactional mail service in production.</p></td></tr>',
 			esc_attr( $name ),
 			checked( (bool) $s['claims_enabled'], true, false )

@@ -307,6 +307,17 @@ final class JobService {
 		$this->log->add( $job_id, 'info', 'complete', 'Job completed.' );
 		AuditLog::log( 'research_job.completed', ResearchJob::SLUG, $job_id );
 
+		// Autonomous research: publish what passes every check, keep doubts as drafts.
+		$publisher = new AutoPublisher( $this->services, $this->log );
+		if ( $publisher->enabled_for( $this->view( $job_id )['params'] ) ) {
+			try {
+				$publisher->run( $job_id );
+			} catch ( \Throwable $e ) {
+				// The job's data is stored; publication is retried with `wp lexranked research-auto-publish`.
+				$this->log->add( $job_id, 'error', 'auto_publish', 'Automatic publication stopped: ' . $e->getMessage() );
+			}
+		}
+
 		// New or changed evidence can move scores; the runner debounces this.
 		$this->services->runner->schedule_soon();
 		return $this->view( $job_id );

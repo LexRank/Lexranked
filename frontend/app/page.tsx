@@ -4,7 +4,6 @@ import { ArticleCard, RankingCard } from "@/components/cards";
 import { CheckIcon, MapPinIcon, XCircleIcon } from "@/components/icons";
 import { CollectArt, HeroArt, RankArt, VerifyArt } from "@/components/home/Illustrations";
 import { PracticeIcon } from "@/components/home/PracticeIcon";
-import { JsonLd } from "@/components/JsonLd";
 import { RankingFinder } from "@/components/RankingFinder";
 import { DemoNotice } from "@/components/ui";
 import { finderOptions } from "@/lib/content/rankings";
@@ -13,7 +12,6 @@ import { allRankings, load } from "@/lib/data/loaders";
 import { formatCount, pluralize } from "@/lib/format";
 import { componentsWithWeights, METHODOLOGY_PRINCIPLES } from "@/lib/methodology";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/jsonld";
 import { getArticles, getPracticeAreas, getScoreVersions, getStates } from "@/lib/wordpress/api";
 
 export const revalidate = 300;
@@ -73,7 +71,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
 
       <section className="hero hero--home">
         <div className="container hero__grid">

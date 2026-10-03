@@ -25,6 +25,7 @@ use LexRanked\Core\Ranking\ContextEligibility;
 use LexRanked\Core\Ranking\RankingQualifier;
 use LexRanked\Core\Ranking\RankingRunner;
 use LexRanked\Core\Services;
+use LexRanked\Core\Support\Text;
 use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
 
@@ -423,7 +424,7 @@ final class EntityPresenter {
 			$out[] = array(
 				'id'       => (int) $post->ID,
 				'entityId' => $entity_id,
-				'name'     => get_the_title( $post ),
+				'name'     => Text::title( $post ),
 				'position' => $other['position'],
 			);
 		}
@@ -446,7 +447,7 @@ final class EntityPresenter {
 			foreach ( $rows as $row ) {
 				if ( ! array_key_exists( $row['entity_id'], $titles ) ) {
 					$post                        = get_post( $row['entity_id'] );
-					$titles[ $row['entity_id'] ] = ( $post instanceof \WP_Post && 'publish' === $post->post_status ) ? get_the_title( $post ) : null;
+					$titles[ $row['entity_id'] ] = ( $post instanceof \WP_Post && 'publish' === $post->post_status ) ? Text::title( $post ) : null;
 				}
 				if ( null === $titles[ $row['entity_id'] ] ) {
 					continue;

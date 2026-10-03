@@ -1,4 +1,5 @@
 import { redirectIfMoved } from "@/lib/content/moved";
+import { placeJsonLd } from "@/lib/seo/jsonld";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -66,6 +67,7 @@ export default async function StatePage(props: PageProps<"/states/[state]">) {
       ]}
       path={s.path}
       eyebrow={s.code ? `State · ${s.code}` : "State"}
+      about={[placeJsonLd({ city: null, state: s.name })]}
       title={`Top-rated lawyers in ${s.name}`}
       lead={`Rankings, lawyers and law firms in ${s.name}, scored with the LexRank methodology from sourced, verified data.`}
       counts={s}

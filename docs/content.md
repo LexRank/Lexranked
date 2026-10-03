@@ -11,6 +11,9 @@ Verified data + ranking data + methodology + sources
 ```
 
 - Content is generated only after research and only from stored data.
+- This applies to AI content drafts. Research profiles follow their own
+  rules: with **Autonomous research** on, profiles that pass every check are
+  published automatically ([research.md](research.md#autonomous-research)).
 - **Nothing is auto-published.** QA failure → `needs_review`; QA pass →
   `ready_for_review`; both remain WordPress drafts.
 
@@ -55,9 +58,11 @@ below it:
 | Above | "At a glance" facts: ranked, verified, average rating, reviews | Data |
 | — | **The ranking** | Engine / API |
 | Below | Guide (H2 sections) | Ranking post content (WordPress editor) |
-| Below | Why this ranking? | Methodology |
-| Below | FAQ (`FAQPage` JSON-LD) | Ranking field `faq` (`Question \| Answer` per line) |
+| Below | FAQ (`FAQPage` JSON-LD): editorial questions about the practice area and place first, then questions the ranking's data answers, with one short "How were these ranked?" linking to `/methodology/` | Ranking field `faq` (`Question \| Answer` per line) + `lib/content/relatedQuestions.ts` |
 | Below | About this ranking: updated date, methodology, editorial review, independence | Data + `reviewed_by` / `reviewed_at` |
+
+The methodology is explained on `/methodology/`; content pages only link to
+it (sidebar "How we rank", one FAQ question) instead of repeating it.
 
 GEO signals:
 - a quotable factual summary with named entities, dates and numbers;
@@ -68,3 +73,19 @@ GEO signals:
 
 Editorial text must follow the content rules above. AI drafts (Phase 6/7)
 land as WordPress drafts and are never auto-published.
+
+## Guides (blog) template
+
+`/articles/<slug>/` (`frontend/app/articles/[slug]/page.tsx`):
+breadcrumbs Home › Guides › Category › Guide; a table of contents built from
+the guide's own `<h2>` headings (ids added automatically); a "Find a … lawyer"
+band with the rankings for the guide's practice area (car-accident and other
+injury categories lead to personal injury rankings); related guides (same
+category first); and a sticky sidebar with the table of contents, matching
+rankings, categories with counts and more guides.
+
+Categories are WordPress categories (one per guide, from the content plan);
+`/articles/category/<slug>/` lists a category and is indexed (and in the
+sitemap) once it holds at least three indexable guides. The content plan for
+the first 100 guides is in [content-plan.md](content-plan.md).
+

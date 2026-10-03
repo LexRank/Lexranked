@@ -68,6 +68,7 @@ final class Settings {
 			'research_backoff_base'     => 300,
 			'research_lease_minutes'    => 10,
 			'ai_enabled'                => false,
+			'research_autonomy'         => false,
 			'disable_xmlrpc'            => true,
 			'claims_enabled'            => true,
 			'max_sponsored_per_ranking' => 2,
@@ -95,7 +96,7 @@ final class Settings {
 			}
 		}
 
-		foreach ( array( 'headless_redirect', 'trust_proxy_header', 'ai_enabled', 'disable_xmlrpc', 'claims_enabled' ) as $key ) {
+		foreach ( array( 'headless_redirect', 'trust_proxy_header', 'ai_enabled', 'research_autonomy', 'disable_xmlrpc', 'claims_enabled' ) as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = in_array( $input[ $key ], array( true, 1, '1', 'on', 'true' ), true );
 			}

@@ -283,7 +283,11 @@ export async function runContent(ctx: JobContext): Promise<PipelineResult> {
           content: {
             ...(g.title ? { title: g.title } : {}),
             summary: g.summary,
-            sections: g.sections.map((s) => ({ heading: s.heading, paragraphs: s.paragraphs.map((p) => ({ text: p.text })) })),
+            sections: g.sections.map((s) => ({
+              heading: s.heading,
+              paragraphs: s.paragraphs.map((p) => ({ text: p.text })),
+              ...(s.bullets && s.bullets.length > 0 ? { bullets: s.bullets.map((b) => b.text) } : {}),
+            })),
             faq: g.faq.map((f) => ({ question: f.question, answer: f.answer })),
           },
           facts: draft.facts.map(({ id, label, value, status, origin }) => ({ id, label, value, ...(status ? { status } : {}), ...(origin ? { origin } : {}) })),

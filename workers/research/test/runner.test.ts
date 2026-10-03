@@ -67,7 +67,7 @@ describe('runOnce — candidate discovery', () => {
     expect(job.processedCount).toBe(6);
     expect(job.stats).toMatchObject({ candidates_created: 4, candidates_needs_review: 1, rows_invalid: 1 });
     expect(wp.requests.filter((r) => r.endsWith('/heartbeat'))).toHaveLength(3);
-    expect(wp.verifications.size).toBe(4); // license + bar_status for the two active bar-sourced lawyers.
+    expect(wp.verifications.size).toBe(6); // license + bar_status + identity for the two active bar-sourced lawyers.
     // Resolution identifiers travel with candidates (the CMS weighs them; a bar number is strong).
     const jordan = wp.candidateItems.find((c) => String(c.name).startsWith('Jordan'));
     expect(jordan?.identifiers).toEqual({ phone: '+1 305 555 0101', bar_state: 'FL', bar_number: '1001' });
@@ -169,6 +169,16 @@ describe('row mapping', () => {
     ]);
     expect(rowVerifications({ ...row, source_type: 'review_platform' }, 7, undefined)).toEqual([]);
   });
+
+  it('verifies identity only when the official record gives a bar number', () => {
+    const withNumber = { ...row, bar_state: 'FL', bar_number: '1001' };
+    expect(rowVerifications(withNumber, 7, undefined).map((v) => [v.verification_type, v.status])).toEqual([
+      ['license', 'failed'],
+      ['bar_status', 'verified'],
+      ['identity', 'verified'],
+    ]);
+    expect(rowVerifications({ ...withNumber, source_type: 'professional_directory' }, 7, undefined)).toEqual([]);
+  });
 });
 
 describe('config and logging', () => {
@@ -180,11 +190,12 @@ describe('config and logging', () => {
     expect(() => loadConfig({ LEXRANKED_API_URL: 'https://x.test', LEXRANKED_WORKER_USER: 'w', LEXRANKED_WORKER_APP_PASSWORD: 'p', LEXRANKED_WORKER_JOB_TYPES: 'ranking_recalculation' })).toThrow(/Unsupported/);
   });
 
-  it('enables AI only with both key and model, and gates AI job types on it', () => {
+  it('enables AI with a key (model chosen at startup unless set), and gates AI job types on it', () => {
     const base = { LEXRANKED_API_URL: 'https://x.test/wp-json/lexranked/v1', LEXRANKED_WORKER_USER: 'w', LEXRANKED_WORKER_APP_PASSWORD: 'p' };
     expect(loadConfig(base).ai).toBeNull();
     expect(loadConfig(base).jobTypes).toEqual(['candidate_discovery', 'source_refresh']);
-    expect(() => loadConfig({ ...base, OPENAI_API_KEY: 'sk-x' })).toThrow(/both/);
+    expect(loadConfig({ ...base, OPENAI_API_KEY: 'sk-x' }).ai).toMatchObject({ model: '' });
+    expect(() => loadConfig({ ...base, OPENAI_MODEL: 'm' })).toThrow(/OPENAI_API_KEY/);
     expect(() => loadConfig({ ...base, LEXRANKED_WORKER_JOB_TYPES: 'content_generation' })).toThrow(/OPENAI/);
     expect(() => loadConfig({ ...base, OPENAI_API_KEY: 'sk-x', OPENAI_MODEL: 'm', OPENAI_BASE_URL: 'http://evil.example/v1' })).toThrow(/https/);
     const cfg = loadConfig({ ...base, OPENAI_API_KEY: 'sk-x', OPENAI_MODEL: 'm' });

@@ -37,9 +37,19 @@ export function rowClaims(row: SeedRow, entityId: number, sourceId: number | und
     ['phone', row.phone],
   ];
   if (row.entity_type === 'lawyer') {
-    fields.push(['bar_state', row.bar_state], ['bar_number', row.bar_number], ['bar_status', row.bar_status]);
+    fields.push(
+      ['bar_state', row.bar_state],
+      ['bar_number', row.bar_number],
+      ['bar_status', row.bar_status],
+      ['years_experience', row.years_experience],
+      ['languages', row.languages],
+      ['education', row.education],
+      ['awards', row.awards],
+    );
   }
-  return fields.filter(([, v]) => v !== undefined && v !== '').map(([field_name, value]) => ({ ...base, field_name, value }));
+  return fields
+    .filter(([, v]) => v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0))
+    .map(([field_name, value]) => ({ ...base, field_name, value }));
 }
 
 /** Verification requests; the server decides the final status by source tier. */
@@ -52,10 +62,15 @@ export function rowVerifications(row: SeedRow, entityId: number, sourceId: numbe
     notes: `Seed dataset row ${row.line}; source read ${row.retrieved_at.slice(0, 10)}.`,
     ...(sourceId !== undefined ? { source_id: sourceId } : {}),
   };
-  return [
+  const checks: VerificationInput[] = [
     { ...base, verification_type: 'license', status: row.bar_status.toLowerCase() === 'active' ? 'verified' : 'failed' },
     { ...base, verification_type: 'bar_status', status: 'verified' },
   ];
+  // The regulator's record ties this name to a unique bar number: that identifies the person.
+  if (row.bar_state && row.bar_number) {
+    checks.push({ ...base, verification_type: 'identity', status: 'verified' });
+  }
+  return checks;
 }
 
 export async function runDiscovery(ctx: JobContext): Promise<PipelineResult> {

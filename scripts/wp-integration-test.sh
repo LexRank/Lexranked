@@ -96,6 +96,8 @@ expect "lawyers list sorted by score" '(length == 8) and (.[0].ranking.score >= 
 expect "list DTO has no private fields" 'all(.[]; has("private") | not) and (tostring | contains("@") | not)' "$API/lawyers?per_page=100"
 expect "filter by state code + practice area" 'length == 8' "$API/lawyers?state=FL&practice_area=personal-injury&per_page=100"
 expect "unknown state yields empty list" 'length == 0' "$API/lawyers?state=texas"
+check "the practice-area catalog is seeded" '. >= 16' "$(wp term list lr_practice_area --format=count)"
+expect "empty catalog areas stay out of the public API" 'map(.slug) | (index("criminal-defense") == null) and (index("personal-injury") != null)' "$API/practice-areas"
 expect "lawyer detail with evidence and freshness" '.verification.status == "verified" and (.sources | length) > 0 and .freshness.isStale == false and .firm != null' "$API/lawyers/avery-example-demo"
 expect "detail by numeric id" '.slug == "avery-example-demo"' "$API/lawyers/$(curl -s "$API/lawyers/avery-example-demo" | jq .id)"
 expect "failed verification surfaces" '.verification.status == "failed"' "$API/lawyers/harper-exemplar-demo"
@@ -319,11 +321,91 @@ check "website structured data applied to the draft" '. == "+1 305 555 0142"' "\
 check "drafts stay out of the public API" '[.[].name] | all(. != "Sample & Fixture, P.A.")' "$(curl -sS "$API/law-firms?per_page=100")"
 dupes="$(wp db query "SELECT COUNT(*) - COUNT(DISTINCT claim_hash) FROM wp_lr_claims WHERE job_id = $JOB" --skip-column-names)"
 check "no duplicate claims after resume" '. == 0' "${dupes//[^0-9]/}"
-check "verification requests await an editor" '. == 6' "$(wp post list --post_type=lr_verification --post_status=pending --format=count)"
+check "verification requests await an editor" '. == 9' "$(wp post list --post_type=lr_verification --post_status=pending --format=count)"
 kill "$SITE_PID" >/dev/null 2>&1 || true
 SITE_PID=""
 wp lexranked research-job verification >/dev/null
 check "internal jobs run in WordPress" 'test("Processed 1 internal")' "\"$(wp lexranked research-run)\""
+
+echo "==> Autonomous research (publish what passes every check, keep doubts as drafts)"
+expect_status "workers cannot create jobs while autonomy is off" 403 "$API/research/jobs" -u "researcher:$WORKER_PW" \
+  -H 'Content-Type: application/json' -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-demo"}}'
+wp option update lexranked_settings '{"search_rate_per_minute":5,"research_autonomy":true,"min_ranking_entities":3}' --format=json >/dev/null
+expect_status "AI job types cannot be created through the API" 400 "$API/research/jobs" -u "researcher:$WORKER_PW" \
+  -H 'Content-Type: application/json' -d '{"job_type":"content_generation"}'
+cat >"$DATA_DIR/autonomy-demo.csv" <<'CSV'
+entity_type,name,city,state,practice_area,website,source_url,source_type,retrieved_at,phone,bar_state,bar_number,bar_status
+lawyer,Avery Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2001,bar_association,2026-09-01,,FL,2001,active
+lawyer,Blake Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2002,bar_association,2026-09-01,,FL,2002,active
+lawyer,Cameron Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2003,bar_association,2026-09-01,,FL,2003,active
+lawyer,Dana Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2004,bar_association,2026-09-01,,FL,2004,inactive
+lawyer,Emery Autotest,Hialeah,FL,personal-injury,,https://directory.fixture.test/lawyers/emery,professional_directory,2026-09-01,,,,
+CSV
+created="$(curl -sS -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' \
+  -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-demo","fetch_websites":false},"title":"Autonomy IT"}' "$API/research/jobs")"
+check "a worker creates a research job through the API" '.status == "pending" and .params.dataset == "autonomy-demo"' "$created"
+AUTO_JOB="$(jq -r '.id' <<<"$created")"
+run_worker && pass "worker runs the API-created job" || fail "worker failed on the API-created job (see $DATA_DIR/worker.log)"
+auto="$(wp lexranked research-status "$AUTO_JOB" --format=json)"
+check "API-created job completed" '.status == "completed" and .stats.candidates_created == 5' "$auto"
+check "the run is summarised in the job log" '[.log[].message] | any(startswith("Autonomous research: 3 published, 2 kept as drafts, 9 verification records and 3 sources published, 1 rankings created"))' "$auto"
+check "profiles with official checks are published" '. == 3' "$(wp post list --post_type=lr_lawyer --post_status=publish --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+held_ids="$(wp post list --post_type=lr_lawyer --post_status=draft --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --field=ID --format=csv | tr -dc '0-9\n')"
+holds=""
+for id in $held_ids; do holds+="$(wp post meta get "$id" _lr_auto_publish_hold) "; done
+check "doubtful profiles stay drafts with the reason" 'test("bar status is not active") and test("no bar state and bar number")' "\"${holds//\"/\'}\""
+check "their verification records are published with them" '. == 9' "$(wp post list --post_type=lr_verification --post_status=publish --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+check "the doubtful profiles' records stay pending" '. >= 2' "$(wp post list --post_type=lr_verification --post_status=pending --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+check "official sources behind them are published" '. == 3' "$(wp post list --post_type=lr_source --post_status=publish --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+check "a ranking is created once the city has enough profiles" '. == 1' "$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Personal Injury Lawyers in Hialeah, Florida' --format=count)"
+expect "published autonomous profiles appear in the public API" 'map(.name) | (index("Avery Autotest") != null) and (index("Dana Autotest") == null)' "$API/lawyers?city=hialeah&per_page=100"
+cat >"$DATA_DIR/autonomy-awards.csv" <<'CSV'
+entity_type,name,city,state,practice_area,website,source_url,source_type,retrieved_at,phone,bar_state,bar_number,bar_status,years_experience,awards
+lawyer,Avery Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2001,bar_association,2026-09-01,,FL,2001,active,12,Board Certified in Civil Trial Law | The Florida Bar | 2020
+CSV
+awards_job="$(curl -sS -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-awards","fetch_websites":false}}' "$API/research/jobs" | jq -r '.id')"
+run_worker && pass "worker adds facts to a published profile" || fail "awards job failed (see $DATA_DIR/worker.log)"
+check "official facts on a published profile are approved automatically" '[.log[].message] | any(test("Approved [0-9]+ facts from official sources"))' "$(wp lexranked research-status "$awards_job" --format=json)"
+expect "the certification shows as an award on the profile" '.professional.awards | any(.name == "Board Certified in Civil Trial Law")' "$API/lawyers/avery-autotest"
+again="$(wp lexranked research-auto-publish "$AUTO_JOB")"
+check "re-applying the rules creates nothing twice" 'test("0 published, 2 kept as drafts, 0 verification records and 0 sources published, 0 rankings created")' "\"$(tail -n1 <<<"$again")\""
+# Remove the autonomous-research records so later sections see the same data as before.
+auto_ids="$(wp post list --post_type=lr_lawyer,lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --field=ID --format=csv | tr -dc '0-9\n')"
+auto_ids+=" $(wp post list --post_type=lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$awards_job" --field=ID --format=csv | tr -dc '0-9\n')"
+auto_ids+=" $(wp post list --post_type=lr_ranking --post_status=any --title='Best Personal Injury Lawyers in Hialeah, Florida' --field=ID --format=csv | tr -dc '0-9\n')"
+# shellcheck disable=SC2086 # Word splitting on IDs is intended.
+wp post delete $auto_ids --force >/dev/null
+wp option update lexranked_settings '{"search_rate_per_minute":5}' --format=json >/dev/null
+
+echo "==> Editorial API (page text for rankings, hubs and profiles)"
+wp user create itEditor editor@example.com --role=editor >/dev/null
+ED_PW="$(wp user application-password create itEditor it --porcelain | tail -1)"
+ED_RANKING="$(curl -sS "$API/rankings?per_page=1" | jq -r '.[0].id')"
+ED_CITY="$(curl -sS "$API/cities" | jq -r '.[] | select(.slug == "miami") | .id')"
+ED_LAWYER="$(curl -sS "$API/lawyers?per_page=1" | jq -r '.[0].id')"
+ED_RANKING_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/rankings/$ED_RANKING" | jq -c '{summary: (.summary // ""), faq, reviewed_by: (.reviewedBy // ""), reviewed_at: (.reviewedAt // "")}')"
+ED_CITY_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/terms/location/$ED_CITY" | jq -c '{summary: (.summary // ""), body: (.body // ""), faq}')"
+ED_LAWYER_BEFORE="$(curl -sS "$API/lawyers/$ED_LAWYER" | jq -c '{summary: (.summary // "")}')"
+expect_status "research workers cannot edit page text" 403 "$API/editorial/rankings/$ED_RANKING" -u "researcher:$WORKER_PW" \
+  -H 'Content-Type: application/json' -d '{"summary":"x"}'
+expect "an editor sets the ranking summary and FAQ" '.summary == "Miami has a busy personal injury bar." and (.faq | length) == 1 and .reviewedBy == "IT Editor"' \
+  "$API/editorial/rankings/$ED_RANKING" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' \
+  -d '{"summary":"Miami has a busy personal injury bar.","faq":[{"question":"How long do I have to file in Florida?","answer":"Two years for most negligence claims."}],"reviewed_by":"IT Editor","reviewed_at":"2026-10-02"}'
+expect "the public ranking shows the editorial text" '.summary == "Miami has a busy personal injury bar." and .faq[0].question == "How long do I have to file in Florida?"' "$API/rankings/$ED_RANKING"
+expect_status "malformed FAQ items are rejected" 400 "$API/editorial/rankings/$ED_RANKING" -u "itEditor:$ED_PW" \
+  -H 'Content-Type: application/json' -d '{"faq":[{"question":"Q?"}]}'
+expect "an editor sets hub text" '.summary == "Lawyers in Miami." and (.body | test("<h2>Courts</h2>")) and (.body | test("script") | not)' \
+  "$API/editorial/terms/location/$ED_CITY" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' \
+  -d '{"summary":"Lawyers in Miami.","body":"<h2>Courts</h2><p>Miami-Dade is the Eleventh Judicial Circuit.</p><script>alert(1)</script>"}'
+expect "the public hub shows it" '.[] | select(.slug == "miami") | .content.summary == "Lawyers in Miami."' "$API/cities"
+expect "an editor sets a profile summary" '.summary == "A Miami personal injury lawyer."' "$API/editorial/profiles/$ED_LAWYER" -u "itEditor:$ED_PW" \
+  -H 'Content-Type: application/json' -d '{"summary":"A Miami personal injury lawyer."}'
+expect "content drafts are listed for editors" 'type == "array"' "$API/editorial/drafts" -u "itEditor:$ED_PW"
+# Put the original text back so later sections see the same data as before.
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$ED_RANKING_BEFORE" "$API/editorial/rankings/$ED_RANKING"
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$ED_CITY_BEFORE" "$API/editorial/terms/location/$ED_CITY"
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$ED_LAWYER_BEFORE" "$API/editorial/profiles/$ED_LAWYER"
+expect "original ranking text restored" "(.summary // \"\") == $(jq '.summary' <<<"$ED_RANKING_BEFORE")" "$API/editorial/rankings/$ED_RANKING" -u "itEditor:$ED_PW"
 
 echo "==> Entity resolution identifiers (Etap B)"
 check "research drafts are indexed by bar number" '. >= 1' "$(wp db query "SELECT COUNT(*) FROM wp_postmeta WHERE meta_key = '_lr_id_bar' AND meta_value = 'FL:1001'" --skip-column-names | tr -dc 0-9)"
@@ -351,7 +433,7 @@ check "content job completed" '.status == "completed" and .stats.drafts_ready + 
 DRAFT_ID="$(wp post list --post_type=lr_content_draft --post_status=any --field=ID --posts_per_page=1 | tail -1)"
 check "generated content is stored as a draft, never published" '. == "draft"' "\"$(wp post get "$DRAFT_ID" --field=post_status)\""
 check "draft carries its facts and QA status" 'test("ready_for_review|needs_review")' "\"$(wp post meta get "$DRAFT_ID" _lr_qa_status)\""
-check "drafts record the interpretation contract (Etap J)" 'startswith("interp/1+ranking-content/")' "\"$(wp post meta get "$DRAFT_ID" _lr_prompt_version)\""
+check "drafts record the interpretation contract (Etap J)" 'startswith("interp/2+ranking-content/")' "\"$(wp post meta get "$DRAFT_ID" _lr_prompt_version)\""
 check "draft facts say which backend computation they come from" 'fromjson | any(.[]; .origin == "ranking snapshot") and any(.[]; .status == "computed")' "$(wp post meta get "$DRAFT_ID" _lr_facts | jq -Rs .)"
 check "draft body is built from escaped plain text" 'test("<h2>How positions are decided</h2>")' "$(wp post get "$DRAFT_ID" --field=post_content | jq -Rs .)"
 check "ranking content unchanged until an editor applies the draft" '(.summary | test("LexRank methodology") | not)' "$(curl -sS "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo")"
@@ -362,6 +444,14 @@ check "hub content job drafted the Miami page" '.status == "completed" and (.sta
 check "article content job drafted an article" '.status == "completed" and (.stats.drafts_ready + .stats.drafts_need_review) == 1' "$(wp lexranked research-status "$ART_JOB" --format=json)"
 HUB_DRAFT="$(wp post list --post_type=lr_content_draft --post_status=any --meta_key=_lr_content_type --meta_value=hub_content --field=ID --posts_per_page=1 | tail -1)"
 check "hub draft targets the city term" '. == "lr_location"' "\"$(wp post meta get "$HUB_DRAFT" _lr_target_taxonomy)\""
+HUB_TERM="$(wp post meta get "$HUB_DRAFT" _lr_target_term)"
+HUB_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/terms/location/$HUB_TERM" | jq -c '{summary: (.summary // ""), body: (.body // ""), faq, reviewed_by: (.reviewedBy // ""), reviewed_at: (.reviewedAt // "")}')"
+expect "editors see the hub draft with its QA status" "any(.[]; .id == $HUB_DRAFT and .contentType == \"hub_content\" and .canApply)" "$API/editorial/drafts" -u "itEditor:$ED_PW"
+expect "an editor applies the hub draft through the API" '.status == "applied" or .status == "partial"' "$API/editorial/drafts/$HUB_DRAFT/apply" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"acknowledge":true}'
+expect "applying twice changes nothing" '.status == "already"' "$API/editorial/drafts/$HUB_DRAFT/apply" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"acknowledge":true}'
+expect "the applied draft text is on the hub" '(.summary | length) > 0' "$API/editorial/terms/location/$HUB_TERM" -u "itEditor:$ED_PW"
+# Restore the seeded hub text that the frontend checks rely on.
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$HUB_BEFORE" "$API/editorial/terms/location/$HUB_TERM"
 check "the generator creates no WordPress posts (only content drafts)" '. == "2"' "\"$(wp post list --post_type=post --post_status=any --format=count)\""
 if grep -q "sk-fake-it-only" "$DATA_DIR/worker.log"; then fail "worker logged the OpenAI key"; else pass "OpenAI key never logged"; fi
 kill "$AI_PID" >/dev/null 2>&1 || true
@@ -402,7 +492,7 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "ranking shows #1 entry" "/rankings/florida/miami/personal-injury/" "Avery Example (Demo)"
   page_has "ranking has ItemList JSON-LD" "/rankings/florida/miami/personal-injury/" '"@type":"ItemList"'
   page_has "demo ranking is noindex" "/rankings/florida/miami/personal-injury/" 'content="noindex, follow"'
-  page_has "ranking explains methodology" "/rankings/florida/miami/personal-injury/" "Why this ranking?"
+  page_has "ranking links the methodology" "/rankings/florida/miami/personal-injury/" "How we rank"
   page_has "ranking has answer-first summary from data" "/rankings/florida/miami/personal-injury/" "the top-ranked personal injury lawyers in Miami, Florida are Avery Example (Demo)"
   page_has "ranking shows editorial summary" "/rankings/florida/miami/personal-injury/" "Demo content: this sample ranking compares"
   page_has "ranking shows editorial body below the list" "/rankings/florida/miami/personal-injury/" "What to ask a personal injury lawyer"

@@ -20,9 +20,10 @@ export interface WorkerConfig {
   batchSize: number;
   /** Test hook: exit abruptly after this many processed rows (simulates a crash). */
   crashAfterRows: number | null;
-  /** AI (Phase 6). Null when OPENAI_API_KEY / OPENAI_MODEL are not set. */
+  /** AI (Phase 6). Null when OPENAI_API_KEY is not set. */
   ai: {
     apiKey: string;
+    /** OPENAI_MODEL, or '' to pick the preferred model at startup (ai/models.ts). */
     model: string;
     baseUrl: string;
     maxCallsPerJob: number;
@@ -63,8 +64,8 @@ export function loadConfig(env: Env = process.env): WorkerConfig {
 
   const apiKey = env.OPENAI_API_KEY ?? '';
   const model = env.OPENAI_MODEL ?? '';
-  if ((apiKey === '') !== (model === '')) {
-    throw new ConfigError('Set both OPENAI_API_KEY and OPENAI_MODEL to enable AI, or neither');
+  if (apiKey === '' && model !== '') {
+    throw new ConfigError('OPENAI_MODEL needs OPENAI_API_KEY');
   }
   const baseUrl = (env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/+$/, '');
   if (!/^https:\/\//i.test(baseUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(baseUrl)) {
@@ -91,7 +92,7 @@ export function loadConfig(env: Env = process.env): WorkerConfig {
       throw new ConfigError(`Unsupported job type "${t}"`);
     }
     if (ai === null && (AI_JOB_TYPES as readonly string[]).includes(t)) {
-      throw new ConfigError(`Job type "${t}" needs OPENAI_API_KEY and OPENAI_MODEL`);
+      throw new ConfigError(`Job type "${t}" needs OPENAI_API_KEY`);
     }
   }
 

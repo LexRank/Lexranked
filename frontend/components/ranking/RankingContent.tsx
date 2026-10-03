@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { FaqItem, RankingDetail, RankingSourceDto } from "@/types/api";
-import type { RelatedQuestion } from "@/lib/content/relatedQuestions";
+import { wrapTables } from "@/lib/content/articles";
+import { groupRankingSources } from "@/lib/content/rankingSources";
 import type { RankingFacts } from "@/lib/content/rankingFacts";
 import { formatCount, formatDate, isoDate } from "@/lib/format";
 import { METHODOLOGY_VERSION } from "@/lib/methodology";
@@ -46,12 +47,12 @@ export function EditorialBody({ html }: { html: string }) {
   if (!html.trim()) return null;
   return (
     <section id="guide" className="card editorial" aria-label="Guide">
-      <div className="prose editorial__body" dangerouslySetInnerHTML={{ __html: html }} />
+      <div className="prose editorial__body" dangerouslySetInnerHTML={{ __html: wrapTables(html) }} />
     </section>
   );
 }
 
-export function FaqSection({ items }: { items: FaqItem[] }) {
+export function FaqSection({ items }: { items: Array<FaqItem & { link?: { href: string; label: string } }> }) {
   if (items.length === 0) return null;
   const ld = faqJsonLd(items);
   return (
@@ -61,9 +62,17 @@ export function FaqSection({ items }: { items: FaqItem[] }) {
       </h2>
       <div className="faq">
         {items.map((item, i) => (
-          <details key={i} className="faq__item" open={i === 0}>
+          <details key={item.question} className="faq__item" open={i === 0}>
             <summary>{item.question}</summary>
-            <p>{item.answer}</p>
+            <p>
+              {item.answer}
+              {item.link && (
+                <>
+                  {" "}
+                  <Link href={item.link.href}>{item.link.label}</Link>
+                </>
+              )}
+            </p>
           </details>
         ))}
       </div>
@@ -132,9 +141,10 @@ export function OnThisPage({ links }: { links: Array<{ href: string; label: stri
   );
 }
 
-/** Sources behind the ranked entries' facts (spec §21 "Sources"), best tier first. */
-export function RankingSources({ sources, noun }: { sources: RankingSourceDto[]; noun: string }) {
-  if (sources.length === 0) return null;
+/** Sources behind the ranked entries' facts (spec §21 "Sources"), grouped by site, best tier first. */
+export function RankingSources({ sources, noun, rankedCount = 0 }: { sources: RankingSourceDto[]; noun: string; rankedCount?: number }) {
+  const groups = groupRankingSources(sources, rankedCount);
+  if (groups.length === 0) return null;
   return (
     <section id="sources" className="card" aria-labelledby="sources-heading">
       <h2 id="sources-heading" style={{ fontSize: "1.4rem" }}>
@@ -145,20 +155,21 @@ export function RankingSources({ sources, noun }: { sources: RankingSourceDto[];
         and when it was last checked.
       </p>
       <ul className="weights" style={{ gap: "0.5rem" }}>
-        {sources.map((s) => (
-          <li key={s.id} className="ranking-source">
+        {groups.map((g) => (
+          <li key={g.key} className="ranking-source">
             <span>
-              {s.url && /^https?:\/\//.test(s.url) ? (
-                <a href={s.url} rel="nofollow noopener noreferrer" target="_blank">
-                  {s.name}
+              {g.url ? (
+                <a href={g.url} rel="nofollow noopener noreferrer" target="_blank">
+                  {g.name}
                 </a>
               ) : (
-                s.name
+                g.name
               )}
-              {s.tierLabel && <span className="muted"> · {s.tierLabel}</span>}
+              {g.tierLabel && <span className="muted"> · {g.tierLabel}</span>}
+              {g.pages > 1 && <span className="muted"> · {g.pages} profile pages</span>}
             </span>
             <span className="muted">
-              {s.facts} {s.facts === 1 ? "fact" : "facts"} for {s.entities} {s.entities === 1 ? noun : `${noun}s`}
+              {g.facts} {g.facts === 1 ? "fact" : "facts"} for {g.entities} {g.entities === 1 ? noun : `${noun}s`}
             </span>
           </li>
         ))}
@@ -167,30 +178,3 @@ export function RankingSources({ sources, noun }: { sources: RankingSourceDto[];
   );
 }
 
-/** Questions the ranking's own data answers (spec §24); not marked up as FAQPage. */
-export function RelatedQuestions({ items }: { items: RelatedQuestion[] }) {
-  if (items.length === 0) return null;
-  return (
-    <section id="related-questions" aria-labelledby="related-questions-heading">
-      <h2 id="related-questions-heading" style={{ fontSize: "1.5rem" }}>
-        Related questions
-      </h2>
-      <div className="faq">
-        {items.map((q) => (
-          <details key={q.question} className="faq__item">
-            <summary>{q.question}</summary>
-            <p>
-              {q.answer}
-              {q.link && (
-                <>
-                  {" "}
-                  <Link href={q.link.href}>{q.link.label}</Link>
-                </>
-              )}
-            </p>
-          </details>
-        ))}
-      </div>
-    </section>
-  );
-}

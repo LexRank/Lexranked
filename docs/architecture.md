@@ -35,7 +35,7 @@ Cloudflare ──▶ Vercel ──▶ Next.js frontend ──▶ LexRanked REST 
 | REST API (`lexranked/v1`) | Stable DTOs, validation, pagination, permissions | Return raw `WP_Post` objects or private fields |
 | `lexranked-core` plugin | Entities, evidence, verification, ranking engine, admin UI, audit logs | Depend on a theme |
 | WordPress | Storage, users/capabilities, editorial workflow | Serve the public site |
-| Workers (`workers/`) | Long-running research, recalculation, drafting, QA | Write directly to the database, publish content, or decide rankings with an LLM |
+| Workers (`workers/`) | Long-running research, recalculation, drafting, QA | Write directly to the database, publish content (only the plugin publishes, by fixed rules), or decide rankings with an LLM |
 
 ## Repository layout
 
@@ -353,7 +353,7 @@ layer may phrase them but never compute or invent one.
 Language models sit at the end of the data flow. They receive only numbered
 facts built from backend computations: snapshots, explanations, contexts,
 eligibility, market statistics and the fact layer. Each fact carries its
-evidence status and origin. One interpretation contract (`interp/1`) is added
+evidence status and origin. One interpretation contract (`interp/2`) is added
 to every prompt. Deterministic QA rejects numbers that are not in the cited
 facts, "verified" claims resting on unverified facts, and ranking decisions
 or verdicts. Output is a draft that an editor applies; the ranking engine

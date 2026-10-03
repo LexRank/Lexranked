@@ -25,6 +25,7 @@ use LexRanked\Core\REST\CommercialController;
 use LexRanked\Core\REST\EntitiesController;
 use LexRanked\Core\REST\CompareController;
 use LexRanked\Core\REST\MarketController;
+use LexRanked\Core\REST\EditorialController;
 use LexRanked\Core\REST\EntityController;
 use LexRanked\Core\REST\RankingsController;
 use LexRanked\Core\REST\ResearchController;
@@ -47,7 +48,7 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.16.0';
+	public const API_VERSION = '1.18.0';
 
 	/**
 	 * Services, available after boot().
@@ -69,6 +70,7 @@ final class Plugin {
 		Installer::maybe_upgrade();
 
 		add_action( 'init', array( self::class, 'register_content_model' ) );
+		add_action( 'init', array( PracticeArea::class, 'seed_catalog' ), 20 );
 
 		( new ApiGuard( $services->settings ) )->register();
 		$services->runner->register();
@@ -96,6 +98,7 @@ final class Plugin {
 			new EntityController( $services ),
 			new CompareController( $services ),
 			new MarketController( $services ),
+			new EditorialController( $services ),
 		);
 		foreach ( $controllers as $controller ) {
 			add_action( 'rest_api_init', array( $controller, 'register_routes' ) );

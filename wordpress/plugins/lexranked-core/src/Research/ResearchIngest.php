@@ -28,7 +28,8 @@ use LexRanked\Core\Taxonomies\PracticeArea;
  * Everything a worker submits goes through here. WordPress stays the source
  * of truth: input is validated, deduplicated and applied by fixed rules.
  *
- * Publication rules (never automatic):
+ * Publication rules (intake never publishes; with "Autonomous research" on,
+ * AutoPublisher publishes what passes AutoPublishPolicy when the job completes):
  * - new lawyers/firms are created as drafts;
  * - resolved facts are written only into drafts / pending-review entities,
  *   and never over a value an editor typed into a non-research draft;

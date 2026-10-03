@@ -40,7 +40,7 @@ const RULES = [
   "Every paid element is labelled “Paid” with a short disclosure, and is shown outside the ranked list. Paid links carry rel=\"sponsored\".",
   "Only the profile owner can buy placements: the profile must be claimed and the claimant’s identity checked.",
   "Only lawyers in good standing are placed: profiles with an inactive, suspended, retired or disbarred bar status are not eligible.",
-  "Placements are relevant to the page: a sponsored lawyer must practise in the ranking’s location and practice area.",
+  "Placements are relevant to the page: a sponsored lawyer must practice in the ranking’s location and practice area.",
   "The number of placements per page is capped, and they are shown in a fixed order (oldest booking first), never by price or score.",
   "Paid placements are never included in the rankings’ structured data for search engines.",
 ];

@@ -1611,6 +1611,97 @@ main {
   margin-top: 0.35rem;
 }
 
+/* Tables inside editorial content (guides, ranking and hub guides). */
+.table-scroll {
+  margin: 1.25rem 0;
+  overflow-x: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(11 31 58 / 0.06);
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.93rem;
+  line-height: 1.5;
+}
+
+.prose th,
+.prose td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.prose th + th,
+.prose td + td {
+  border-left: 1px solid var(--line);
+}
+
+.prose thead th {
+  background: var(--navy-900);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  border-bottom: 2px solid var(--brass-500);
+}
+
+.prose thead th + th {
+  border-left-color: rgb(255 255 255 / 0.15);
+}
+
+.prose tbody tr:nth-child(even) td {
+  background: var(--paper);
+}
+
+.prose tbody tr:hover td {
+  background: var(--brass-100);
+}
+
+.prose tbody td:first-child {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.prose tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+@media (max-width: 40rem) {
+  .prose th,
+  .prose td {
+    padding: 0.55rem 0.65rem;
+    font-size: 0.88rem;
+  }
+}
+
+/* A table without a header row: the first column labels each row. */
+.prose table:not(:has(thead)) tbody td:first-child {
+  background: var(--navy-100);
+}
+
+/* The direct answer that opens a section. */
+.editorial__body h2 + p > strong:only-child,
+.editorial__body > p:first-child > strong:first-child {
+  color: var(--ink);
+}
+
+.editorial__body h2 + p:has(> strong:first-child) {
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--brass-500);
+  background: var(--brass-100);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* Frequently asked questions inside a guide. */
+.editorial__body h3 + p {
+  margin-top: 0.35rem;
+}
+
 .faq {
   display: grid;
   gap: 0.75rem;
@@ -3370,4 +3461,51 @@ h2 {
   width: 0.9rem;
   height: 0.9rem;
   color: var(--brass-600);
+}
+
+/* Guides (blog): sidebar link lists, the "find a lawyer" band and category chips. */
+.link-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+  font-size: 0.92rem;
+}
+
+.link-list a {
+  text-decoration: none;
+  color: var(--navy-700);
+}
+
+.link-list a:hover {
+  text-decoration: underline;
+}
+
+.link-list a[aria-current="page"] {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cta-band {
+  background: linear-gradient(180deg, var(--brass-100), var(--surface));
+  border-color: var(--brass-300);
+}
+
+.chip[aria-current="page"] {
+  background: var(--navy-900);
+  border-color: var(--navy-900);
+  color: #fff;
+}
+
+.card--guide .card__thumb {
+  display: block;
+  width: calc(100% + 2 * var(--card-pad, 1.5rem));
+  max-width: none;
+  height: auto;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  margin: calc(-1 * var(--card-pad, 1.5rem)) calc(-1 * var(--card-pad, 1.5rem)) 1rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--neutral-bg);
 }

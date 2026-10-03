@@ -128,6 +128,31 @@ final class ExplanationTest extends TestCase {
 		$this->assertSame( $why, RankingExplainer::why( $rows, array( 1 => 'Avery' ) ), 'Deterministic' );
 	}
 
+	public function testComponentsWithNoDataInTheRankingAreNotGaps(): void {
+		$rows = array(
+			self::row(
+				1,
+				1,
+				array(
+					'reputation'  => 0,
+					'credentials' => 6,
+				)
+			),
+			self::row(
+				2,
+				2,
+				array(
+					'reputation'  => 0,
+					'credentials' => 4,
+				)
+			),
+		);
+		$why  = RankingExplainer::why( $rows );
+		$this->assertNotContains( 'reputation', array_column( $why[2]['gaps'], 'key' ), 'Nobody has reputation data: it holds no one back' );
+		$this->assertSame( array( 'credentials' ), array_column( $why[2]['gaps'], 'key' ) );
+		$this->assertStringNotContainsString( 'Reputation', $why[1]['summary'] );
+	}
+
 	public function testChangeExplainedFromSnapshotDiffs(): void {
 		$prev  = array(
 			1 => self::row(

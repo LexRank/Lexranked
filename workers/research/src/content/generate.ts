@@ -17,7 +17,8 @@ export const CONTENT_PROMPT_VERSION = 'ranking-content/2';
 export interface Generated {
   summary: string;
   summaryFactRefs: string[];
-  sections: { heading: string; paragraphs: { text: string; factRefs: string[] }[] }[];
+  /** `bullets` (articles only): a short list shown after the section's first, answering paragraph. */
+  sections: { heading: string; paragraphs: { text: string; factRefs: string[] }[]; bullets?: { text: string; factRefs: string[] }[] }[];
   faq: { question: string; answer: string; factRefs: string[] }[];
 }
 
@@ -94,6 +95,7 @@ export function unitsOf(c: Generated & { title?: string }): Unit[] {
   c.sections.forEach((s, i) => {
     units.push({ where: `sections[${i}].heading`, text: s.heading, factRefs: [] });
     s.paragraphs.forEach((p, j) => units.push({ where: `sections[${i}].paragraphs[${j}]`, text: p.text, factRefs: p.factRefs }));
+    (s.bullets ?? []).forEach((b, j) => units.push({ where: `sections[${i}].bullets[${j}]`, text: b.text, factRefs: b.factRefs }));
   });
   c.faq.forEach((f, i) => {
     units.push({ where: `faq[${i}].question`, text: f.question, factRefs: f.factRefs });
@@ -106,7 +108,7 @@ export function unitsOf(c: Generated & { title?: string }): Unit[] {
 
 export const HUB_PROMPT_VERSION = 'hub-content/2';
 export const PROFILE_PROMPT_VERSION = 'profile-summary/2';
-export const ARTICLE_PROMPT_VERSION = 'article/2';
+export const ARTICLE_PROMPT_VERSION = 'article/3';
 
 /** Hub pages (state, city, practice area): same shape as ranking content. */
 export async function generateHubContent(ai: AiClient, page: { title: string; place: string }, facts: Fact[]): Promise<{ content: Generated; model: string }> {
@@ -178,7 +180,7 @@ export function articleSchema(factIds: string[]): JsonSchema {
         items: {
           type: 'object',
           additionalProperties: false,
-          required: ['heading', 'paragraphs'],
+          required: ['heading', 'paragraphs', 'bullets'],
           properties: {
             heading: { type: 'string', maxLength: 100 },
             paragraphs: {
@@ -186,6 +188,11 @@ export function articleSchema(factIds: string[]): JsonSchema {
               minItems: 1,
               maxItems: 4,
               items: { type: 'object', additionalProperties: false, required: ['text', 'factRefs'], properties: { text: { type: 'string', maxLength: 900 }, factRefs: refs } },
+            },
+            bullets: {
+              type: 'array',
+              maxItems: 8,
+              items: { type: 'object', additionalProperties: false, required: ['text', 'factRefs'], properties: { text: { type: 'string', maxLength: 300 }, factRefs: refs } },
             },
           },
         },
@@ -204,7 +211,10 @@ export async function generateArticle(ai: AiClient, topic: string, facts: Fact[]
     'You draft an editorial guide for LexRanked, a site that ranks US lawyers with a published, data-driven methodology.',
     'The topic is an editor\'s brief, not a fact. Practical, general guidance (what to check, what to ask) needs no citation, but must not contain names, numbers, statistics, laws or claims about specific people or firms.',
     'Anything about specific lawyers, firms, rankings, scores or the methodology must come from the numbered facts, cited in factRefs.',
-    'Write a clear title, a 1–2 sentence summary, 3–5 sections and up to 4 FAQs.',
+    'Cover the topic completely: every question a reader searching for it would ask, each answered.',
+    'Under every heading, the first paragraph answers that heading directly in one or two sentences; the detail follows in the next paragraphs.',
+    'Use a short bullet list in a section when it helps (steps, checklists, what to bring, red flags); leave bullets empty otherwise.',
+    'Write a clear title, a 1–2 sentence answer-first summary, 3–6 sections and up to 5 FAQs whose answers start with the direct answer.',
   ]);
   const res = await ai.structured<GeneratedArticle>({
     name: 'article_draft',
