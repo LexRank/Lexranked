@@ -96,7 +96,7 @@ expect "lawyers list sorted by score" '(length == 8) and (.[0].ranking.score >= 
 expect "list DTO has no private fields" 'all(.[]; has("private") | not) and (tostring | contains("@") | not)' "$API/lawyers?per_page=100"
 expect "filter by state code + practice area" 'length == 8' "$API/lawyers?state=FL&practice_area=personal-injury&per_page=100"
 expect "unknown state yields empty list" 'length == 0' "$API/lawyers?state=texas"
-check "the practice-area catalog is seeded" '. >= 16' "$(wp term list lr_practice_area --field=slug --format=count)"
+check "the practice-area catalog is seeded" '. >= 16' "$(wp term list lr_practice_area --format=count)"
 expect "empty catalog areas stay out of the public API" 'map(.slug) | (index("criminal-defense") == null) and (index("personal-injury") != null)' "$API/practice-areas"
 expect "lawyer detail with evidence and freshness" '.verification.status == "verified" and (.sources | length) > 0 and .freshness.isStale == false and .firm != null' "$API/lawyers/avery-example-demo"
 expect "detail by numeric id" '.slug == "avery-example-demo"' "$API/lawyers/$(curl -s "$API/lawyers/avery-example-demo" | jq .id)"
