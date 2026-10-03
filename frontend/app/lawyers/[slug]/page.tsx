@@ -82,6 +82,7 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
   const where = formatLocation(lawyer.location);
   const p = lawyer.professional;
   const bestPosition = lawyer.rankings.filter((r) => r.path).sort((a, b) => a.position - b.position)[0];
+  const barCheck = barLicenseEvidence(lawyer);
 
   return (
     <>
@@ -218,10 +219,24 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
               </dd>
               {p.barState && (
                 <>
-                  <dt>Bar admission</dt>
+                  <dt>Bar license</dt>
                   <dd>
                     {p.barState}
                     {p.barNumber ? ` · No. ${p.barNumber}` : ""}
+                    {p.barStatus ? <span style={{ textTransform: "capitalize" }}>{` · ${p.barStatus}`}</span> : null}
+                    {barCheck.verified && lawyer.verification.verifiedAt && (
+                      <div className="muted" style={{ fontSize: "0.88rem" }}>
+                        Verified <time dateTime={isoDate(lawyer.verification.verifiedAt)}>{formatDate(lawyer.verification.verifiedAt)}</time>
+                        {barCheck.source && (
+                          <>
+                            {" · Source: "}
+                            <a href={barCheck.source.url} rel="nofollow noopener noreferrer" target="_blank">
+                              {barCheck.source.name}
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </dd>
                 </>
               )}
@@ -354,4 +369,13 @@ export default async function LawyerPage(props: PageProps<"/lawyers/[slug]">) {
       </div>
     </>
   );
+}
+
+/** Whether the license was verified against the bar, and the bar profile it was read from. */
+function barLicenseEvidence(lawyer: LawyerDetail): { verified: boolean; source: { name: string; url: string } | null } {
+  const checks = lawyer.verification.checks ?? {};
+  const verified = checks.bar_status === "verified" || checks.license === "verified";
+  const fact = (lawyer.facts ?? []).find((f) => f.attribute === "bar_status" || f.attribute === "bar_number");
+  const source = fact?.source.url ? { name: fact.source.tier === 1 && lawyer.professional.barState === "FL" ? "The Florida Bar" : (fact.source.name ?? "Source"), url: fact.source.url } : null;
+  return { verified, source };
 }

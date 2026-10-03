@@ -70,6 +70,7 @@ final class Plugin {
 		Installer::maybe_upgrade();
 
 		add_action( 'init', array( self::class, 'register_content_model' ) );
+		add_action( 'init', array( PracticeArea::class, 'seed_catalog' ), 20 );
 
 		( new ApiGuard( $services->settings ) )->register();
 		$services->runner->register();

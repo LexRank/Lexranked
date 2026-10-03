@@ -15,6 +15,14 @@ use PHPUnit\Framework\TestCase;
 
 final class PluginTest extends TestCase {
 
+	public function testPracticeAreaCatalogHasValidSlugs(): void {
+		$this->assertArrayHasKey( 'personal-injury', \LexRanked\Core\Taxonomies\PracticeArea::CATALOG );
+		foreach ( \LexRanked\Core\Taxonomies\PracticeArea::CATALOG as $slug => $name ) {
+			$this->assertMatchesRegularExpression( '/^[a-z]+(-[a-z]+)*$/', $slug );
+			$this->assertNotSame( '', $name );
+		}
+	}
+
 	public function testRestNamespaceIsStable(): void {
 		$this->assertSame( 'lexranked/v1', Plugin::REST_NAMESPACE );
 	}
