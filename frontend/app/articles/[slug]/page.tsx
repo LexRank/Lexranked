@@ -112,7 +112,7 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
                 {rankings[0]?.practiceArea ? `Find a ${rankings[0].practiceArea.name.toLowerCase()} lawyer` : "Find a lawyer"}
               </h2>
               <p className="muted" style={{ marginTop: 0 }}>
-                Rankings built from verified licence records and cited sources. Payment never changes a position.
+                Rankings built from verified license records and cited sources. Payment never changes a position.
               </p>
               <div className="grid grid--2">
                 {rankings.map((r) => (
