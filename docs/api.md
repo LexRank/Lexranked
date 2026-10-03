@@ -144,7 +144,7 @@ Rules:
 
 ### AI-readable pages (API 1.15)
 - **`GET /methodology`** returns `{ active, versions[], updatedAt, schedule{recalculation, dataQuality, snapshots}, sourceTiers[{type, tier, tierLabel}], freshness[{category, maxAgeDays}], dataQuality, pageEligibility }`. `active` and `versions[]` are ScoreVersion objects; `updatedAt` is the last calculation.
-- **Lawyer and firm details** add `aiSummary{version: "sum-1.0", text, facts[{key, label, value, status: verified|sourced|derived, asOf, source}], asOf}`. It is generated from the profile's facts only.
+- **Lawyer and firm details** add `aiSummary{version: "sum-1.1", text, facts[{key, label, value, status: verified|sourced|derived, asOf, source}], asOf}`. It is generated from the profile's facts only.
 - **Ranking details** add `sources[{id, name, url, publisher, type, tier, tierLabel, facts, entities}]`: the sources behind the entries' facts, best tier first.
 
 ### `GET /page-eligibility` and `eligibility` on DTOs (API 1.14)
