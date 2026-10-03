@@ -108,6 +108,40 @@ final class StructuredSummaryTest extends TestCase {
 		$this->assertStringNotContainsString( 'Data verified', $text );
 	}
 
+	public function testAPassedBarStatusCheckAndAwardsAreStated(): void {
+		$summary = StructuredSummary::for_detail(
+			self::lawyer(
+				array(
+					self::fact( 'bar_status', 'active', 'unverified' ),
+					self::fact( 'bar_state', 'FL', 'unverified' ),
+					self::fact(
+						'awards',
+						array(
+							array(
+								'name'   => 'Board Certified in Civil Trial Law',
+								'issuer' => 'The Florida Bar',
+								'year'   => '1989',
+							),
+						),
+						'unverified'
+					),
+				),
+				array(
+					'verification' => array(
+						'status'     => 'verified',
+						'verifiedAt' => '2026-10-02T08:59:35Z',
+						'checks'     => array( 'bar_status' => 'verified' ),
+					),
+				)
+			)
+		);
+		$this->assertStringContainsString( 'Bar status: active (FL), verified October 2, 2026.', $summary['text'] );
+		$this->assertStringContainsString( 'Awards on record: Board Certified in Civil Trial Law (The Florida Bar).', $summary['text'] );
+		$by = array_column( $summary['facts'], null, 'key' );
+		$this->assertSame( 'verified', $by['bar_status']['status'] );
+		$this->assertSame( 'sourced', $by['awards']['status'] );
+	}
+
 	public function testFirms(): void {
 		$summary = StructuredSummary::for_detail(
 			array(

@@ -21,7 +21,7 @@ namespace LexRanked\Core\Content;
  */
 final class StructuredSummary {
 
-	public const VERSION = 'sum-1.0';
+	public const VERSION = 'sum-1.1';
 
 	/**
 	 * Summary for a lawyer or firm detail DTO.
@@ -89,16 +89,40 @@ final class StructuredSummary {
 			$items[]     = self::fact_item( 'years_experience', 'Experience', (int) $years['value'] . ' years', $years );
 		}
 
-		// Bar status.
+		// Bar status: verified when the fact is, or when the profile's bar-status
+		// check passed against an official source (the badge shows the same).
 		$bar = $facts['bar_status'] ?? null;
 		if ( ! $firm && self::usable( $bar ) ) {
-			$state       = self::usable( $facts['bar_state'] ?? null ) ? ' (' . $facts['bar_state']['value'] . ')' : '';
+			$state   = self::usable( $facts['bar_state'] ?? null ) ? ' (' . $facts['bar_state']['value'] . ')' : '';
+			$checked = 'verified' === ( $d['verification']['checks']['bar_status'] ?? null );
+			if ( 'verified' !== $bar['status'] && $checked ) {
+				$bar['status']     = 'verified';
+				$bar['verifiedAt'] = $d['verification']['verifiedAt'] ?? null;
+			}
 			$verified    = 'verified' === $bar['status'];
 			$date        = self::date( $bar['verifiedAt'] ?? null );
 			$sentences[] = $verified
 				? sprintf( 'Bar status: %s%s, verified%s.', $bar['value'], $state, null === $date ? '' : ' ' . $date )
 				: sprintf( 'Bar status on record: %s%s (not yet verified).', $bar['value'], $state );
 			$items[]     = self::fact_item( 'bar_status', 'Bar status', ucfirst( (string) $bar['value'] ) . $state, $bar );
+		}
+
+		// Awards and certifications, with the body that granted them.
+		$awards = $facts['awards'] ?? null;
+		if ( ! $firm && self::usable( $awards ) ) {
+			$names = array();
+			foreach ( (array) $awards['value'] as $award ) {
+				$name = trim( (string) ( is_array( $award ) ? ( $award['name'] ?? '' ) : $award ) );
+				if ( '' === $name ) {
+					continue;
+				}
+				$issuer  = is_array( $award ) ? trim( (string) ( $award['issuer'] ?? '' ) ) : '';
+				$names[] = '' === $issuer ? $name : $name . ' (' . $issuer . ')';
+			}
+			if ( array() !== $names ) {
+				$sentences[] = ( 'verified' === $awards['status'] ? 'Verified awards: ' : 'Awards on record: ' ) . self::join( $names ) . '.';
+				$items[]     = self::fact_item( 'awards', 'Awards', implode( '; ', $names ), $awards );
+			}
 		}
 
 		// Practice areas: say "verified" only when the fact is.

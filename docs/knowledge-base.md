@@ -294,7 +294,7 @@ A separate, published percentage of **how well a profile is documented**. It say
 ## Etap H: AI-readable pages (implemented)
 
 - **Profiles** follow the brief's structure: identity → at a glance → score → rankings and comparisons → credentials → verification → sources & verification → related.
-  - **"At a glance"** is `aiSummary` (`Content\StructuredSummary`, `sum-1.0`, pure): an answer-first paragraph plus structured statements (value, verified / sourced / derived, date, source), built only from the profile's facts. A fact is called "verified" only when its fact status is verified. Missing or conflicting facts are left out. Commercial status is never read.
+  - **"At a glance"** is `aiSummary` (`Content\StructuredSummary`, `sum-1.1`, pure): an answer-first paragraph plus structured statements (value, verified / sourced / derived, date, source), built only from the profile's facts. A fact is called "verified" only when its fact status is verified, or, for bar status, when the profile's bar-status check passed against an official source. Awards are listed with the body that granted them. Missing or conflicting facts are left out. Commercial status is never read.
   - **"Sources & verification"** (spec §16–18) shows each fact with its source, tier and its own date, e.g. "Bar status → Example State Bar Registry → Verified September 26, 2026". It flags stale facts and conflicts.
   - The header shows **"Data last verified"**.
 - **Rankings** add:
