@@ -22,24 +22,25 @@ final class PracticeArea {
 	/**
 	 * The practice areas LexRanked ranks, by slug. Research can only assign
 	 * areas that exist; empty areas stay hidden from the public API
-	 * (hide_empty), so seeding them adds no thin pages.
+	 * (hide_empty), so seeding them adds no thin pages. Names read naturally
+	 * before "Lawyers" ("Best Family Lawyers in Tampa").
 	 */
 	public const CATALOG = array(
 		'personal-injury'      => 'Personal Injury',
 		'criminal-defense'     => 'Criminal Defense',
-		'family-law'           => 'Family Law',
+		'family-law'           => 'Family',
 		'divorce'              => 'Divorce',
 		'immigration'          => 'Immigration',
 		'bankruptcy'           => 'Bankruptcy',
-		'employment-law'       => 'Employment Law',
+		'employment-law'       => 'Employment',
 		'medical-malpractice'  => 'Medical Malpractice',
 		'workers-compensation' => "Workers' Compensation",
 		'estate-planning'      => 'Estate Planning',
 		'real-estate'          => 'Real Estate',
-		'business-law'         => 'Business Law',
+		'business-law'         => 'Business',
 		'dui'                  => 'DUI',
 		'wrongful-death'       => 'Wrongful Death',
-		'tax-law'              => 'Tax Law',
+		'tax-law'              => 'Tax',
 		'elder-law'            => 'Elder Law',
 	);
 

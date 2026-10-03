@@ -196,7 +196,7 @@ suggested profile; editors pick *Same as #…*, *Create draft* or *Reject*.
   Locations are created under their state when missing; practice areas are
   only assigned from existing terms (unknown ones are logged). The plugin
   seeds a catalog of 16 practice areas (`PracticeArea::CATALOG`: personal
-  injury, criminal defense, family law, divorce, immigration, bankruptcy,
+  injury, criminal defense, family, divorce, immigration, bankruptcy,
   employment, medical malpractice, workers' compensation, estate planning,
   real estate, business, DUI, wrongful death, tax, elder law); areas without
   published profiles stay out of the public API.
