@@ -24,6 +24,7 @@ use LexRanked\Core\REST\ArticlesController;
 use LexRanked\Core\REST\HealthController;
 use LexRanked\Core\REST\CommercialController;
 use LexRanked\Core\REST\ReviewsController;
+use LexRanked\Core\REST\ContactController;
 use LexRanked\Core\REST\EntitiesController;
 use LexRanked\Core\REST\CompareController;
 use LexRanked\Core\REST\MarketController;
@@ -50,7 +51,7 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.21.0';
+	public const API_VERSION = '1.22.0';
 
 	/**
 	 * Services, available after boot().
@@ -100,6 +101,7 @@ final class Plugin {
 			new HealthController( $services ),
 			new CommercialController( $services ),
 			new ReviewsController( $services ),
+			new ContactController(),
 			new EntityController( $services ),
 			new CompareController( $services ),
 			new MarketController( $services ),

@@ -34,7 +34,18 @@ export function SiteFooter() {
             <li><Link href="/methodology/">How rankings work</Link></li>
             <li><Link href="/verified/">Verification</Link></li>
             <li><Link href="/advertising/">Advertising policy</Link></li>
+            <li><Link href="/editorial-policy/">Editorial policy</Link></li>
             <li><Link href="/articles/">Guides</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h2>LexRanked</h2>
+          <ul>
+            <li><Link href="/about/">About</Link></li>
+            <li><Link href="/contact/">Contact</Link></li>
+            <li><Link href="/privacy/">Privacy policy</Link></li>
+            <li><Link href="/terms/">Terms of use</Link></li>
+            <li><Link href="/disclaimer/">Legal disclaimer</Link></li>
           </ul>
         </div>
       </div>

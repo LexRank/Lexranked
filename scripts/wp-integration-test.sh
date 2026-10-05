@@ -435,6 +435,12 @@ check "approved reviews are recorded as rating evidence from the LexRanked revie
 expect "an editor can withdraw a review" '.status == "rejected"' "$API/editorial/reviews/$REVIEW_ID" -u "itEditor:$ED_PW" -X POST -H 'Content-Type: application/json' -d '{"action":"reject"}'
 expect "a withdrawn review leaves the profile" '.clientReviews.count == 0' "$API/lawyers/avery-example-demo"
 check "its rating evidence is retired with it" '. == 0' "$(wp db query "SELECT COUNT(*) FROM wp_lr_claims WHERE entity_id = $AVERY_ID AND source_type = 'lexranked_reviews' AND review_status = 'approved'" --skip-column-names | tr -dc 0-9)"
+echo "==> Contact form (emailed to the editors, never stored)"
+CONTACT='{"name":"Jordan Taylor","email":"jordan@example.com","topic":"correction","page":"/lawyers/avery-example-demo/","message":"The years in practice on this profile look wrong; see the Florida Bar record."}'
+expect_status "contact messages cannot be sent anonymously" 401 "$API/contact" -X POST -H 'Content-Type: application/json' -d "$CONTACT"
+expect_status "an invalid contact message is rejected" 400 "$API/contact" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d '{"name":"J","email":"x","topic":"sales","message":"short"}'
+expect "a contact message is accepted" '.status == "sent"' "$API/contact" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "$CONTACT"
+check "the message is emailed with the sender as reply-to" 'test("LexRanked contact.*Correction to a profile or ranking")' "$("${COMPOSE[@]}" exec -T wordpress sh -c 'tail -n1 /tmp/it-mail.log' | jq -Rs .)"
 
 echo "==> Entity resolution identifiers (Etap B)"
 check "research drafts are indexed by bar number" '. >= 1' "$(wp db query "SELECT COUNT(*) FROM wp_postmeta WHERE meta_key = '_lr_id_bar' AND meta_value = 'FL:1001'" --skip-column-names | tr -dc 0-9)"
@@ -640,6 +646,12 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "review confirm page never acts on GET" "/reviews/confirm/?token=$(printf 'A%.0s' $(seq 1 43))" "Confirm my review"
   expect_status "advertising policy" 200 "$WEB/advertising/"
   page_has "advertising policy states the rule" "/advertising/" "Payment never changes a score"
+  page_has "about page" "/about/" "What is LexRanked?"
+  page_has "editorial policy" "/editorial-policy/" "What standard does every LexRanked page follow?"
+  page_has "privacy policy states the cookie rule" "/privacy/" "sets no cookies"
+  page_has "terms of use" "/terms/" "What are the rules for client reviews?"
+  page_has "legal disclaimer" "/disclaimer/" "is not a law firm"
+  page_has "contact page has the form" "/contact/" "Send message"
   sitemap="$(curl -sS "$WEB/sitemap.xml")"
   if grep -q "/advertising/" <<<"$sitemap" && ! grep -q "/claim/" <<<"$sitemap"; then pass "sitemap lists the policy, not claim pages"; else fail "sitemap commercial pages"; fi
   sitemap="$(curl -sS "$WEB/sitemap.xml")"

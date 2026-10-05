@@ -113,6 +113,17 @@ final class ReviewRepository {
 	}
 
 	/**
+	 * Delete reviews whose email was never confirmed (their email address with them).
+	 *
+	 * @param string $before Created before this UTC datetime (Y-m-d H:i:s).
+	 * @return int Rows deleted.
+	 */
+	public function delete_unconfirmed( string $before ): int {
+		global $wpdb;
+		return (int) $wpdb->query( $wpdb->prepare( "DELETE FROM {$this->table()} WHERE status = %s AND created_at < %s", ReviewStatus::PendingEmail->value, $before ) );
+	}
+
+	/**
 	 * Reviews of one profile with a status, newest first.
 	 *
 	 * @param string $entity_type Entity type.

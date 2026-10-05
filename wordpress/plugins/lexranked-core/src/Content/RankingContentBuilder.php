@@ -87,10 +87,11 @@ final class RankingContentBuilder {
 			? sprintf( '%s %s, which only about one in twenty %s lawyers achieves in any field.', self::all_or_some( $stats['cert'], $n, false ), self::verb( $stats['cert'] ) . ' ' . $cert . ' by ' . $bar, $state )
 			: sprintf( 'Every lawyer in this ranking has a %s license verified as eligible to practice, and every fact shown links to its source.', $bar );
 
-		$body   = array();
-		$body[] = '<h2>What sets these ' . $e( $city_name ) . ' lawyers apart</h2>';
-		$body[] = '<p><strong>' . $e( $lead ) . '</strong> The figures below come from each lawyer\'s ' . $e( $short ) . ' profile, checked in ' . $e( $checked ) . '.</p>';
-		$body[] = self::table( array( 'Fact about the ' . $n . ' ranked lawyers', 'Figure' ), $rows, $e );
+		$body         = array();
+		$body[]       = '<h2>What sets these ' . $e( $city_name ) . ' lawyers apart</h2>';
+		$requirements = $stats['cert'] > 0 && isset( $pack['certification']['requirements'] ) ? ' ' . $e( (string) $pack['certification']['requirements'] ) : '';
+		$body[]       = '<p><strong>' . $e( $lead ) . '</strong>' . $requirements . ' The figures below come from each lawyer\'s ' . $e( $short ) . ' profile, checked in ' . $e( $checked ) . '.</p>';
+		$body[]       = self::table( array( 'Fact about the ' . $n . ' ranked lawyers', 'Figure' ), $rows, $e );
 
 		$body[] = '<h2>About this ranking</h2>';
 		$body[] = '<p><strong>' . $e( sprintf( 'It compares %d %s lawyers whose office is in %s, using only facts with a cited source.', $n, $noun, $city_name ) ) . '</strong></p>';

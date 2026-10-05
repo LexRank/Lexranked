@@ -166,6 +166,18 @@ export const submitReview = (body: ReviewSubmission) =>
 export const confirmReview = (token: string) =>
   apiRequest<{ status: string }>("reviews/confirm", { method: "POST", body: { token }, timeoutMs: 15000 });
 
+export interface ContactSubmission {
+  name: string;
+  email: string;
+  topic: "general" | "correction" | "lawyer" | "privacy" | "press";
+  page: string;
+  message: string;
+}
+
+/** Send a contact message to the editors (server action only; it is emailed, not stored). */
+export const sendContact = (body: ContactSubmission) =>
+  apiRequest<{ status: string }>("contact", { method: "POST", body, timeoutMs: 15000 });
+
 /** Current entity for a current or former slug (renames and merges); null when unknown. */
 export async function resolveEntity(type: EntityType, slug: string, opts?: Opts): Promise<EntityDto | null> {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return null;

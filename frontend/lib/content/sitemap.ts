@@ -19,7 +19,7 @@ export interface SitemapInput {
   articles?: ArticleSummary[];
 }
 
-export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/"];
+export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/", "/about/", "/editorial-policy/", "/contact/", "/privacy/", "/terms/", "/disclaimer/"];
 
 /** Index pages, listed once they link to enough pages (indexPageIndexable). */
 export const INDEX_PATHS = { rankings: "/rankings/", states: "/states/", cities: "/cities/", practiceAreas: "/practice-areas/" } as const;

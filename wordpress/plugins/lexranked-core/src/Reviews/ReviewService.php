@@ -30,7 +30,10 @@ use LexRanked\Core\Services;
  */
 final class ReviewService {
 
-	public const TOKEN_TTL          = 172800;
+	public const TOKEN_TTL = 172800;
+	/** Unconfirmed reviews (and their email address) are deleted after this many days. */
+	public const UNCONFIRMED_DAYS = 7;
+
 	public const MAX_PER_EMAIL_DAY  = 5;
 	public const MAX_PER_ENTITY_DAY = 20;
 	public const SOURCE_OPTION      = 'lexranked_review_source_id';
@@ -258,9 +261,11 @@ final class ReviewService {
 	}
 
 	/**
-	 * Daily: refresh the facts of every reviewed profile (keeps them fresh).
+	 * Daily: delete reviews never confirmed within UNCONFIRMED_DAYS (with their
+	 * email address) and refresh the facts of every reviewed profile.
 	 */
 	public function refresh_all(): void {
+		$this->reviews->delete_unconfirmed( gmdate( 'Y-m-d H:i:s', time() - self::UNCONFIRMED_DAYS * DAY_IN_SECONDS ) );
 		foreach ( $this->reviews->reviewed_entities() as $e ) {
 			$this->sync_facts( $e['entity_type'], $e['entity_id'] );
 		}
