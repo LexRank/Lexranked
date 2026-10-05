@@ -58,6 +58,10 @@ final class Installer {
 		// Schema v10: sites on the previous default score version move to the new one
 		// once (a version chosen deliberately in Settings is kept on later upgrades).
 		self::adopt_default_score_version();
+		// Scores and rankings follow the upgraded code and score version without waiting for the daily run.
+		if ( ! wp_next_scheduled( \LexRanked\Core\Ranking\RankingRunner::CRON_HOOK . '_soon' ) ) {
+			wp_schedule_single_event( time() + \LexRanked\Core\Ranking\RankingRunner::DEBOUNCE_S, \LexRanked\Core\Ranking\RankingRunner::CRON_HOOK . '_soon' );
+		}
 		// DTO shapes may have changed: drop cached API responses.
 		\LexRanked\Core\Support\ContentVersion::bump();
 		update_option( self::VERSION_OPTION, Schema::VERSION, false );

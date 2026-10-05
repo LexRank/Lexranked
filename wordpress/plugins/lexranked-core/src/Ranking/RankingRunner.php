@@ -60,6 +60,22 @@ final class RankingRunner {
 		}
 		// v1.1+ scores are built from the fact layer: new or re-reviewed evidence recalculates too.
 		add_action( 'lexranked_facts_changed', array( $this, 'schedule_soon' ) );
+		// A different score version in Settings recalculates every ranking.
+		add_action( 'update_option_' . \LexRanked\Core\Settings\Settings::OPTION, array( $this, 'settings_changed' ), 10, 2 );
+	}
+
+	/**
+	 * Recalculate when the active score version changes.
+	 *
+	 * @param mixed $old_value Previous settings.
+	 * @param mixed $value     New settings.
+	 */
+	public function settings_changed( $old_value, $value ): void {
+		$old = is_array( $old_value ) ? ( $old_value['score_version'] ?? null ) : null;
+		$new = is_array( $value ) ? ( $value['score_version'] ?? null ) : null;
+		if ( $old !== $new ) {
+			$this->schedule_soon();
+		}
 	}
 
 	/**
