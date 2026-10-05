@@ -419,7 +419,7 @@ expect_status "reviews cannot be submitted anonymously" 401 "$API/reviews" -X PO
 expect_status "a review without the client confirmation is rejected" 400 "$API/reviews" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "${REVIEW/\"client\":true/\"client\":false}"
 expect "review accepted, email confirmation pending" '.status == "pending_email"' "$API/reviews" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "$REVIEW"
 expect "an unconfirmed review is not public" '.clientReviews.count == 0' "$API/lawyers/avery-example-demo"
-RTOKEN="$("${COMPOSE[@]}" exec -T wordpress sh -c 'cat /tmp/it-mail.log' | grep -o 'reviews/confirm/?token=[A-Za-z0-9_-]*' | tail -1 | cut -d= -f2)"
+RTOKEN="$("${COMPOSE[@]}" exec -T wordpress sh -c 'cat /tmp/it-mail.log' | grep 'review' | grep -o 'token=[A-Za-z0-9_-]*' | tail -1 | cut -d= -f2)"
 expect "email confirmed, review waits for moderation" '.status == "pending_review"' "$API/reviews/confirm" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "{\"token\":\"$RTOKEN\"}"
 REVIEW_ID="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/reviews" | jq '.[0].id')"
 expect "editors see the moderation queue without email addresses" 'length == 1 and .[0].author == "Jordan T." and (tostring | test("jordan@example.com") | not)' "$API/editorial/reviews" -u "itEditor:$ED_PW"
