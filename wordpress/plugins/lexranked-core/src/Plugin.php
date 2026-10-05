@@ -48,7 +48,7 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.18.0';
+	public const API_VERSION = '1.19.0';
 
 	/**
 	 * Services, available after boot().

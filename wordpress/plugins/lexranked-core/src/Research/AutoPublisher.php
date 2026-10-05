@@ -71,9 +71,22 @@ final class AutoPublisher {
 			'rankings'      => array(),
 		);
 
+		// Large jobs publish hundreds of profiles; do not let the PHP time limit
+		// or a closed connection stop the run halfway (it is also re-runnable).
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( 0 );
+		}
+		ignore_user_abort( true );
+
 		$records = $this->job_verifications( $job_id );
 		$backing = array();
+		$earlier = array();
 		foreach ( $this->job_entities( $job_id ) as $post ) {
+			// Published by an earlier run of this job: count it for rankings, change nothing.
+			if ( 'publish' === $post->post_status ) {
+				$earlier[] = (int) $post->ID;
+				continue;
+			}
 			$is_firm  = LawFirm::SLUG === $post->post_type;
 			$type     = $is_firm ? $this->services->law_firm : $this->services->lawyer;
 			$record   = $this->services->entities->record( $post, $type );
@@ -157,7 +170,7 @@ final class AutoPublisher {
 
 		$summary['claims']   = $this->approve_claims( $job_id );
 		$summary['sources']  = $this->publish_sources( $job_id, $backing );
-		$summary['rankings'] = $this->ensure_rankings( $job_id, $summary['published'] );
+		$summary['rankings'] = $this->ensure_rankings( $job_id, array_merge( $summary['published'], $earlier ) );
 
 		$this->log->add(
 			$job_id,

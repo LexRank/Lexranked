@@ -369,6 +369,7 @@ check "official facts on a published profile are approved automatically" '[.log[
 expect "the certification shows as an award on the profile" '.professional.awards | any(.name == "Board Certified in Civil Trial Law")' "$API/lawyers/avery-autotest"
 again="$(wp lexranked research-auto-publish "$AUTO_JOB")"
 check "re-applying the rules creates nothing twice" 'test("0 published, 2 kept as drafts, 0 verification records and 0 sources published, 0 rankings created")' "\"$(tail -n1 <<<"$again")\""
+check "a completed job's publication can be finished through the API, idempotently" '.published == 0 and .held == 2 and (.rankings | length) == 0' "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
 # Remove the autonomous-research records so later sections see the same data as before.
 auto_ids="$(wp post list --post_type=lr_lawyer,lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --field=ID --format=csv | tr -dc '0-9\n')"
 auto_ids+=" $(wp post list --post_type=lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$awards_job" --field=ID --format=csv | tr -dc '0-9\n')"
