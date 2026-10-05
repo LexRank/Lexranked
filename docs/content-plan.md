@@ -53,6 +53,29 @@ state, city and practice-area pages, FAQs and profile summaries.
    every other fact (rule 4); if nothing true and helpful can be added,
    nothing is invented.
 
+### Rankings start with their content
+
+A ranking is published only together with complete page text that meets
+rules 1–5 and 8: a summary, an answer under every heading, a table of the
+ranked lawyers' verified figures, the state's rules for the practice area,
+the local court, how to choose, further reading, sources and an FAQ.
+
+- Rankings created by autonomous research get this text automatically
+  (plugin 0.24.0, `rc-1`), before publication. It is built from the ranked
+  lawyers' facts and a verified state knowledge pack
+  (`src/Content/knowledge/{STATE}.json`: practice-area rules with statute
+  links, certification names, county and judicial circuit per city). Nothing
+  is written by AI and nothing is claimed that the facts do not show (for
+  example "all are board certified" only when every ranked lawyer is).
+- Without knowledge for the state, practice area or city the ranking stays
+  a draft (logged in the job) and is published by the next research run
+  once the pack covers it. **To open a new city or practice area, add its
+  verified facts to the pack first.**
+- Generated text follows every recalculation (counts, ranges, languages).
+  Text an editor writes (wp-admin, editorial API or an applied AI draft) is
+  kept and no longer regenerated; `POST /editorial/rankings/{id}/generate`
+  switches a ranking back to generated text.
+
 Who writes: guides need outside facts (statutes, deadlines, fees), so they
 are researched and written by the editorial assistant with web research and
 primary sources. The AI content generator (`content_generation` with

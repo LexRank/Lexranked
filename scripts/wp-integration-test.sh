@@ -374,6 +374,12 @@ expect "the certification shows as an award on the profile" '.professional.award
 again="$(wp lexranked research-auto-publish "$AUTO_JOB")"
 check "re-applying the rules creates nothing twice" 'test("0 published, 2 kept as drafts, 0 verification records and 0 sources published, 0 rankings created")' "\"$(tail -n1 <<<"$again")\""
 check "a completed job's publication can be finished through the API, idempotently" '.published == 0 and .held == 2 and (.rankings | length) == 0' "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
+wp user create itEditor editor@example.com --role=editor >/dev/null
+ED_PW="$(wp user application-password create itEditor it --porcelain | tail -1)"
+HIALEAH_RANKING="$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Personal Injury Lawyers in Hialeah, Florida' --field=ID | tail -1)"
+expect "an automatically created ranking is published with complete generated page text" '(.summary | test("personal injury lawyers? in Hialeah, Florida")) and (.body | test("<h2>Florida rules to know</h2>")) and (.body | test("Eleventh Judicial Circuit")) and (.body | test("<h2>Sources</h2>")) and (.faq | length) >= 6 and .generated == true' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW"
+expect "an editor's text replaces the generated text and is kept" '.summary == "Edited by hand." and .generated == false' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"summary":"Edited by hand."}'
+expect "generated text can be restored on request" '.generated == true and (.summary | test("Hialeah"))' "$API/editorial/rankings/$HIALEAH_RANKING/generate" -u "itEditor:$ED_PW" -X POST
 # Remove the autonomous-research records so later sections see the same data as before.
 auto_ids="$(wp post list --post_type=lr_lawyer,lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --field=ID --format=csv | tr -dc '0-9\n')"
 auto_ids+=" $(wp post list --post_type=lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$awards_job" --field=ID --format=csv | tr -dc '0-9\n')"
@@ -383,8 +389,6 @@ wp post delete $auto_ids --force >/dev/null
 wp option update lexranked_settings '{"search_rate_per_minute":5}' --format=json >/dev/null
 
 echo "==> Editorial API (page text for rankings, hubs and profiles)"
-wp user create itEditor editor@example.com --role=editor >/dev/null
-ED_PW="$(wp user application-password create itEditor it --porcelain | tail -1)"
 ED_RANKING="$(curl -sS "$API/rankings?per_page=1" | jq -r '.[0].id')"
 ED_CITY="$(curl -sS "$API/cities" | jq -r '.[] | select(.slug == "miami") | .id')"
 ED_LAWYER="$(curl -sS "$API/lawyers?per_page=1" | jq -r '.[0].id')"

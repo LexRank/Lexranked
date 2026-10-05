@@ -172,6 +172,8 @@ final class DraftApplier {
 						)
 					)
 				);
+				// Reviewed text replaces generated text and is no longer regenerated.
+				$this->services->ranking_content->release( (int) $fields['target_id'] );
 		}//end switch
 		$this->services->entities->save_fields( $draft_id, $this->services->content_draft, $changes, true );
 		AuditLog::log(

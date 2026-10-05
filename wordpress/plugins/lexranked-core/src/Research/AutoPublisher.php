@@ -34,6 +34,9 @@ use LexRanked\Core\Taxonomies\PracticeArea;
  */
 final class AutoPublisher {
 
+	/** Post meta on a draft ranking kept back because its page text cannot be written yet. */
+	public const HELD_META = '_lr_held_for_content';
+
 	/** Why a research draft was kept (JSON list of reasons). */
 	public const META_HOLD = '_lr_auto_publish_hold';
 
@@ -429,6 +432,16 @@ final class AutoPublisher {
 		$created = array();
 		$min     = (int) $this->services->settings->get( 'min_ranking_entities' );
 		foreach ( $pairs as $pair ) {
+			$held = $this->held_ranking( $pair['entity_type'], $pair['city']['id'], $pair['area']['id'] );
+			if ( null !== $held ) {
+				// A draft kept for missing text: publish it once the text can be written.
+				if ( $this->services->ranking_content->prepare( $held ) && $this->publish_post( $held ) ) {
+					delete_post_meta( $held, self::HELD_META );
+					$created[] = $held;
+					$this->log->add( $job_id, 'info', 'auto_publish', sprintf( 'Published ranking #%d with its page text.', $held ) );
+				}
+				continue;
+			}
 			$decision = AutoPublishPolicy::decide_ranking(
 				$this->count_published( $pair['post_type'], $pair['city']['id'], $pair['area']['id'] ),
 				$min,
@@ -439,13 +452,13 @@ final class AutoPublisher {
 				$this->log->add( $job_id, 'info', 'auto_publish', sprintf( 'No new ranking "%s": %s.', $title, $decision['reason'] ) );
 				continue;
 			}
-			$id = $this->create_ranking( $title, $pair['entity_type'], $pair['city']['id'], $pair['area']['id'] );
+			$id = $this->create_ranking( $job_id, $title, $pair['entity_type'], $pair['city']['id'], $pair['area']['id'] );
 			if ( null !== $id ) {
 				$created[] = $id;
 				$this->log->add( $job_id, 'info', 'auto_publish', sprintf( 'Created ranking #%d "%s" (%s).', $id, $title, $decision['reason'] ) );
 				AuditLog::log( 'research.ranking_created', Ranking::SLUG, $id, array( 'job_id' => $job_id ) );
 			}
-		}
+		}//end foreach
 		return $created;
 	}
 
@@ -487,6 +500,37 @@ final class AutoPublisher {
 	}
 
 	/**
+	 * A draft ranking for the pair kept back for missing page text, or null.
+	 *
+	 * @param string $entity_type lawyer|law_firm.
+	 * @param int    $city_id     City term ID.
+	 * @param int    $area_id     Practice-area term ID.
+	 */
+	private function held_ranking( string $entity_type, int $city_id, int $area_id ): ?int {
+		$posts = get_posts(
+			array(
+				'post_type'        => Ranking::SLUG,
+				'post_status'      => 'draft',
+				'posts_per_page'   => -1,
+				'fields'           => 'ids',
+				'no_found_rows'    => true,
+				'suppress_filters' => false,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Few held drafts.
+				'meta_key'         => self::HELD_META,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Two exact term IDs.
+				'tax_query'        => self::tax_query( $city_id, $area_id ),
+			)
+		);
+		foreach ( $posts as $id ) {
+			$post = get_post( (int) $id );
+			if ( $post instanceof \WP_Post && ( $this->services->entities->record( $post, $this->services->ranking )['fields']['entity_type'] ?? null ) === $entity_type ) {
+				return (int) $id;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Whether a non-contextual ranking for the pair exists in any status but trash.
 	 *
 	 * @param string $entity_type lawyer|law_firm.
@@ -515,14 +559,16 @@ final class AutoPublisher {
 	}
 
 	/**
-	 * Create and publish a ranking. The engine calculates its positions.
+	 * Create a ranking, calculate it and write its page text; publish it only
+	 * when the text is complete.
 	 *
+	 * @param int    $job_id      Job ID (log).
 	 * @param string $title       Title.
 	 * @param string $entity_type lawyer|law_firm.
 	 * @param int    $city_id     City term ID.
 	 * @param int    $area_id     Practice-area term ID.
 	 */
-	private function create_ranking( string $title, string $entity_type, int $city_id, int $area_id ): ?int {
+	private function create_ranking( int $job_id, string $title, string $entity_type, int $city_id, int $area_id ): ?int {
 		$id = wp_insert_post(
 			array(
 				'post_type'   => Ranking::SLUG,
@@ -537,6 +583,12 @@ final class AutoPublisher {
 		$this->services->entities->save_fields( (int) $id, $this->services->ranking, array( 'entity_type' => $entity_type ) );
 		wp_set_object_terms( (int) $id, array( $city_id ), Location::SLUG );
 		wp_set_object_terms( (int) $id, array( $area_id ), PracticeArea::SLUG );
+		// Complete page text first: without it the ranking stays a draft, never a thin page.
+		if ( ! $this->services->ranking_content->prepare( (int) $id ) ) {
+			update_post_meta( (int) $id, self::HELD_META, '1' );
+			$this->log->add( $job_id, 'warning', 'auto_publish', sprintf( 'Ranking #%d "%s" kept as a draft: complete page text cannot be written yet (no verified knowledge for this state, practice area or city).', $id, $title ) );
+			return null;
+		}
 		// Publish last so save hooks see the complete record.
 		return $this->publish_post( (int) $id ) ? (int) $id : null;
 	}
