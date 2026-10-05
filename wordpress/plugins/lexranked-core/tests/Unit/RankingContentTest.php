@@ -97,6 +97,8 @@ final class RankingContentTest extends TestCase {
 		$this->assertGreaterThanOrEqual( 3, substr_count( $c['body'], '<table>' ) );
 		$this->assertStringContainsString( 'https://www.flsenate.gov/Laws/Statutes/2025/95.11', $c['body'] );
 		$this->assertStringContainsString( 'Eleventh Judicial Circuit', $c['body'] );
+		$this->assertStringContainsString( 'requires at least five years of practice', $c['body'] );
+		$this->assertStringContainsString( 'Claims above $50,000 go to the circuit court', $c['body'] );
 		$this->assertStringContainsString( 'href="/methodology/"', $c['body'] );
 		$questions = array_column( $c['faq'], 'question' );
 		$this->assertGreaterThanOrEqual( 7, count( $questions ) );

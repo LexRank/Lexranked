@@ -13,7 +13,8 @@
   "source": [
    "https://www.floridabar.org/the-florida-bar-news/board-certification-continues-to-set-florida-lawyers-apart/",
    "The Florida Bar News: Board certification continues to set Florida lawyers apart (July 2026)"
-  ]
+  ],
+  "requirements": "Florida Bar board certification requires at least five years of practice, substantial involvement in the field, peer review by other lawyers and judges, continuing legal education and a written exam, and it must be renewed every five years."
  },
  "crashSource": [
   "https://www.flhsmv.gov/pdf/crashreports/crash_facts_2023.pdf",
@@ -39,6 +40,10 @@
     [
      "Lawyer fees",
      "Contingency fees are capped, for example 33⅓% of the first $1 million if the case resolves before the defendant answers (Rule 4-1.5)"
+    ],
+    [
+     "Which court",
+     "Claims above $50,000 go to the circuit court; smaller claims go to the county court"
     ]
    ],
    "src": [
