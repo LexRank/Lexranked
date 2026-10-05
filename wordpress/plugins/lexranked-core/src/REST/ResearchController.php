@@ -198,6 +198,15 @@ final class ResearchController extends RestController {
 		}
 		register_rest_route(
 			$ns,
+			$job . '/auto-publish',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'rerun_auto_publish' ),
+				'permission_callback' => $perm,
+			)
+		);
+		register_rest_route(
+			$ns,
 			$job . '/review-candidates',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -513,6 +522,16 @@ final class ResearchController extends RestController {
 		return $this->run(
 			fn(): array => array( 'results' => $this->services->ingest->verifications( $this->job_id( $request ), (array) $request['items'] ) )
 		);
+	}
+
+	/**
+	 * POST /research/jobs/{id}/auto-publish: finish automatic publication of
+	 * a completed job (idempotent).
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function rerun_auto_publish( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		return $this->run( fn(): array => $this->services->jobs->rerun_auto_publish( (int) $request['id'] ) );
 	}
 
 	/**
