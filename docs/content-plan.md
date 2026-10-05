@@ -17,11 +17,14 @@ guides, trust pages) and their order is in `docs/page-plan.md`.
 These rules apply to guides and to every other text on the site: ranking,
 state, city and practice-area pages, FAQs and profile summaries.
 
-1. **Complete.** The guide answers its topic fully and every question a
-   reader searching for it would ask (the plan's "Questions" are the
-   minimum, plus "People also ask"-style follow-ups). No thin sections.
-2. **Answer first.** Directly under the H1 lead and under every H2/H3, the
-   first one or two sentences answer that heading; detail follows below.
+1. **Complete.** The text covers its topic 100%: it answers every question
+   a reader searching for it would ask (the plan's "Questions" are the
+   minimum, plus "People also ask"-style follow-ups), so the reader is left
+   with no further questions. No thin sections.
+2. **Answer first, in bold.** Directly under the H1 lead and under every
+   H2/H3, the first one or two sentences answer that heading concretely and
+   are set in bold; detail follows below. Important sentences and phrases
+   in the detail (deadlines, amounts, conditions, warnings) are also bold.
    FAQ answers also start with the direct answer.
 3. **Helpful elements.** Use them wherever they make the answer easier to
    use: a "short version" bullet list at the top, numbered steps,

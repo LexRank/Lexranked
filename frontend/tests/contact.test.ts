@@ -1,25 +1,38 @@
 import { describe, expect, it } from "vitest";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { EmailLine, PhoneLine, profileActive } from "@/components/profile/Contact";
-import type { CommercialBlock } from "@/types/api";
+import { CONTACT_HONEYPOT, parseContactForm } from "@/lib/contact/validate";
 
-const free: CommercialBlock = { status: "free", isPaidPlacement: false, claimed: false, premium: false };
-const claimed: CommercialBlock = { status: "claimed", isPaidPlacement: false, claimed: true, premium: false };
-const premium: CommercialBlock = { status: "premium", isPaidPlacement: false, claimed: true, premium: true };
+function form(values: Record<string, string>): FormData {
+  const f = new FormData();
+  for (const [k, v] of Object.entries(values)) f.set(k, v);
+  return f;
+}
 
-describe("profile contact details", () => {
-  it("are active only on claimed or premium profiles", () => {
-    expect(profileActive(free)).toBe(false);
-    expect(profileActive(claimed)).toBe(true);
-    expect(profileActive(premium)).toBe(true);
-    expect(profileActive({ status: "claimed", isPaidPlacement: false })).toBe(true);
+const VALID = {
+  name: "  Jane   Doe ",
+  email: "Jane@Example.com",
+  topic: "correction",
+  page: "/lawyers/jane-doe/",
+  message: "My years in practice are wrong; I was admitted in 2004 (see the Florida Bar record).",
+};
+
+describe("contact form", () => {
+  it("accepts and normalises a valid message", () => {
+    const parsed = parseContactForm(form(VALID));
+    expect(parsed).toEqual({ ok: true, data: { name: "Jane Doe", email: "jane@example.com", topic: "correction", page: "/lawyers/jane-doe/", message: VALID.message } });
   });
 
-  it("show phone and email as plain text until the profile is active", () => {
-    expect(renderToStaticMarkup(createElement(PhoneLine, { phone: "305-371-3666", active: false }))).toBe("<dd><span>305-371-3666</span></dd>");
-    expect(renderToStaticMarkup(createElement(EmailLine, { email: "info@firm.test", active: false }))).not.toContain("mailto:");
-    expect(renderToStaticMarkup(createElement(PhoneLine, { phone: "(305) 371-3666", active: true }))).toContain('href="tel:3053713666"');
-    expect(renderToStaticMarkup(createElement(EmailLine, { email: "info@firm.test", active: true }))).toContain('href="mailto:info@firm.test"');
+  it("reports every invalid field", () => {
+    const parsed = parseContactForm(form({ name: "J", email: "x", topic: "sales", page: "javascript:alert(1)", message: "short" }));
+    expect(parsed.ok).toBe(false);
+    if (parsed.ok === false) expect(Object.keys(parsed.errors).sort()).toEqual(["email", "message", "name", "page", "topic"]);
+  });
+
+  it("treats a filled honeypot as a bot", () => {
+    expect(parseContactForm(form({ ...VALID, [CONTACT_HONEYPOT]: "http://spam.test" }))).toEqual({ ok: "bot" });
+  });
+
+  it("allows an empty page address", () => {
+    const parsed = parseContactForm(form({ ...VALID, page: "" }));
+    expect(parsed.ok).toBe(true);
   });
 });

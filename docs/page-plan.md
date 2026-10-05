@@ -15,7 +15,7 @@ a po publikacji zmienia status na ✅. Stan na: 5 października 2026.
 | Huby obszarów praktyki | 11 | 11 z 16 obszarów katalogu ma dane |
 | Hub stanu | 1 | Floryda |
 | Poradniki | 7 | plan poradników: 100 pozycji w `docs/content-plan.md` (3 opublikowane z planu) |
-| Strony zaufania | 4 | metodologia, weryfikacja, polityka reklamowa, status |
+| Strony zaufania | 10 | metodologia, weryfikacja, polityka reklamowa, status, o nas, polityka redakcyjna, kontakt, prywatność, regulamin, zastrzeżenia prawne |
 
 ## 2. Analiza
 
@@ -997,12 +997,12 @@ linkują do nich w sekcji „Further reading”. Fakty sprawdzać w ustawach (za
 | 1 | How we rank (metodologia) | `/methodology/` | przejrzystość rankingu | — | ✅ |
 | 2 | How we verify | `/verified/` | weryfikacja licencji | — | ✅ |
 | 3 | Advertising policy | `/advertising/` | płatność nie zmienia pozycji | — | ✅ |
-| 4 | About LexRanked | `/about/` | kto stoi za serwisem (E-E-A-T) | P1 | planowany |
-| 5 | Editorial policy | `/editorial-policy/` | standard treści z `docs/content-plan.md`, źródła, aktualizacje | P1 | planowany |
-| 6 | Contact | `/contact/` | kontakt i zgłaszanie błędów | P1 | planowany |
-| 7 | Privacy policy | `/privacy/` | wymagana (formularze opinii i zgłoszeń, e-mail) | P1 | planowany |
-| 8 | Terms of use | `/terms/` | zasady korzystania | P1 | planowany |
-| 9 | Legal disclaimer | `/disclaimer/` | serwis nie udziela porad prawnych | P1 | planowany |
+| 4 | About LexRanked | `/about/` | kto stoi za serwisem (E-E-A-T) | P1 | ✅ |
+| 5 | Editorial policy | `/editorial-policy/` | standard treści z `docs/content-plan.md`, źródła, aktualizacje | P1 | ✅ |
+| 6 | Contact | `/contact/` | kontakt i zgłaszanie błędów | P1 | ✅ |
+| 7 | Privacy policy | `/privacy/` | wymagana (formularze opinii i zgłoszeń, e-mail) | P1 | ✅ |
+| 8 | Terms of use | `/terms/` | zasady korzystania | P1 | ✅ |
+| 9 | Legal disclaimer | `/disclaimer/` | serwis nie udziela porad prawnych | P1 | ✅ |
 | 10 | Corrections | `/corrections/` | jak poprawiamy błędy w danych | P2 | planowany |
 | 11 | For lawyers | `/for-lawyers/` | jak trafić do rankingu, zgłoszenie profilu, aktualizacja danych | P2 | planowany |
 | 12 | Review policy | `/review-policy/` | jak moderujemy opinie klientów | P2 | planowany |

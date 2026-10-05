@@ -3593,3 +3593,8 @@ h2 {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* Trust and legal pages: space between answer-first sections. */
+.editorial__body > section + section {
+  margin-top: 2.25rem;
+}
