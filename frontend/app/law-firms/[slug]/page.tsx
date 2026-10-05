@@ -20,6 +20,7 @@ import { formatDate, formatLocation, isoDate, pluralize } from "@/lib/format";
 import { lawFirmJsonLd, type Crumb } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getLawFirm, getLawFirms } from "@/lib/wordpress/api";
+import { ClientReviews } from "@/components/profile/Reviews";
 import type { LawFirmDetail } from "@/types/api";
 
 export const revalidate = 300;
@@ -151,6 +152,8 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
               </div>
             </section>
           )}
+          <ClientReviews reviews={firm.clientReviews} entityType="law_firm" entityId={firm.id} name={firm.name} city={firm.location?.city} state={firm.location?.state} />
+
           <VerificationSection verification={firm.verification} freshness={firm.freshness} />
           {(firm.facts ?? []).length > 0 ? (
             <>

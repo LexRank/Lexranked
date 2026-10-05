@@ -3509,3 +3509,87 @@ h2 {
   border-radius: var(--radius) var(--radius) 0 0;
   background: var(--neutral-bg);
 }
+
+/* ---------- Client reviews ---------- */
+
+.review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.review {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.review:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.review__head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.review__body {
+  margin: 0.5rem 0 0.35rem;
+  white-space: pre-line;
+}
+
+.review__meta {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.review-form-wrap > summary {
+  list-style: none;
+  width: fit-content;
+}
+
+.review-form-wrap > summary::-webkit-details-marker {
+  display: none;
+}
+
+.star-input {
+  border: 0;
+  padding: 0;
+  margin: 0 0 0.5rem;
+  display: flex;
+  gap: 0.15rem;
+  flex-wrap: wrap;
+}
+
+.star-input legend {
+  width: 100%;
+}
+
+.star-input label {
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--line-strong);
+}
+
+.star-input label.is-on,
+.star-input label:has(input:checked) {
+  color: var(--brass-500);
+}
+
+.star-input input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.star-input label:has(input:focus-visible) {
+  outline: 2px solid var(--brass-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

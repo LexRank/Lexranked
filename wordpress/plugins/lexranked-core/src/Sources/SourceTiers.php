@@ -29,6 +29,7 @@ final class SourceTiers {
 		'secondary'                => 5,
 		'social'                   => 5,
 		'other'                    => 5,
+		'lexranked_reviews'        => 5,
 	);
 
 	/** What each tier means (docs/knowledge-base.md). */

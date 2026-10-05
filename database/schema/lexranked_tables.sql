@@ -1,6 +1,6 @@
 -- Reference DDL for LexRanked custom tables (MySQL/MariaDB, prefix wp_).
 -- Source of truth: wordpress/plugins/lexranked-core/src/Database/Schema.php (applied with dbDelta).
--- Schema version: 9
+-- Schema version: 10
 
 CREATE TABLE wp_lr_claims (
   claim_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -127,6 +127,33 @@ CREATE TABLE wp_lr_profile_claims (
   KEY entity (entity_id,status),
   KEY status (status,updated_at),
   KEY claimant_email (claimant_email(100),created_at)
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE wp_lr_client_reviews (
+  review_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  entity_id bigint(20) unsigned NOT NULL,
+  entity_type varchar(20) NOT NULL,
+  status varchar(20) NOT NULL,
+  rating tinyint(3) unsigned NOT NULL,
+  title varchar(120) NOT NULL DEFAULT '',
+  body text NOT NULL,
+  display_name varchar(80) NOT NULL DEFAULT '',
+  reviewer_email varchar(254) NOT NULL DEFAULT '',
+  email_hash char(64) NOT NULL,
+  service_year smallint(5) unsigned NOT NULL DEFAULT 0,
+  email_token_hash char(64) DEFAULT NULL,
+  email_token_expires datetime DEFAULT NULL,
+  email_verified_at datetime DEFAULT NULL,
+  moderation_note varchar(500) NOT NULL DEFAULT '',
+  moderated_by bigint(20) unsigned NOT NULL DEFAULT 0,
+  approved_at datetime DEFAULT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY  (review_id),
+  UNIQUE KEY email_token_hash (email_token_hash),
+  KEY entity (entity_type,entity_id,status),
+  KEY status (status,review_id),
+  KEY email_hash (email_hash,created_at)
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE wp_lr_placements (

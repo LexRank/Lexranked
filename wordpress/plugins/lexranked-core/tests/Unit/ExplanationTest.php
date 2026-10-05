@@ -19,7 +19,8 @@ final class ExplanationTest extends TestCase {
 
 	public function testV11ReadsTheFactLayer(): void {
 		$versions = new ScoreVersions();
-		$this->assertSame( 'v1.1', ScoreVersions::DEFAULT_VERSION );
+		$this->assertSame( 'v1.2', ScoreVersions::DEFAULT_VERSION );
+		$this->assertSame( 'v1.1', ScoreVersions::PREVIOUS_DEFAULT );
 		$this->assertSame( ScoreVersion::INPUT_PROFILE, $versions->get( 'v1.0' )->input, 'Historical snapshots keep v1.0' );
 		$this->assertSame( ScoreVersion::INPUT_FACTS, $versions->get( 'v1.1' )->input );
 		$this->assertSame( $versions->get( 'v1.0' )->weights, $versions->get( 'v1.1' )->weights, 'Only the input source changes' );

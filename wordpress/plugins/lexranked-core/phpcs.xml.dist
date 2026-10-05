@@ -53,12 +53,14 @@
 		<exclude-pattern>src/Commercial/ClaimStatus.php</exclude-pattern>
 		<exclude-pattern>src/Entity/EntityType.php</exclude-pattern>
 		<exclude-pattern>src/Commercial/Product.php</exclude-pattern>
+		<exclude-pattern>src/Reviews/ReviewStatus.php</exclude-pattern>
 	</rule>
 	<rule ref="PHPCompatibility.FunctionDeclarations.NewParamTypeDeclarations.SelfOutsideClassScopeFound">
 		<exclude-pattern>src/Domain/*</exclude-pattern>
 		<exclude-pattern>src/Commercial/ClaimStatus.php</exclude-pattern>
 		<exclude-pattern>src/Entity/EntityType.php</exclude-pattern>
 		<exclude-pattern>src/Commercial/Product.php</exclude-pattern>
+		<exclude-pattern>src/Reviews/ReviewStatus.php</exclude-pattern>
 	</rule>
 
 	<!-- Tests use PHPUnit's camelCase conventions. -->

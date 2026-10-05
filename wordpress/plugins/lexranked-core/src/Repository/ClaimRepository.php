@@ -321,6 +321,42 @@ final class ClaimRepository {
 	}
 
 	/**
+	 * Take an entity's claims from one source for the given fields out of the
+	 * public record (review_status rejected, kept for audit), except claims
+	 * whose hash is kept. Used when a computed value (e.g. a review average)
+	 * replaces its previous value, so two values from the same source never
+	 * conflict.
+	 *
+	 * @param string             $entity_type Entity type.
+	 * @param int                $wp_id       WordPress ID.
+	 * @param int                $source_id   Source post ID.
+	 * @param array<int, string> $fields      Field names.
+	 * @param array<int, string> $keep        Claim hashes to keep.
+	 * @return int Claims retired.
+	 */
+	public function retire_source_claims( string $entity_type, int $wp_id, int $source_id, array $fields, array $keep = array() ): int {
+		global $wpdb;
+		$table   = $this->table();
+		$retired = 0;
+		foreach ( $fields as $field ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom table; values prepared.
+			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT claim_id, claim_hash FROM {$table} WHERE entity_type = %s AND entity_id = %d AND source_id = %d AND field_name = %s AND review_status = %s", $entity_type, $wp_id, $source_id, $field, self::REVIEW_APPROVED ), ARRAY_A );
+			foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+				if ( in_array( (string) $row['claim_hash'], $keep, true ) ) {
+					continue;
+				}
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
+				$wpdb->update( $table, array( 'review_status' => self::REVIEW_REJECTED ), array( 'claim_id' => (int) $row['claim_id'] ), array( '%s' ), array( '%d' ) );
+				++$retired;
+			}
+		}
+		if ( $retired > 0 ) {
+			self::changed( $entity_type, $wp_id );
+		}
+		return $retired;
+	}
+
+	/**
 	 * Delete all claims for an entity (used when purging demo data).
 	 *
 	 * @param int $entity_id Entity ID.
