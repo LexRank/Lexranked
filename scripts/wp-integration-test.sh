@@ -533,7 +533,7 @@ if [[ -n "$FRONTEND" ]]; then
   expect_status "ranking slug redirects to canonical path" 308 "$WEB/rankings/best-personal-injury-lawyers-in-miami-florida-demo/"
   expect_status "lawyer profile" 200 "$WEB/lawyers/avery-example-demo/"
   page_has "profile shows score breakdown" "/lawyers/avery-example-demo/" "Score breakdown"
-  page_has "profile explains a component" "/lawyers/avery-example-demo/" "adjusted for volume to"
+  page_has "profile explains a component" "/lawyers/avery-example-demo/" "years in practice (full credit at"
   page_has "profile shows sources" "/lawyers/avery-example-demo/" "Example State Bar Registry (Demo)"
   page_has "profile shows data freshness" "/lawyers/avery-example-demo/" "Data verified"
   page_has "profile canonical" "/lawyers/avery-example-demo/" '<link rel="canonical" href="https://lexranked.com/lawyers/avery-example-demo/"/>'
