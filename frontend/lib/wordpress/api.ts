@@ -146,6 +146,26 @@ export const submitClaim = (body: ClaimSubmission) =>
 export const confirmClaim = (token: string) =>
   apiRequest<{ status: string }>("claims/confirm", { method: "POST", body: { token }, timeoutMs: 15000 });
 
+export interface ReviewSubmission {
+  entityType: "lawyer" | "law_firm";
+  entityId: number;
+  rating: number;
+  title: string;
+  body: string;
+  name: string;
+  email: string;
+  serviceYear: number;
+  client: true;
+}
+
+/** Submit a client review (server action only). */
+export const submitReview = (body: ReviewSubmission) =>
+  apiRequest<{ status: string }>("reviews", { method: "POST", body, timeoutMs: 15000 });
+
+/** Confirm a reviewer's email with the token from the link. */
+export const confirmReview = (token: string) =>
+  apiRequest<{ status: string }>("reviews/confirm", { method: "POST", body: { token }, timeoutMs: 15000 });
+
 /** Current entity for a current or former slug (renames and merges); null when unknown. */
 export async function resolveEntity(type: EntityType, slug: string, opts?: Opts): Promise<EntityDto | null> {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return null;

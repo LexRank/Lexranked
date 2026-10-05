@@ -142,9 +142,16 @@ describe("methodology weights", () => {
   });
 
   it("uses API weights when available and falls back otherwise", () => {
-    expect(componentsWithWeights(null)).toBe(METHODOLOGY_COMPONENTS);
+    expect(componentsWithWeights(null).map((c) => c.key)).not.toContain("review_strength");
     const merged = componentsWithWeights([{ key: "reputation", weight: 25 }]);
     expect(merged.find((c) => c.key === "reputation")?.weight).toBe(25);
-    expect(merged.find((c) => c.key === "experience")?.weight).toBe(15);
+    expect(merged.find((c) => c.key === "experience")?.weight).toBe(30);
+  });
+
+  it("leaves out components the active version weights 0 (v1.2: reviews)", () => {
+    const v11 = componentsWithWeights([{ key: "review_strength", weight: 20 }]);
+    expect(v11.find((c) => c.key === "review_strength")?.weight).toBe(20);
+    const v12 = componentsWithWeights([{ key: "review_strength", weight: 0 }]);
+    expect(v12.map((c) => c.key)).not.toContain("review_strength");
   });
 });

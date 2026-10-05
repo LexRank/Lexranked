@@ -101,6 +101,7 @@ final class EntityPresenter {
 			$include_private
 		);
 		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
+		$dto['clientReviews']  = $s->reviews->public_block( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['dataQuality']    = $s->quality->stored( (int) $post->ID );
 		$dto['eligibility']    = $s->eligibility->profiles( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', array( (int) $post->ID ) )[ (int) $post->ID ];
@@ -153,6 +154,7 @@ final class EntityPresenter {
 			(string) wp_kses_post( wpautop( $post->post_content ) )
 		);
 		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
+		$dto['clientReviews']  = $s->reviews->public_block( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['dataQuality']    = $s->quality->stored( (int) $post->ID );
 		$dto['eligibility']    = $s->eligibility->profiles( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', array( (int) $post->ID ) )[ (int) $post->ID ];

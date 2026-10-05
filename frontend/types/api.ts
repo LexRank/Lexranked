@@ -164,12 +164,20 @@ export interface LawyerSummary extends EntityBase {
   firm: EntityRef | null;
 }
 
+/** Approved client reviews on a profile (API 1.20). */
+export interface ClientReviewsDto {
+  count: number;
+  average: number | null;
+  items: Array<{ id: number; rating: number; title: string; body: string; author: string; serviceYear: number | null; publishedAt: string | null }>;
+}
+
 export interface LawyerDetail extends LawyerSummary {
   /** Since API 1.15: answer-first summary generated from the profile's facts. */
   aiSummary?: AiSummaryDto;
   /** Answer-first profile summary (API 1.5). */
   summary?: string | null;
   premiumContent?: PremiumContentDto | null;
+  clientReviews?: ClientReviewsDto;
   /** Normalised facts with source and freshness (API 1.9). */
   facts?: FactDto[];
   dataQuality?: DataQualityDto | null;
@@ -206,6 +214,7 @@ export interface LawFirmDetail extends LawFirmSummary {
   /** Answer-first profile summary (API 1.5). */
   summary?: string | null;
   premiumContent?: PremiumContentDto | null;
+  clientReviews?: ClientReviewsDto;
   facts?: FactDto[];
   dataQuality?: DataQualityDto | null;
   contact: { website: string | null; phone: string | null; email: string | null };

@@ -37,12 +37,16 @@ final class ScoreCalculator {
 			'practice_relevance' => $this->practice_relevance( $input, $context ),
 			'credentials'        => $this->credentials( $input ),
 			'local_relevance'    => $this->local_relevance( $input, $context ),
-			'data_quality'       => $this->data_quality( $input ),
+			'data_quality'       => $this->data_quality( $input, $version ),
 		);
 
 		$components = array();
 		$total      = 0.0;
 		foreach ( $version->weights as $key => $weight ) {
+			// A component weighted 0 is not part of this version (e.g. reviews in v1.2).
+			if ( 0.0 === (float) $weight ) {
+				continue;
+			}
 			$f            = $factors[ $key ];
 			$factor       = max( 0.0, min( 1.0, $f['factor'] ) );
 			$points       = round( $factor * (float) $weight, 2 );
@@ -61,14 +65,23 @@ final class ScoreCalculator {
 	}
 
 	/**
-	 * Reputation: recorded awards (half) and review volume on a log scale (half).
+	 * Reputation: recorded awards (half) and review volume on a log scale (half);
+	 * awards only in versions that do not score reviews.
 	 *
 	 * @param EntityInput  $in Input.
 	 * @param ScoreVersion $v  Version.
 	 * @return array{factor: float, explanation: string, missing: array<int, string>}
 	 */
 	private function reputation( EntityInput $in, ScoreVersion $v ): array {
-		$awards  = min( $in->awards_count, (int) $v->param( 'awards_cap' ) ) / $v->param( 'awards_cap' );
+		$awards = min( $in->awards_count, (int) $v->param( 'awards_cap' ) ) / $v->param( 'awards_cap' );
+		$label  = sprintf( '%d recorded award%s (counted up to %d)', $in->awards_count, 1 === $in->awards_count ? '' : 's', (int) $v->param( 'awards_cap' ) );
+		if ( ! $v->reviews_scored() ) {
+			return array(
+				'factor'      => $awards,
+				'explanation' => $label . '.',
+				'missing'     => array(),
+			);
+		}
 		$cap     = $v->param( 'review_volume_cap' );
 		$volume  = null === $in->review_count ? 0.0 : min( 1.0, log( 1 + max( 0, $in->review_count ) ) / log( 1 + $cap ) );
 		$missing = null === $in->review_count ? array( 'review_count' ) : array();
@@ -240,13 +253,15 @@ final class ScoreCalculator {
 	/**
 	 * Data quality: completeness (0.4), sourced facts (0.3), verified profile (0.3; pending 0.15).
 	 *
-	 * @param EntityInput $in Input.
+	 * @param EntityInput  $in Input.
+	 * @param ScoreVersion $v  Version.
 	 * @return array{factor: float, explanation: string, missing: array<int, string>}
 	 */
-	private function data_quality( EntityInput $in ): array {
-		$total    = count( self::KEY_FIELDS );
-		$present  = count( array_intersect( self::KEY_FIELDS, $in->present_fields ) );
-		$sourced  = count( array_intersect( self::KEY_FIELDS, $in->sourced_fields ) );
+	private function data_quality( EntityInput $in, ScoreVersion $v ): array {
+		$keys     = $v->reviews_scored() ? self::KEY_FIELDS : array_values( array_diff( self::KEY_FIELDS, array( 'rating', 'review_count' ) ) );
+		$total    = count( $keys );
+		$present  = count( array_intersect( $keys, $in->present_fields ) );
+		$sourced  = count( array_intersect( $keys, $in->sourced_fields ) );
 		$verified = match ( $in->verification_status ) {
 			'verified' => 1.0,
 			'pending' => 0.5,
@@ -255,7 +270,7 @@ final class ScoreCalculator {
 		return array(
 			'factor'      => 0.4 * $present / $total + 0.3 * $sourced / $total + 0.3 * $verified,
 			'explanation' => sprintf( '%d of %d key facts on record, %d backed by sources; profile %s.', $present, $total, $sourced, $in->verification_status ),
-			'missing'     => array_values( array_diff( self::KEY_FIELDS, $in->present_fields ) ),
+			'missing'     => array_values( array_diff( $keys, $in->present_fields ) ),
 		);
 	}
 }

@@ -90,6 +90,30 @@ final class RankingEngineTest extends TestCase {
 		$this->assertEquals( $result, $calc->calculate( self::lawyer( 1 ), $this->miami_pi, $this->v1 ) );
 	}
 
+	public function testV12LeavesReviewsOutOfTheScore(): void {
+		$v12    = ( new ScoreVersions() )->get( 'v1.2' );
+		$calc   = new ScoreCalculator();
+		$result = $calc->calculate( self::lawyer( 1 ), $this->miami_pi, $v12 );
+
+		// reputation 4.00 (1 of 5 awards) + experience 18.00 (15 of 25 years) + practice 20.00
+		// + credentials 15.00 + local 5.00 + data quality 8.80 (5 of 5 key facts, 3 sourced, verified).
+		$this->assertSame( 70.8, $result->total );
+		$this->assertSame( array( 'reputation', 'experience', 'practice_relevance', 'credentials', 'local_relevance', 'data_quality' ), array_column( $result->components, 'key' ), 'Review strength is not a v1.2 component' );
+		$this->assertSame( array( 4.0, 18.0, 20.0, 15.0, 5.0, 8.8 ), array_column( $result->components, 'points' ) );
+		$this->assertSame( '1 recorded award (counted up to 5).', $result->components[0]['explanation'] );
+
+		// Ratings and review counts change nothing in v1.2.
+		$none = self::lawyer(
+			1,
+			array(
+				'rating'         => null,
+				'review_count'   => null,
+				'present_fields' => array_values( array_diff( ScoreCalculator::KEY_FIELDS, array( 'rating', 'review_count' ) ) ),
+			)
+		);
+		$this->assertSame( $result->total, $calc->calculate( $none, $this->miami_pi, $v12 )->total );
+	}
+
 	public function testStoredInputsReproduceTheScore(): void {
 		$input  = self::lawyer( 7 );
 		$stored = json_decode( (string) json_encode( $input->to_array() ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- WordPress is not loaded in unit tests.
@@ -194,13 +218,18 @@ final class RankingEngineTest extends TestCase {
 					'weights' => $weights,
 					'params'  => ScoreVersions::builtin()['v1.0']['params'],
 				),
+				'v1.9' => array(
+					'weights' => $weights,
+					'params'  => ScoreVersions::builtin()['v1.0']['params'],
+				),
 			)
 		);
 		$this->assertSame( 30, $versions->get( 'v1.0' )->weights['reputation'] );
 		$this->assertSame( 30, $versions->get( 'v1.1' )->weights['reputation'], 'v1.1 is built in too' );
 		$this->assertSame( 'facts', $versions->get( 'v1.1' )->input );
-		$this->assertSame( 25, $versions->get( 'v1.2' )->weights['reputation'] );
-		$this->assertSame( 'profile', $versions->get( 'v1.2' )->input, 'Configured versions default to profile input' );
-		$this->assertSame( array( 'v1.0', 'v1.1', 'v1.2' ), array_keys( $versions->all() ) );
+		$this->assertSame( 20, $versions->get( 'v1.2' )->weights['reputation'], 'v1.2 is built in too' );
+		$this->assertSame( 25, $versions->get( 'v1.9' )->weights['reputation'] );
+		$this->assertSame( 'profile', $versions->get( 'v1.9' )->input, 'Configured versions default to profile input' );
+		$this->assertSame( array( 'v1.0', 'v1.1', 'v1.2', 'v1.9' ), array_keys( $versions->all() ) );
 	}
 }

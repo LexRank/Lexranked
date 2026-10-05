@@ -120,11 +120,11 @@ expect_status "CPTs not exposed via wp/v2" 404 "$BASE/wp-json/wp/v2/lr_lawyer"
 
 echo "==> Ranking engine"
 wp lexranked recalculate >/dev/null
-expect "ranking comes from engine snapshots with breakdowns" '(.calculatedAt != null) and ((.entries | length) == 8) and all(.entries[]; (.breakdown | length) == 7)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+expect "ranking comes from engine snapshots with breakdowns (v1.2: reviews not scored)" '(.calculatedAt != null) and ((.entries | length) == 8) and all(.entries[]; (.breakdown | length) == 6 and ([.breakdown[].key] | index("review_strength")) == null)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 expect "second calculation reports movement" 'all(.entries[]; .movement == 0 and .isNew == false)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 expect "ranking history has both runs" '(.runs | length) == 2 and ((.runs[0].entries | length) == 8)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo/history"
 expect "profile has breakdown summing to the score" '((.ranking.breakdown | map(.points) | add) * 100 | round) == ((.ranking.score) * 100 | round) and ((.rankings | length) == 2)' "$API/lawyers/avery-example-demo"
-expect "score versions endpoint: v1.1 reads the fact layer, v1.0 kept" '.active == "v1.1" and ([.versions[0].weights[].weight] | add) == 100 and ([.versions[] | select(.id == "v1.1")][0].input == "facts") and ([.versions[] | select(.id == "v1.0")][0].input == "profile")' "$API/score-versions"
+expect "score versions endpoint: v1.2 is active, v1.1 and v1.0 kept" '.active == "v1.2" and ([.versions[0].weights[].weight] | add) == 100 and ([.versions[] | select(.id == "v1.2")][0].input == "facts") and ([.versions[] | select(.id == "v1.1")][0].input == "facts") and ([.versions[] | select(.id == "v1.0")][0].input == "profile")' "$API/score-versions"
 if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "all snapshots reproduce exactly from stored inputs"; else fail "snapshot reproduction"; fi
 
 echo "==> Entity layer (Etap A)"
@@ -160,16 +160,20 @@ expect "a lawyer with failed verification scores lower on verification" '[.dataQ
 check "CLI explains the score" 'test("Data Quality [0-9.]+% \\(dq-1.0\\)")' "$(wp lexranked quality lawyer:avery-example-demo | sed -n 1p | jq -Rs .)"
 expect "Data Quality is not part of the ranking entries" '(.entries | tostring | test("dataQuality|quality_score") | not)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 
-echo "==> Ranking explanations and methodology v1.1 (Etap D)"
+echo "==> Ranking explanations and methodology v1.2 (Etap D)"
 RANKING_URL="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
-expect "entries were calculated with v1.1 from the fact layer" 'all(.entries[]; .scoreVersion == "v1.1")' "$RANKING_URL"
+expect "entries were calculated with v1.2 from the fact layer" 'all(.entries[]; .scoreVersion == "v1.2")' "$RANKING_URL"
 expect "every entry explains its position from its components" 'all(.entries[]; (.why.summary | startswith("Ranks #")) and (.why.strengths | type) == "array") and .entries[0].why.behind == null and .entries[1].why.behind.position == 1' "$RANKING_URL"
 BLAKE_WP="$(curl -sS "$API/lawyers/blake-sample-demo" | jq .id)"
 wp eval "\\LexRanked\\Core\\Plugin::services()->claims->insert( array( 'entity_id' => $BLAKE_WP, 'entity_type' => 'lawyer', 'field_name' => 'review_count', 'value' => 900, 'source_url' => 'https://example.com/demo/reviews', 'source_type' => 'review_platform', 'retrieved_at' => gmdate( 'c' ), 'confidence' => 0.8, 'verification_status' => 'verified' ) );" >/dev/null
 expect "new evidence reaches the fact layer" '(.facts[] | select(.attribute == "review_count")) | .value == 900 and .status == "verified"' "$API/lawyers/blake-sample-demo"
+BLAKE_SCORE="$(curl -sS "$API/lawyers/blake-sample-demo" | jq .ranking.score)"
 wp lexranked recalculate >/dev/null
-expect "the change is explained from the snapshot difference" '(.entries[] | select(.entity.slug == "blake-sample-demo")) | .change != null and ([.change.reasons[].text] | any(test("review count 154 → 900"))) and ([.change.reasons[].type] | index("component") != null)' "$RANKING_URL"
-if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "v1.0 and v1.1 snapshots all reproduce from their stored inputs"; else fail "snapshot reproduction after v1.1"; fi
+check "review data does not move a v1.2 score" ". == $BLAKE_SCORE" "$(curl -sS "$API/lawyers/blake-sample-demo" | jq .ranking.score)"
+wp eval "\\LexRanked\\Core\\Plugin::services()->claims->insert( array( 'entity_id' => $BLAKE_WP, 'entity_type' => 'lawyer', 'field_name' => 'awards', 'value' => array( array( 'name' => 'Example Award (Demo)', 'issuer' => 'Example Bar Foundation (Demo)', 'year' => '2025' ) ), 'source_url' => 'https://example.com/demo/awards', 'source_type' => 'professional_association', 'retrieved_at' => gmdate( 'c' ), 'confidence' => 0.9, 'verification_status' => 'verified' ) );" >/dev/null
+wp lexranked recalculate >/dev/null
+expect "the change is explained from the snapshot difference" '(.entries[] | select(.entity.slug == "blake-sample-demo")) | .change != null and ([.change.reasons[].text] | any(test("awards on record 0 → 1"))) and ([.change.reasons[].type] | index("component") != null)' "$RANKING_URL"
+if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "all snapshots reproduce from their stored inputs"; else fail "snapshot reproduction after new evidence"; fi
 
 echo "==> Comparison engine (Etap E)"
 AVERY_E="$(curl -sS "$API/lawyers/avery-example-demo" | jq .entityId)"
@@ -219,8 +223,8 @@ expect "comparisons exist but are never indexed" '.eligibility.exists and (.elig
 check "the pages report lists every decision" 'any(.[]; .path == "/rankings/florida/miami/personal-injury/spanish-speaking/" and .exists == "no") and any(.[]; .type == "profile" and .exists == "yes")' "$(wp lexranked pages --format=json)"
 
 echo "==> AI-readable pages (Etap H)"
-expect "the methodology is live: version, last calculation, sources, update frequency" '.active.id == "v1.1" and (.updatedAt | length) > 0 and ([.sourceTiers[].tier] | unique) == [1,2,3,4,5] and ([.freshness[] | select(.category == "review_data")][0].maxAgeDays == 7) and .pageEligibility == "pe-1.0"' "$API/methodology"
-expect "profiles carry an answer-first summary built from their facts" '(.aiSummary.text | startswith("Avery Example (Demo) is a Founding Partner at Harbor Example Injury Law (Demo) in Miami, Florida")) and (.aiSummary.text | test("LexRank score: [0-9.]+/100 \\(methodology v1.1\\)")) and ([.aiSummary.facts[] | select(.key == "bar_status")][0].status == "verified")' "$API/lawyers/avery-example-demo"
+expect "the methodology is live: version, last calculation, sources, update frequency" '.active.id == "v1.2" and (.updatedAt | length) > 0 and ([.sourceTiers[].tier] | unique) == [1,2,3,4,5] and ([.freshness[] | select(.category == "review_data")][0].maxAgeDays == 7) and .pageEligibility == "pe-1.0"' "$API/methodology"
+expect "profiles carry an answer-first summary built from their facts" '(.aiSummary.text | startswith("Avery Example (Demo) is a Founding Partner at Harbor Example Injury Law (Demo) in Miami, Florida")) and (.aiSummary.text | test("LexRank score: [0-9.]+/100 \\(methodology v1.2\\)")) and ([.aiSummary.facts[] | select(.key == "bar_status")][0].status == "verified")' "$API/lawyers/avery-example-demo"
 expect "summaries say verified only when the fact is" '(.aiSummary.text | test("Practice areas on record: Personal Injury")) and (.aiSummary.text | test("Verified case types: Car Accidents"))' "$API/lawyers/avery-example-demo"
 expect "summaries never mention paid status" '(.commercial.status == "premium") and (.aiSummary.text | test("premium|sponsor|paid"; "i") | not)' "$API/lawyers/emery-mockwell-demo"
 expect "rankings list the sources behind their entries, best tier first" '(.sources | length) >= 2 and .sources[0].tier == 1 and all(.sources[]; .facts > 0 and .entities > 0)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
@@ -408,6 +412,26 @@ curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -
 curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$ED_LAWYER_BEFORE" "$API/editorial/profiles/$ED_LAWYER"
 expect "original ranking text restored" "(.summary // \"\") == $(jq '.summary' <<<"$ED_RANKING_BEFORE")" "$API/editorial/rankings/$ED_RANKING" -u "itEditor:$ED_PW"
 
+echo "==> Client reviews (email-confirmed, editor-approved)"
+AVERY_ID="$(curl -sS "$API/lawyers/avery-example-demo" | jq .id)"
+REVIEW="{\"entityType\":\"lawyer\",\"entityId\":$AVERY_ID,\"rating\":5,\"title\":\"Clear and responsive\",\"body\":\"She explained every step of my case and returned my calls the same day. I would hire her again.\",\"name\":\"jordan taylor\",\"email\":\"jordan@example.com\",\"serviceYear\":2024,\"client\":true}"
+expect_status "reviews cannot be submitted anonymously" 401 "$API/reviews" -X POST -H 'Content-Type: application/json' -d "$REVIEW"
+expect_status "a review without the client confirmation is rejected" 400 "$API/reviews" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "${REVIEW/\"client\":true/\"client\":false}"
+expect "review accepted, email confirmation pending" '.status == "pending_email"' "$API/reviews" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "$REVIEW"
+expect "an unconfirmed review is not public" '.clientReviews.count == 0' "$API/lawyers/avery-example-demo"
+RTOKEN="$("${COMPOSE[@]}" exec -T wordpress sh -c 'cat /tmp/it-mail.log' | grep -o 'reviews/confirm/?token=[A-Za-z0-9_-]*' | tail -1 | cut -d= -f2)"
+expect "email confirmed, review waits for moderation" '.status == "pending_review"' "$API/reviews/confirm" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "{\"token\":\"$RTOKEN\"}"
+REVIEW_ID="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/reviews" | jq '.[0].id')"
+expect "editors see the moderation queue without email addresses" 'length == 1 and .[0].author == "Jordan T." and (tostring | test("jordan@example.com") | not)' "$API/editorial/reviews" -u "itEditor:$ED_PW"
+expect_status "research workers cannot moderate reviews" 403 "$API/editorial/reviews/$REVIEW_ID" -u "researcher:$WORKER_PW" -X POST -H 'Content-Type: application/json' -d '{"action":"approve"}'
+expect "an editor approves the review" '.status == "approved"' "$API/editorial/reviews/$REVIEW_ID" -u "itEditor:$ED_PW" -X POST -H 'Content-Type: application/json' -d '{"action":"approve"}'
+expect "the approved review is on the profile, with first name and initial only" '.clientReviews.count == 1 and .clientReviews.average == 5 and .clientReviews.items[0].author == "Jordan T." and (tostring | test("jordan@example.com|jordan taylor") | not)' "$API/lawyers/avery-example-demo"
+check "the reviewer's email is deleted after moderation" '. == 0' "$(wp db query "SELECT LENGTH(reviewer_email) FROM wp_lr_client_reviews WHERE review_id = $REVIEW_ID" --skip-column-names | tr -dc 0-9)"
+check "approved reviews are recorded as rating evidence from the LexRanked reviews source" '. == 2' "$(wp db query "SELECT COUNT(*) FROM wp_lr_claims WHERE entity_id = $AVERY_ID AND source_type = 'lexranked_reviews' AND review_status = 'approved'" --skip-column-names | tr -dc 0-9)"
+expect "an editor can withdraw a review" '.status == "rejected"' "$API/editorial/reviews/$REVIEW_ID" -u "itEditor:$ED_PW" -X POST -H 'Content-Type: application/json' -d '{"action":"reject"}'
+expect "a withdrawn review leaves the profile" '.clientReviews.count == 0' "$API/lawyers/avery-example-demo"
+check "its rating evidence is retired with it" '. == 0' "$(wp db query "SELECT COUNT(*) FROM wp_lr_claims WHERE entity_id = $AVERY_ID AND source_type = 'lexranked_reviews' AND review_status = 'approved'" --skip-column-names | tr -dc 0-9)"
+
 echo "==> Entity resolution identifiers (Etap B)"
 check "research drafts are indexed by bar number" '. >= 1' "$(wp db query "SELECT COUNT(*) FROM wp_postmeta WHERE meta_key = '_lr_id_bar' AND meta_value = 'FL:1001'" --skip-column-names | tr -dc 0-9)"
 DUP_ID="$(wp post create --post_type=lr_lawyer --post_status=draft --post_title="J. Sample Duplicate" --meta_input='{"_lr_bar_state":"FL","_lr_bar_number":"01001"}' --porcelain | tail -1)"
@@ -515,6 +539,8 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "profile canonical" "/lawyers/avery-example-demo/" '<link rel="canonical" href="https://lexranked.com/lawyers/avery-example-demo/"/>'
   page_has "profile Person JSON-LD" "/lawyers/avery-example-demo/" '"@type":"Person"'
   page_has "profile links to related lawyers" "/lawyers/avery-example-demo/" "/lawyers/blake-sample-demo/"
+  page_has "profile has the client reviews section with the review form" "/lawyers/avery-example-demo/" "Write a review"
+  page_has "profile links to its Google reviews without an API key" "/lawyers/avery-example-demo/" "google.com/maps/search/?api=1"
   expect_status "law firm profile" 200 "$WEB/law-firms/harbor-example-injury-law-demo/"
   for path in /lawyers/ /law-firms/ /rankings/ /states/ /states/florida/ /cities/ /cities/miami/ /practice-areas/ /practice-areas/personal-injury/ /methodology/ /verified/ "/search/?q=avery" /status/; do
     expect_status "page $path" 200 "$WEB$path"
@@ -553,7 +579,7 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "breadcrumbs lead to the broader ranking" "/rankings/florida/miami/personal-injury/car-accidents/" 'href="/rankings/florida/miami/personal-injury/"'
   page_has "the broader ranking links its narrower rankings" "/rankings/florida/miami/personal-injury/" "Narrower rankings"
   page_has "cards show key attributes" "/rankings/florida/miami/personal-injury/" "22 years experience"
-  page_has "the header names the methodology the entries used" "/rankings/florida/miami/personal-injury/" "LexRank v1.1"
+  page_has "the header names the methodology the entries used" "/rankings/florida/miami/personal-injury/" "LexRank v1.2"
   expect_status "a context below its threshold is a 404" 404 "$WEB/rankings/florida/miami/personal-injury/spanish-speaking/"
   if grep -q "spanish-speaking" <<<"$(curl -sS "$WEB/sitemap.xml")"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
 
@@ -607,6 +633,7 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "claim page has the form" "/claim/lawyer/avery-example-demo/" 'name="barNumber"'
   expect_status "claim page for an unknown profile is 404" 404 "$WEB/claim/lawyer/does-not-exist/"
   page_has "confirm page never acts on GET" "/claim/confirm/?token=$(printf 'A%.0s' $(seq 1 43))" "Confirm my email address"
+  page_has "review confirm page never acts on GET" "/reviews/confirm/?token=$(printf 'A%.0s' $(seq 1 43))" "Confirm my review"
   expect_status "advertising policy" 200 "$WEB/advertising/"
   page_has "advertising policy states the rule" "/advertising/" "Payment never changes a score"
   sitemap="$(curl -sS "$WEB/sitemap.xml")"

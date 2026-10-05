@@ -14,6 +14,8 @@ use LexRanked\Core\Eligibility\EligibilityService;
 use LexRanked\Core\Commercial\CommercialService;
 use LexRanked\Core\Commercial\PlacementRepository;
 use LexRanked\Core\Commercial\ProfileClaimRepository;
+use LexRanked\Core\Reviews\ReviewRepository;
+use LexRanked\Core\Reviews\ReviewService;
 use LexRanked\Core\Entity\EntityRegistry;
 use LexRanked\Core\Fact\FactService;
 use LexRanked\Core\Quality\QualityService;
@@ -252,6 +254,13 @@ final class Services {
 	public readonly CommercialService $commercial;
 
 	/**
+	 * Client reviews (moderated; approved reviews become rating facts).
+	 *
+	 * @var ReviewService
+	 */
+	public readonly ReviewService $reviews;
+
+	/**
 	 * Build the graph.
 	 *
 	 * @param Settings|null $settings Settings (injectable for tests).
@@ -294,6 +303,7 @@ final class Services {
 		$this->ingest        = new ResearchIngest( $this, $this->candidates, $this->entity_index, $this->research_log );
 		$this->revalidator   = new Revalidator( $this->settings );
 		$this->commercial    = new CommercialService( $this, new ProfileClaimRepository(), new PlacementRepository() );
+		$this->reviews       = new ReviewService( $this, new ReviewRepository() );
 		$this->health        = new HealthService( $this, $this->revalidator );
 	}
 

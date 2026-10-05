@@ -18,7 +18,7 @@ namespace LexRanked\Core\Database;
 final class Schema {
 
 	/** Bump when the DDL below changes; triggers dbDelta on next load. */
-	public const VERSION = '9';
+	public const VERSION = '10';
 
 	public const CLAIMS         = 'lr_claims';
 	public const AUDIT_LOG      = 'lr_audit_log';
@@ -26,6 +26,7 @@ final class Schema {
 	public const CANDIDATE      = 'lr_candidates';
 	public const JOB_LOG        = 'lr_research_log';
 	public const PROFILE_CLAIMS = 'lr_profile_claims';
+	public const CLIENT_REVIEWS = 'lr_client_reviews';
 	public const PLACEMENTS     = 'lr_placements';
 	public const ENTITIES       = 'lr_entities';
 	public const ENTITY_ALIASES = 'lr_entity_aliases';
@@ -45,6 +46,7 @@ final class Schema {
 		$cands  = $prefix . self::CANDIDATE;
 		$logs   = $prefix . self::JOB_LOG;
 		$pclaim = $prefix . self::PROFILE_CLAIMS;
+		$review = $prefix . self::CLIENT_REVIEWS;
 		$place  = $prefix . self::PLACEMENTS;
 		$ents   = $prefix . self::ENTITIES;
 		$alias  = $prefix . self::ENTITY_ALIASES;
@@ -171,6 +173,32 @@ final class Schema {
   KEY entity (entity_id,status),
   KEY status (status,updated_at),
   KEY claimant_email (claimant_email(100),created_at)
+) {$charset_collate};",
+			$review => "CREATE TABLE {$review} (
+  review_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  entity_id bigint(20) unsigned NOT NULL,
+  entity_type varchar(20) NOT NULL,
+  status varchar(20) NOT NULL,
+  rating tinyint(3) unsigned NOT NULL,
+  title varchar(120) NOT NULL DEFAULT '',
+  body text NOT NULL,
+  display_name varchar(80) NOT NULL DEFAULT '',
+  reviewer_email varchar(254) NOT NULL DEFAULT '',
+  email_hash char(64) NOT NULL,
+  service_year smallint(5) unsigned NOT NULL DEFAULT 0,
+  email_token_hash char(64) DEFAULT NULL,
+  email_token_expires datetime DEFAULT NULL,
+  email_verified_at datetime DEFAULT NULL,
+  moderation_note varchar(500) NOT NULL DEFAULT '',
+  moderated_by bigint(20) unsigned NOT NULL DEFAULT 0,
+  approved_at datetime DEFAULT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY  (review_id),
+  UNIQUE KEY email_token_hash (email_token_hash),
+  KEY entity (entity_type,entity_id,status),
+  KEY status (status,review_id),
+  KEY email_hash (email_hash,created_at)
 ) {$charset_collate};",
 			$place  => "CREATE TABLE {$place} (
   placement_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,

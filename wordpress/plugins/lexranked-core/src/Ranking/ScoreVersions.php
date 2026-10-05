@@ -16,7 +16,10 @@ namespace LexRanked\Core\Ranking;
  */
 final class ScoreVersions {
 
-	public const DEFAULT_VERSION = 'v1.1';
+	public const DEFAULT_VERSION = 'v1.2';
+
+	/** The previous default; sites still on it move to the new default once (Installer). */
+	public const PREVIOUS_DEFAULT = 'v1.1';
 
 	/**
 	 * Built-in definitions (docs/ranking-methodology.md).
@@ -52,6 +55,22 @@ final class ScoreVersions {
 			// v1.1: same weights, reads the evidence-backed fact layer (Etap D). Unsourced
 			// profile values and facts whose sources conflict count as missing.
 			'v1.1' => $v1 + array( 'input' => ScoreVersion::INPUT_FACTS ),
+			// v1.2: client reviews are not scored until enough first-party reviews exist
+			// (Google ratings may not be stored). Their 40 points go to verifiable data;
+			// review fields leave the data-quality completeness check.
+			'v1.2' => array(
+				'weights' => array(
+					'reputation'         => 20,
+					'review_strength'    => 0,
+					'experience'         => 30,
+					'practice_relevance' => 20,
+					'credentials'        => 15,
+					'local_relevance'    => 5,
+					'data_quality'       => 10,
+				),
+				'params'  => $v1['params'] + array( 'reviews_scored' => 0 ),
+				'input'   => ScoreVersion::INPUT_FACTS,
+			),
 		);
 	}
 

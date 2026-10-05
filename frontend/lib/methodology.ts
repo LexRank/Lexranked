@@ -6,9 +6,9 @@
  * this module will read them from there instead.
  */
 
-export const METHODOLOGY_VERSION = "LexRank v1.1";
+export const METHODOLOGY_VERSION = "LexRank v1.2";
 
-/** "LexRank v1.1" for a stored score version; the default when unknown. */
+/** "LexRank v1.2" for a stored score version; the default when unknown. */
 export function methodologyLabel(version?: string | null): string {
   return version ? `LexRank ${version}` : METHODOLOGY_VERSION;
 }
@@ -24,32 +24,32 @@ export const METHODOLOGY_COMPONENTS: MethodologyComponent[] = [
   {
     key: "reputation",
     label: "Reputation",
-    weight: 30,
-    description: "Recorded awards and the volume of public client reviews.",
+    weight: 20,
+    description: "Recorded awards and board certifications, counted up to five.",
   },
   {
     key: "review_strength",
     label: "Review strength",
-    weight: 20,
+    weight: 0,
     description:
-      "Client ratings adjusted for review volume with a Bayesian average, so a handful of perfect reviews cannot outrank hundreds of strong ones.",
+      "Client ratings adjusted for review volume with a Bayesian average. Not scored in v1.2: client reviews are collected and shown on profiles, and will count once enough exist.",
   },
   {
     key: "experience",
     label: "Experience",
-    weight: 15,
+    weight: 30,
     description: "Years in practice, with full credit at 25 years.",
   },
   {
     key: "practice_relevance",
     label: "Practice-area relevance",
-    weight: 15,
+    weight: 20,
     description: "Whether the lawyer or firm practices in the ranked area, and how focused that practice is.",
   },
   {
     key: "credentials",
     label: "Professional credentials",
-    weight: 10,
+    weight: 15,
     description: "Active bar status, a verified license and education on record (firms: verified business and website).",
   },
   {
@@ -61,7 +61,7 @@ export const METHODOLOGY_COMPONENTS: MethodologyComponent[] = [
   {
     key: "data_quality",
     label: "Data quality",
-    weight: 5,
+    weight: 10,
     description: "How complete, source-backed and verified the profile's key facts are.",
   },
 ];
@@ -90,7 +90,8 @@ export const METHODOLOGY_PRINCIPLES = [
  * public component descriptions. Falls back to the documented defaults.
  */
 export function componentsWithWeights(weights: Array<{ key: string; weight: number }> | null): MethodologyComponent[] {
-  if (!weights || weights.length === 0) return METHODOLOGY_COMPONENTS;
+  // A component weighted 0 is not part of the active version (e.g. review strength in v1.2).
+  if (!weights || weights.length === 0) return METHODOLOGY_COMPONENTS.filter((c) => c.weight > 0);
   const byKey = new Map(weights.map((w) => [w.key, w.weight]));
-  return METHODOLOGY_COMPONENTS.map((c) => ({ ...c, weight: byKey.get(c.key) ?? c.weight }));
+  return METHODOLOGY_COMPONENTS.map((c) => ({ ...c, weight: byKey.get(c.key) ?? c.weight })).filter((c) => c.weight > 0);
 }

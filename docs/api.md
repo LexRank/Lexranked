@@ -211,6 +211,25 @@ a profile is claimed or an email known). 400 `lexranked_invalid_claim` with
 `POST /claims/confirm` `{ token }` → `{ status: "pending_review" }`; 400 for
 an unknown, used or expired token. Responses are `no-store`.
 
+### Client reviews (API 1.20)
+`POST /reviews` · `POST /reviews/confirm` (frontend server only, same role as
+claims). Body `{ entityType, entityId, rating: 1–5, title?, body (40–2000
+chars, no links), name, email, serviceYear, client: true }` → **202**
+`{ status: "pending_email" }` (also for repeats: one review per email and
+profile). 400 `lexranked_invalid_review` with `data.field`, 404 unknown
+profile, 429 (5 per email / 20 per profile per day). The confirmation link
+goes to the frontend `/reviews/confirm/?token=…`; confirming moves the review
+to `pending_review`.
+`GET /editorial/reviews?status=` and `POST /editorial/reviews/{id}`
+`{ action: approve|reject, note? }` (editors, `edit_posts`). The reviewer's
+email is deleted when a review is moderated.
+Lawyer and firm details carry `clientReviews{count, average, items[{id, rating,
+title, body, author, serviceYear, publishedAt}]}` (approved reviews only;
+author is first name and last initial). Approved reviews are also recorded as
+`rating` and `review_count` evidence from the "LexRanked client reviews" source
+(type `lexranked_reviews`, tier 5), which the ranking engine scores like other
+review data; review data from a higher-tier platform takes precedence.
+
 ### `GET /search?q=`
 Name search across lawyers and firms (`q` 2–100 chars, `type=all|lawyer|law_firm`,
 `per_page` ≤ 20). Sends `X-Robots-Tag: noindex`; stricter rate limit.

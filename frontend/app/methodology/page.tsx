@@ -12,7 +12,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = buildMetadata({
   title: "Ranking Methodology",
   description:
-    "How LexRanked ranks lawyers: seven weighted factors, volume-adjusted review scores, source tiers, verification and strict separation of payment from rankings.",
+    "How LexRanked ranks lawyers: weighted factors built from verified records, source tiers, verification, how client reviews are handled and strict separation of payment from rankings.",
   path: "/methodology/",
   type: "article",
 });
@@ -54,6 +54,7 @@ export default async function MethodologyPage() {
   const active = versions.ok ? versions.data.versions.find((v) => v.id === versions.data.active) : undefined;
   const components = componentsWithWeights(active?.weights ?? null);
   const params = active?.params;
+  const reviewsScored = components.some((c) => c.key === "review_strength");
   const versionLabel = `LexRank ${active?.id ?? "v1.0"}`;
   return (
     <>
@@ -123,10 +124,19 @@ export default async function MethodologyPage() {
             </p>
           </section>
 
-          <section>
-            <h2>Why star ratings alone are not enough</h2>
+          <section id="client-reviews">
+            <h2>{reviewsScored ? "Why star ratings alone are not enough" : "Client reviews"}</h2>
+            {!reviewsScored && (
+              <p>
+                <strong>Client reviews do not count towards {versionLabel}.</strong> Ratings from Google and other platforms may not be
+                stored, so LexRanked collects its own reviews: the reviewer confirms their email address, states they were a client, and
+                an editor reads every review before it is published on the profile. Until enough reviews exist to compare lawyers
+                fairly, rankings use only verifiable records; when reviews are scored, it will be in a new methodology version with the
+                volume adjustment below.
+              </p>
+            )}
             <p>
-              A 5.0 average from three reviews says much less than a 4.8 average from four hundred. LexRank uses a Bayesian average
+              A 5.0 average from three reviews says much less than a 4.8 average from four hundred. {reviewsScored ? "LexRank uses" : "When reviews are scored, LexRank uses"} a Bayesian average
               that pulls ratings with few reviews toward a neutral baseline, in proportion to how little evidence supports them:
             </p>
             <pre className="card" style={{ overflowX: "auto", fontSize: "0.95rem" }}>
