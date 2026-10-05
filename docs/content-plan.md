@@ -9,6 +9,9 @@ The plan's ranking URLs map to LexRanked rankings:
 only to rankings that exist; the guide template adds the matching rankings
 automatically (`frontend/lib/content/articles.ts`).
 
+The full list of pages to build (rankings, hubs, data pages, Florida
+guides, trust pages) and their order is in `docs/page-plan.md`.
+
 ## Editorial standard (every guide and all other content)
 
 These rules apply to guides and to every other text on the site: ranking,
