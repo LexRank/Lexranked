@@ -360,8 +360,9 @@ every change is written to the audit log.
 
 | Route | Body | Result |
 |---|---|---|
-| `GET /editorial/rankings/{id}` | — | `{id, title, slug, status, summary, body, faq[], reviewedBy, reviewedAt}` (raw body) |
+| `GET /editorial/rankings/{id}` | — | `{id, title, slug, status, summary, body, faq[], reviewedBy, reviewedAt, generated}` (raw body; `generated`: text is generated and follows recalculations, API 1.21) |
 | `POST /editorial/rankings/{id}` | any of `title`, `slug`, `summary`, `body` (HTML, sanitized with `wp_kses_post`), `faq[{question, answer}]` (≤ 20), `reviewed_by`, `reviewed_at` (`YYYY-MM-DD`) | the ranking's editorial view; `""` clears a field |
+| `POST /editorial/rankings/{id}/generate` (API 1.21) | — | replaces the text with text generated from the ranked lawyers' facts and the state knowledge pack (see docs/content-plan.md); `422 lexranked_no_content` when complete text cannot be written. Saving text by hand turns generation off again |
 | `GET /editorial/terms/{location\|practice-area}/{id}` | — | `{id, taxonomy, name, slug, summary, body, faq[], reviewedBy, reviewedAt}` |
 | `POST /editorial/terms/{location\|practice-area}/{id}` | any of `summary`, `body`, `faq`, `reviewed_by`, `reviewed_at` | the hub's editorial view |
 | `POST /editorial/profiles/{id}` | `{summary}` (2–4 plain sentences) | `{id, name, summary}` |

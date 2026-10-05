@@ -122,6 +122,15 @@ final class EditorialController extends RestController {
 		);
 		register_rest_route(
 			$ns,
+			'/editorial/rankings/(?P<id>\d+)/generate',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'generate_ranking' ),
+				'permission_callback' => $perm,
+			)
+		);
+		register_rest_route(
+			$ns,
 			'/editorial/terms/(?P<taxonomy>location|practice-area)/(?P<id>\d+)',
 			array(
 				array(
@@ -235,9 +244,34 @@ final class EditorialController extends RestController {
 		if ( is_wp_error( $saved ) ) {
 			return new \WP_Error( 'lexranked_not_saved', 'The ranking could not be saved.', array( 'status' => 500 ) );
 		}
+		if ( array() !== array_intersect_key( $params, array_flip( array( 'summary', 'body', 'faq' ) ) ) ) {
+			// Text written by an editor is kept: it is no longer regenerated after recalculations.
+			$this->services->ranking_content->release( $post->ID );
+		}
 		AuditLog::log( 'editorial.ranking_updated', Ranking::SLUG, $post->ID, array( 'fields' => array_keys( array_intersect_key( $params, $this->changeable() ) ) ) );
 		$fresh = get_post( $post->ID );
 		return $this->item_response( $this->ranking_view( $fresh instanceof \WP_Post ? $fresh : $post ), true );
+	}
+
+	/**
+	 * POST /editorial/rankings/{id}/generate: replace the text with generated
+	 * text from the ranking's facts, kept in step after every recalculation.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function generate_ranking( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$post = $this->ranking( (int) $request['id'] );
+		if ( $post instanceof \WP_Error ) {
+			return $post;
+		}
+		$content = $this->services->ranking_content->generate( $post->ID );
+		if ( null === $content ) {
+			return new \WP_Error( 'lexranked_no_content', 'Complete text cannot be generated for this ranking (no calculation yet, or no verified knowledge for its state, practice area or city).', array( 'status' => 422 ) );
+		}
+		$this->services->ranking_content->apply( $post->ID, $content );
+		AuditLog::log( 'editorial.ranking_generated', Ranking::SLUG, $post->ID, array( 'version' => \LexRanked\Core\Content\RankingContentBuilder::VERSION ) );
+		$fresh = get_post( $post->ID );
+		return $this->item_response( $this->ranking_view( $fresh instanceof \WP_Post ? $fresh : $post ) + array( 'generated' => true ), true );
 	}
 
 	/**
@@ -429,6 +463,7 @@ final class EditorialController extends RestController {
 			'faq'        => is_array( $fields['faq'] ) ? $fields['faq'] : array(),
 			'reviewedBy' => $fields['reviewed_by'],
 			'reviewedAt' => $fields['reviewed_at'],
+			'generated'  => $this->services->ranking_content->is_generated( (int) $post->ID ),
 		);
 	}
 

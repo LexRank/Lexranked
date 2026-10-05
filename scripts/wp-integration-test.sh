@@ -391,6 +391,10 @@ ED_LAWYER="$(curl -sS "$API/lawyers?per_page=1" | jq -r '.[0].id')"
 ED_RANKING_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/rankings/$ED_RANKING" | jq -c '{summary: (.summary // ""), faq, reviewed_by: (.reviewedBy // ""), reviewed_at: (.reviewedAt // "")}')"
 ED_CITY_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/terms/location/$ED_CITY" | jq -c '{summary: (.summary // ""), body: (.body // ""), faq}')"
 ED_LAWYER_BEFORE="$(curl -sS "$API/lawyers/$ED_LAWYER" | jq -c '{summary: (.summary // "")}')"
+HIALEAH_RANKING="$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Personal Injury Lawyers in Hialeah, Florida' --field=ID | tail -1)"
+expect "an automatically created ranking is published with complete generated page text" '(.summary | test("personal injury lawyers? in Hialeah, Florida")) and (.body | test("<h2>Florida rules to know</h2>")) and (.body | test("Eleventh Judicial Circuit")) and (.body | test("<h2>Sources</h2>")) and (.faq | length) >= 6 and .generated == true' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW"
+expect "an editor's text replaces the generated text and is kept" '.summary == "Edited by hand." and .generated == false' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"summary":"Edited by hand."}'
+expect "generated text can be restored on request" '.generated == true and (.summary | test("Hialeah"))' "$API/editorial/rankings/$HIALEAH_RANKING/generate" -u "itEditor:$ED_PW" -X POST
 expect_status "research workers cannot edit page text" 403 "$API/editorial/rankings/$ED_RANKING" -u "researcher:$WORKER_PW" \
   -H 'Content-Type: application/json' -d '{"summary":"x"}'
 expect "an editor sets the ranking summary and FAQ" '.summary == "Miami has a busy personal injury bar." and (.faq | length) == 1 and .reviewedBy == "IT Editor"' \
