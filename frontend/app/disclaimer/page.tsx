@@ -83,8 +83,9 @@ export default function DisclaimerPage() {
       answer: "We check facts against official sources and show the date each was checked, but records change; confirm a lawyer's license with the state bar before you hire them.",
       children: (
         <p>
-          Our guide <Link href="/articles/how-to-check-a-miami-lawyer-florida-bar/">How to check a Florida lawyer before you hire them</Link> shows
-          how. If you find an error, <Link href="/contact/?topic=correction">report it</Link>.
+          For Florida lawyers, search{" "}
+          <a href="https://www.floridabar.org/directories/find-mbr/" rel="noopener">The Florida Bar&apos;s member directory</a> by name or bar
+          number. If you find an error, <Link href="/contact/?topic=correction">report it</Link>.
         </p>
       ),
     },
