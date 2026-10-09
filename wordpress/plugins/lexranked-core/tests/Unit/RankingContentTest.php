@@ -131,6 +131,35 @@ final class RankingContentTest extends TestCase {
 		$this->assertStringContainsString( 'Thirteenth Judicial Circuit', $c['body'] );
 	}
 
+	public function testNewCertificationAreasUseTheirOwnRulesAndCertification(): void {
+		$cases = array(
+			array( 'appellate', 'Appellate', 'Board Certified in Appellate Practice', 'Rule 9.110' ),
+			array( 'condominium-hoa', 'Condo and HOA', 'Board Certified in Condominium and Planned Development Law', 'section 718.1255' ),
+			array( 'construction-law', 'Construction', 'Board Certified in Construction Law', 'section 713.08' ),
+		);
+		foreach ( $cases as $case ) {
+			$c = self::build(
+				array(
+					'area_slug' => $case[0],
+					'area_name' => $case[1],
+					'city_slug' => 'miami',
+					'city_name' => 'Miami',
+				),
+				array(
+					array(
+						'years'  => 20,
+						'awards' => array( $case[2] ),
+					),
+				)
+			);
+			$this->assertNotNull( $c, $case[0] );
+			$this->assertStringContainsString( 'The lawyer in this ranking is ' . $case[2], $c['body'], $case[0] );
+			$this->assertStringContainsString( $case[3], $c['body'], $case[0] );
+		}
+		$this->assertSame( 'condo and HOA', RankingContentBuilder::in_sentence( 'Condo and HOA' ) );
+		$this->assertSame( "workers' compensation", RankingContentBuilder::in_sentence( "Workers' Compensation" ) );
+	}
+
 	public function testNoCompleteTextMeansNoContent(): void {
 		$this->assertNull( self::build( array( 'city_slug' => 'key-west' ) ), 'no city knowledge' );
 		$this->assertNull( self::build( array( 'area_slug' => 'bankruptcy' ) ), 'no practice-area knowledge' );
@@ -204,5 +233,39 @@ final class RankingContentTest extends TestCase {
 		$this->assertNotContains( 'Are there Spanish-speaking personal injury lawyers in Miami?', $questions );
 		// An ordinary ranking keeps its own text.
 		$this->assertStringNotContainsString( 'Working with a', self::build()['body'] );
+	}
+
+	public function testStatewideRankingDescribesTheShownLawyersAcrossCities(): void {
+		$people            = self::people();
+		$people[0]['city'] = 'Miami';
+		$people[1]['city'] = 'Miami';
+		$people[2]['city'] = 'Tampa';
+		$c                 = self::build(
+			array(
+				'city_slug'     => '',
+				'city_name'     => '',
+				'tracked'       => 152,
+				'city_rankings' => array( array( '/rankings/florida/miami/personal-injury/', 'Miami' ), array( 'javascript:x', 'Bad' ) ),
+			),
+			$people
+		);
+		$this->assertNotNull( $c );
+		$this->assertStringContainsString( 'lists the top 3 of the 152 personal injury lawyers LexRanked tracks across Florida', $c['summary'] );
+		$this->assertStringContainsString( 'They practice in 2 cities, led by Miami.', $c['summary'] );
+		$this->assertStringContainsString( '<td>Miami</td><td>2</td>', str_replace( "\n", '', $c['body'] ) );
+		$this->assertStringContainsString( 'href="/rankings/florida/miami/personal-injury/"', $c['body'] );
+		$this->assertStringNotContainsString( 'javascript:', $c['body'] );
+		$this->assertStringContainsString( 'href="/data/florida-judicial-circuits/"', $c['body'] );
+		$this->assertStringNotContainsString( 'Judicial Circuit</td>', $c['body'], 'no single court for the whole state' );
+		$this->assertContains( 'Where are the best personal injury lawyers in Florida?', array_column( $c['faq'], 'question' ) );
+		$this->assertNull(
+			self::build(
+				array(
+					'city_slug' => '',
+					'area_slug' => 'bankruptcy',
+				)
+			),
+			'no practice-area knowledge'
+		);
 	}
 }

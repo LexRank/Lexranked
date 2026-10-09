@@ -398,6 +398,7 @@ check "a re-run creates a language ranking once enough lawyers list the language
 SPANISH_RANKING="$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Spanish-Speaking Personal Injury Lawyers in Hialeah, Florida' --field=ID | tail -1)"
 expect "the language ranking is public with its context and language-specific text" '.context.type == "language" and .context.segment == "spanish-speaking" and (.entries | length) == 2 and (.faq | map(.question) | index("Will my court hearing be in Spanish?")) != null' "$API/rankings/$SPANISH_RANKING"
 check "re-running does not create it twice" '(.rankings | length) == 0' "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
+check "a statewide ranking waits for enough lawyers in more than one city" '[.log[].message] | any(test("No new ranking \"Best Personal Injury Lawyers in Florida\": 3 published profiles statewide \\(needs 4\\)"))' "$(wp lexranked research-status "$AUTO_JOB" --format=json)"
 wp option update lexranked_settings '{"search_rate_per_minute":5,"research_autonomy":true,"min_ranking_entities":3}' --format=json >/dev/null
 expect "an automatically created ranking is published with complete generated page text" '(.summary | test("personal injury lawyers? in Hialeah, Florida")) and (.body | test("<h2>Florida rules to know</h2>")) and (.body | test("Eleventh Judicial Circuit")) and (.body | test("<h2>Sources</h2>")) and (.faq | length) >= 6 and .generated == true' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW"
 expect "an editor's text replaces the generated text and is kept" '.summary == "Edited by hand." and .generated == false' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"summary":"Edited by hand."}'
@@ -439,6 +440,18 @@ curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -
 curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$ED_CITY_BEFORE" "$API/editorial/terms/location/$ED_CITY"
 curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$ED_LAWYER_BEFORE" "$API/editorial/profiles/$ED_LAWYER"
 expect "original ranking text restored" "(.summary // \"\") == $(jq '.summary' <<<"$ED_RANKING_BEFORE")" "$API/editorial/rankings/$ED_RANKING" -u "itEditor:$ED_PW"
+
+echo "==> Knowledge added over the API (no plugin update)"
+KN_AREA='{"name":"Health Care","cert":"Health","certName":"Board Certified in Health Law","lead":"A lead about Florida health law.","rows":[["Rule","What it means"]],"src":[["https://www.flsenate.gov/Laws/Statutes/2025/456.057","Florida Statutes, section 456.057"]],"faq":[["A question?","An answer."]],"guides":[]}'
+expect_status "research workers cannot change knowledge" 403 "$API/editorial/knowledge/FL/areas/health-law" -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' -d "$KN_AREA"
+expect_status "an incomplete area is rejected" 400 "$API/editorial/knowledge/FL/areas/health-law" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"cert":"Health","certName":"Board Certified in Health Law","lead":"x","rows":[],"src":[["http://insecure.test/","x"]],"faq":[]}'
+expect "an editor adds a practice area and its term" '.stored == true and (.practiceAreaId | type) == "number"' "$API/editorial/knowledge/FL/areas/health-law" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$KN_AREA"
+expect "an editor adds a city" '.stored == true' "$API/editorial/knowledge/FL/cities/key-west" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"county":"Monroe","circuit":"Sixteenth"}'
+expect "the pack lists the additions next to the shipped entries" '(.areas | index("health-law")) != null and (.areas | index("personal-injury")) != null and (.cities | index("key-west")) != null and .added.cities["key-west"].county == "Monroe"' "$API/editorial/knowledge/FL" -u "itEditor:$ED_PW"
+expect "removing an addition leaves the shipped pack" '.removed == true' "$API/editorial/knowledge/FL/cities/key-west" -u "itEditor:$ED_PW" -X DELETE
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -X DELETE "$API/editorial/knowledge/FL/areas/health-law"
+wp term delete lr_practice_area "$(wp term get lr_practice_area health-law --by=slug --field=term_id)" >/dev/null
+expect "additions removed" '(.areas | index("health-law")) == null and (.cities | index("key-west")) == null and (.cities | index("miami")) != null' "$API/editorial/knowledge/FL" -u "itEditor:$ED_PW"
 
 echo "==> Client reviews (email-confirmed, editor-approved)"
 AVERY_ID="$(curl -sS "$API/lawyers/avery-example-demo" | jq .id)"

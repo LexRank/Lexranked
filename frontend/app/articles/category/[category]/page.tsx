@@ -8,6 +8,7 @@ import { categoryCounts } from "@/lib/content/articles";
 import { articleEligibility, indexPageIndexable } from "@/lib/content/eligibility";
 import { allArticles, load } from "@/lib/data/loaders";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { inSentence } from "@/lib/format";
 
 export const revalidate = 300;
 const PER_PAGE = 12;
@@ -32,7 +33,7 @@ export async function generateMetadata(props: PageProps<"/articles/category/[cat
   const path = `/articles/category/${category.slug}/`;
   return buildMetadata({
     title: page > 1 ? `${category.name} Guides – Page ${page}` : `${category.name} Guides`,
-    description: `Guides on ${category.name.toLowerCase()}: practical answers on your rights, deadlines, costs and how to choose a lawyer, from LexRanked.`,
+    description: `Guides on ${inSentence(category.name)}: practical answers on your rights, deadlines, costs and how to choose a lawyer, from LexRanked.`,
     path: page > 1 ? `${path}?page=${page}` : path,
     // A category is worth indexing once it holds enough guides.
     noindex: !indexPageIndexable(items.filter((a) => articleEligibility(a).indexable).length),
@@ -55,7 +56,7 @@ export default async function GuideCategoryPage(props: PageProps<"/articles/cate
       ]}
       eyebrow="Guides"
       title={`${category.name} guides`}
-      lead={`Everything we have published on ${category.name.toLowerCase()}, newest first.`}
+      lead={`Everything we have published on ${inSentence(category.name)}, newest first.`}
       ok
       hasDemo={shown.some((a) => a.isDemo)}
       empty={shown.length === 0}

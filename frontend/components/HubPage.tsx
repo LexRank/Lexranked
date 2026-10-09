@@ -107,9 +107,12 @@ export function HubPage({
             <section>
               <h2>Rankings</h2>
               <div className="grid grid--2">
-                {rankings.map((r) => (
-                  <RankingCard key={r.id} ranking={r} />
-                ))}
+                {/* Statewide rankings ("Best … Lawyers in Florida") lead: they cover every city. */}
+                {[...rankings]
+                  .sort((a, b) => Number(Boolean(a.location?.citySlug)) - Number(Boolean(b.location?.citySlug)))
+                  .map((r) => (
+                    <RankingCard key={r.id} ranking={r} />
+                  ))}
               </div>
             </section>
           )}

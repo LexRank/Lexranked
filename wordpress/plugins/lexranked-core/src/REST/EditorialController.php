@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace LexRanked\Core\REST;
 
 use LexRanked\Core\Content\DraftApplier;
+use LexRanked\Core\Content\KnowledgeStore;
+use LexRanked\Core\Content\RankingContentService;
 use LexRanked\Core\Content\TermContent;
 use LexRanked\Core\Plugin;
 use LexRanked\Core\PostTypes\ContentDraft;
@@ -53,7 +55,9 @@ final class EditorialController extends RestController {
 	public function register_routes(): void {
 		$ns   = Plugin::REST_NAMESPACE;
 		$perm = static fn(): bool => current_user_can( 'edit_posts' );
-		$text = array(
+		// Knowledge feeds the text of every ranking in a state: editors only.
+		$knowledge = static fn(): bool => current_user_can( 'edit_others_posts' );
+		$text      = array(
 			'summary'     => array(
 				'type'      => 'string',
 				'maxLength' => 1000,
@@ -186,6 +190,38 @@ final class EditorialController extends RestController {
 				),
 			)
 		);
+		register_rest_route(
+			$ns,
+			'/editorial/knowledge/(?P<state>[A-Z]{2})',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'show_knowledge' ),
+				'permission_callback' => $knowledge,
+			)
+		);
+		register_rest_route(
+			$ns,
+			'/editorial/knowledge/(?P<state>[A-Z]{2})/(?P<kind>areas|cities)/(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)',
+			array(
+				array(
+					'methods'             => \WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'update_knowledge' ),
+					'permission_callback' => $knowledge,
+					'args'                => array(
+						'name' => array(
+							'type'      => 'string',
+							'minLength' => 2,
+							'maxLength' => 60,
+						),
+					),
+				),
+				array(
+					'methods'             => \WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_knowledge' ),
+					'permission_callback' => $knowledge,
+				),
+			)
+		);
 	}
 
 	/**
@@ -272,6 +308,120 @@ final class EditorialController extends RestController {
 		AuditLog::log( 'editorial.ranking_generated', Ranking::SLUG, $post->ID, array( 'version' => \LexRanked\Core\Content\RankingContentBuilder::VERSION ) );
 		$fresh = get_post( $post->ID );
 		return $this->item_response( $this->ranking_view( $fresh instanceof \WP_Post ? $fresh : $post ) + array( 'generated' => true ), true );
+	}
+
+	/**
+	 * GET /editorial/knowledge/{state}: what generated ranking text can use
+	 * (shipped pack plus additions) and what was added after release.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function show_knowledge( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$code = (string) $request['state'];
+		$pack = RankingContentService::load_pack( $code );
+		if ( null === $pack ) {
+			return new \WP_Error( 'lexranked_not_found', 'No knowledge pack for this state.', array( 'status' => 404 ) );
+		}
+		return $this->item_response(
+			array(
+				'state'   => $code,
+				'areas'   => array_keys( (array) ( $pack['areas'] ?? array() ) ),
+				'cities'  => array_keys( (array) ( $pack['cities'] ?? array() ) ),
+				'added'   => KnowledgeStore::additions( $code ),
+				'checked' => $pack['checked'] ?? null,
+			),
+			true
+		);
+	}
+
+	/**
+	 * POST /editorial/knowledge/{state}/{areas|cities}/{slug}: add a practice
+	 * area (and its term, when "name" is given) or a city. Rejected unless
+	 * the entry is as complete as the shipped pack.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function update_knowledge( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$code = (string) $request['state'];
+		$kind = (string) $request['kind'];
+		$slug = (string) $request['slug'];
+		if ( null === RankingContentService::load_pack( $code ) ) {
+			return new \WP_Error( 'lexranked_not_found', 'No knowledge pack for this state.', array( 'status' => 404 ) );
+		}
+		$input  = (array) $request->get_json_params();
+		$errors = 'areas' === $kind ? KnowledgeStore::save_area( $code, $slug, $input ) : KnowledgeStore::save_city( $code, $slug, $input );
+		if ( array() !== $errors ) {
+			return new \WP_Error(
+				'lexranked_invalid_param',
+				'Incomplete knowledge entry.',
+				array(
+					'status' => 400,
+					'errors' => $errors,
+				)
+			);
+		}
+		$term = null;
+		if ( 'areas' === $kind ) {
+			$existing = get_term_by( 'slug', $slug, PracticeArea::SLUG );
+			if ( $existing instanceof \WP_Term ) {
+				$term = $existing->term_id;
+			} elseif ( is_string( $request['name'] ) && '' !== trim( $request['name'] ) ) {
+				$made = wp_insert_term( trim( $request['name'] ), PracticeArea::SLUG, array( 'slug' => $slug ) );
+				$term = is_array( $made ) ? (int) $made['term_id'] : null;
+			}
+		}
+		AuditLog::log(
+			'editorial.knowledge_updated',
+			$kind,
+			(int) $term,
+			array(
+				'state' => $code,
+				'slug'  => $slug,
+			)
+		);
+		return $this->item_response(
+			array(
+				'state'          => $code,
+				'kind'           => $kind,
+				'slug'           => $slug,
+				'practiceAreaId' => $term,
+				'stored'         => true,
+			),
+			true
+		);
+	}
+
+	/**
+	 * DELETE /editorial/knowledge/{state}/{areas|cities}/{slug}: remove an
+	 * addition (the shipped pack is unchanged).
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function delete_knowledge( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$code = (string) $request['state'];
+		$kind = (string) $request['kind'];
+		$slug = (string) $request['slug'];
+		if ( ! KnowledgeStore::remove( $code, $kind, $slug ) ) {
+			return new \WP_Error( 'lexranked_not_found', 'No stored entry with this slug.', array( 'status' => 404 ) );
+		}
+		AuditLog::log(
+			'editorial.knowledge_removed',
+			$kind,
+			0,
+			array(
+				'state' => $code,
+				'slug'  => $slug,
+			)
+		);
+		return $this->item_response(
+			array(
+				'state'   => $code,
+				'kind'    => $kind,
+				'slug'    => $slug,
+				'removed' => true,
+			),
+			true
+		);
 	}
 
 	/**

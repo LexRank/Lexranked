@@ -1,5 +1,5 @@
 import type { RankingDetail } from "@/types/api";
-import { formatDate, formatScore } from "@/lib/format";
+import { formatDate, formatScore, inSentence } from "@/lib/format";
 import { methodologyLabel } from "@/lib/methodology";
 
 /**
@@ -42,7 +42,7 @@ function joinNames(items: string[]): string {
 /** Scope phrase: "personal injury lawyers in Miami, Florida". */
 export function rankingScopePhrase(ranking: Pick<RankingDetail, "entityType" | "practiceArea" | "location" | "context">): string {
   const noun = ranking.entityType === "law_firm" ? "law firms" : "lawyers";
-  const practice = ranking.practiceArea ? `${ranking.practiceArea.name.toLowerCase()} ` : "";
+  const practice = ranking.practiceArea ? `${inSentence(ranking.practiceArea.name)} ` : "";
   const where = ranking.location?.city
     ? `${ranking.location.city}${ranking.location.state ? `, ${ranking.location.state}` : ""}`
     : ranking.location?.state;

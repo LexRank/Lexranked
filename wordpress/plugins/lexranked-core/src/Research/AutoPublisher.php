@@ -464,7 +464,131 @@ final class AutoPublisher {
 				AuditLog::log( 'research.ranking_created', Ranking::SLUG, $id, array( 'job_id' => $job_id ) );
 			}
 		}//end foreach
-		return array_merge( $created, $this->ensure_language_rankings( $job_id, $pairs, $min ) );
+		return array_merge( $created, $this->ensure_language_rankings( $job_id, $pairs, $min ), $this->ensure_state_rankings( $job_id, $pairs, $min ) );
+	}
+
+	/**
+	 * Create a statewide ranking ("Best Personal Injury Lawyers in Florida")
+	 * for each practice area of the pairs that has enough published lawyers
+	 * across the state (AutoPublishPolicy::decide_state_ranking).
+	 *
+	 * @param int                                 $job_id Job ID.
+	 * @param array<string, array<string, mixed>> $pairs  City and practice-area pairs from ensure_rankings.
+	 * @param int                                 $min    Minimum lawyers for a city ranking.
+	 * @return array<int, int> Created ranking IDs.
+	 */
+	private function ensure_state_rankings( int $job_id, array $pairs, int $min ): array {
+		$areas = array();
+		foreach ( $pairs as $pair ) {
+			if ( 'lawyer' === $pair['entity_type'] ) {
+				$areas[ $pair['state']['id'] . '|' . $pair['area']['id'] ] = $pair;
+			}
+		}
+		$created = array();
+		foreach ( $areas as $pair ) {
+			$state_id = (int) $pair['state']['id'];
+			$area_id  = (int) $pair['area']['id'];
+			$existing = $this->state_ranking( $state_id, $area_id );
+			$title    = AutoPublishPolicy::state_ranking_title( $pair['area']['name'], $pair['state']['name'] );
+			if ( null !== $existing ) {
+				// Held for missing text: publish it once the text can be written.
+				if ( 'draft' === get_post_status( $existing ) && '' !== (string) get_post_meta( $existing, self::HELD_META, true ) && $this->services->ranking_content->prepare( $existing ) && $this->publish_post( $existing ) ) {
+					delete_post_meta( $existing, self::HELD_META );
+					$created[] = $existing;
+					$this->log->add( $job_id, 'info', 'auto_publish', sprintf( 'Published statewide ranking #%d with its page text.', $existing ) );
+				}
+				continue;
+			}
+			[ $count, $cities ] = $this->state_counts( $state_id, $area_id );
+			$decision           = AutoPublishPolicy::decide_state_ranking( $count, $cities, $min, false );
+			if ( ! $decision['create'] ) {
+				$this->log->add( $job_id, 'info', 'auto_publish', sprintf( 'No new ranking "%s": %s.', $title, $decision['reason'] ) );
+				continue;
+			}
+			$id = $this->create_ranking( $job_id, $title, 'lawyer', $state_id, $area_id );
+			if ( null !== $id ) {
+				$created[] = $id;
+				$this->log->add( $job_id, 'info', 'auto_publish', sprintf( 'Created statewide ranking #%d "%s" (%s).', $id, $title, $decision['reason'] ) );
+				AuditLog::log( 'research.ranking_created', Ranking::SLUG, $id, array( 'job_id' => $job_id ) );
+			}
+		}//end foreach
+		return $created;
+	}
+
+	/**
+	 * The statewide (no city, no context) lawyer ranking for a practice area, any status but trash, or null.
+	 *
+	 * @param int $state_id State term ID.
+	 * @param int $area_id  Practice-area term ID.
+	 */
+	private function state_ranking( int $state_id, int $area_id ): ?int {
+		foreach ( $this->rankings_in( $state_id, $area_id, false ) as $f ) {
+			$has_city = array() !== array_filter( (array) get_the_terms( (int) $f['_id'], Location::SLUG ), static fn( $t ): bool => $t instanceof \WP_Term && 0 !== (int) $t->parent );
+			if ( ! $has_city && 'lawyer' === ( $f['entity_type'] ?? null ) && in_array( $f['context_type'] ?? null, array( null, '' ), true ) ) {
+				return (int) $f['_id'];
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Published real lawyers in a state (any city) and practice area, and the number of their cities.
+	 *
+	 * @param int $state_id State term ID.
+	 * @param int $area_id  Practice-area term ID.
+	 * @return array{0: int, 1: int}
+	 */
+	private function state_counts( int $state_id, int $area_id ): array {
+		$cities = array();
+		$count  = 0;
+		foreach (
+			get_posts(
+				array(
+					'post_type'        => Lawyer::SLUG,
+					'post_status'      => 'publish',
+					'posts_per_page'   => -1,
+					'fields'           => 'ids',
+					'no_found_rows'    => true,
+					'suppress_filters' => false,
+					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Two exact term IDs.
+					'tax_query'        => array(
+						'relation' => 'AND',
+						array(
+							'taxonomy' => Location::SLUG,
+							'field'    => 'term_id',
+							'terms'    => array( $state_id ),
+						),
+						array(
+							'taxonomy'         => PracticeArea::SLUG,
+							'field'            => 'term_id',
+							'terms'            => array( $area_id ),
+							'include_children' => false,
+						),
+					),
+					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Demo flag.
+					'meta_query'       => array(
+						'relation' => 'OR',
+						array(
+							'key'     => '_lr_is_demo',
+							'compare' => 'NOT EXISTS',
+						),
+						array(
+							'key'     => '_lr_is_demo',
+							'value'   => '1',
+							'compare' => '!=',
+						),
+					),
+				)
+			) as $id
+		) {
+			++$count;
+			foreach ( (array) get_the_terms( (int) $id, Location::SLUG ) as $term ) {
+				if ( $term instanceof \WP_Term && 0 !== (int) $term->parent ) {
+					$cities[ $term->term_id ] = true;
+				}
+			}
+		}//end foreach
+		return array( $count, count( $cities ) );
 	}
 
 	/**

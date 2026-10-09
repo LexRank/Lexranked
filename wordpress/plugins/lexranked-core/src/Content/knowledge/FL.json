@@ -575,6 +575,219 @@
     ]
    ],
    "certName": "Board Certified in Workers' Compensation Law"
+  },
+  "appellate": {
+   "cert": "Appellate Practice",
+   "lead": "A notice of appeal must be filed within 30 days of the order being appealed, and Florida's six district courts of appeal hear most appeals from the trial courts.",
+   "rows": [
+    [
+     "Notice of appeal",
+     "Filed with the clerk of the lower tribunal within 30 days of rendition of the order (Fla. R. App. P. 9.110(b))"
+    ],
+    [
+     "Initial brief",
+     "Served within 70 days of filing the notice of appeal (Rule 9.110(f))"
+    ],
+    [
+     "Answer and reply briefs",
+     "Answer brief 30 days after the initial brief; reply brief 30 days after the answer brief (Rule 9.210(g))"
+    ],
+    [
+     "Rehearing",
+     "Motion for rehearing or clarification within 15 days of the court's decision (Rule 9.330(a))"
+    ],
+    [
+     "Florida Supreme Court",
+     "Discretionary review is invoked by a notice filed within 30 days of the district court's decision (Rule 9.120(b))"
+    ],
+    [
+     "Appellate courts",
+     "Six district courts of appeal, each covering contiguous judicial circuits (Fla. Stat. § 35.01)"
+    ]
+   ],
+   "src": [
+    [
+     "https://www-media.floridabar.org/uploads/2026/10/Appellate-Court-Rules-10-01-26.pdf",
+     "Florida Rules of Appellate Procedure (as amended to October 1, 2026): Rules 9.110, 9.120, 9.210 and 9.330"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/35.01",
+     "Florida Statutes, section 35.01 (district courts of appeal)"
+    ]
+   ],
+   "faq": [
+    [
+     "How long do I have to appeal a judgment in Florida?",
+     "30 days from rendition of the final order. The notice of appeal is filed with the clerk of the court that entered the order, under Rule 9.110(b) of the Florida Rules of Appellate Procedure. The deadline is jurisdictional, so a late notice usually ends the appeal."
+    ],
+    [
+     "Can I appeal an order before the case is over?",
+     "Only certain nonfinal orders can be appealed right away, such as orders on venue, injunctions and personal jurisdiction, listed in Rule 9.130. Other orders are usually reviewed after the final judgment."
+    ],
+    [
+     "Which court hears my appeal?",
+     "Most appeals from the circuit courts go to one of Florida's six district courts of appeal, determined by the circuit where the case was heard. The Florida Supreme Court reviews only certain cases."
+    ],
+    [
+     "Why hire a separate appellate lawyer?",
+     "An appeal is decided on the written record and the briefs, not on new evidence. Appellate lawyers focus on legal research, brief writing and oral argument, and The Florida Bar certifies lawyers in Appellate Practice after peer review and an exam."
+    ]
+   ],
+   "guides": [],
+   "certName": "Board Certified in Appellate Practice"
+  },
+  "condominium-hoa": {
+   "cert": "Condominium and Planned Development",
+   "lead": "Florida condominiums are governed by chapter 718 and homeowners' associations by chapter 720, and many disputes must go to arbitration or mediation before a lawsuit.",
+   "rows": [
+    [
+     "Access to records",
+     "The association must make official records available within 10 working days (condo) or 10 business days (HOA) of a written request (Fla. Stat. §§ 718.111(12), 720.303(5))"
+    ],
+    [
+     "Fines",
+     "At most $100 per violation and $1,000 in total, after 14 days' notice and a hearing before a committee of owners (§§ 718.303(3), 720.305(2))"
+    ],
+    [
+     "Before suing",
+     "Many condo disputes go to nonbinding arbitration with the state (§ 718.1255); many HOA disputes require presuit mediation (§ 720.311)"
+    ],
+    [
+     "Milestone inspections",
+     "Condo buildings three stories or taller need a structural inspection by December 31 of the year they turn 30, then every 10 years (§ 553.899)"
+    ],
+    [
+     "Reserve studies",
+     "Condo associations must complete a structural integrity reserve study at least every 10 years for buildings three stories or taller (§ 718.112(2)(g))"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/718.111",
+     "Florida Statutes, section 718.111 (condominium official records)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/718.112",
+     "Florida Statutes, section 718.112 (structural integrity reserve study)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/718.303",
+     "Florida Statutes, section 718.303 (condominium fines)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/718.1255",
+     "Florida Statutes, section 718.1255 (condominium dispute resolution)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/720.303",
+     "Florida Statutes, section 720.303 (HOA official records)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/720.305",
+     "Florida Statutes, section 720.305 (HOA fines)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/720.311",
+     "Florida Statutes, section 720.311 (HOA dispute resolution)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/553.899",
+     "Florida Statutes, section 553.899 (milestone inspections)"
+    ]
+   ],
+   "faq": [
+    [
+     "How much can a Florida HOA or condo association fine me?",
+     "Up to $100 per violation and $1,000 in total for a continuing violation, unless an HOA's governing documents allow more, and only after 14 days' written notice and a hearing before a committee of at least three owners."
+    ],
+    [
+     "Do I have to go to arbitration or mediation before suing my association?",
+     "Often, yes. Many condominium disputes go first to nonbinding arbitration with the Division of Florida Condominiums, Timeshares and Mobile Homes, and many HOA disputes require a demand for presuit mediation."
+    ],
+    [
+     "When does a Florida condo building need a milestone inspection?",
+     "Buildings three habitable stories or taller need one by December 31 of the year the building reaches 30 years of age, and every 10 years after that. Local officials can require it at 25 years near salt water."
+    ],
+    [
+     "Who certifies condominium lawyers in Florida?",
+     "The Florida Bar certifies lawyers in Condominium and Planned Development Law after at least five years of practice, peer review and a written exam."
+    ]
+   ],
+   "guides": [
+    [
+     "/articles/florida-condo-hoa-disputes/",
+     "Florida condo and HOA disputes: your rights as an owner"
+    ]
+   ],
+   "certName": "Board Certified in Condominium and Planned Development Law"
+  },
+  "construction-law": {
+   "cert": "Construction",
+   "lead": "Florida's Construction Lien Law sets strict deadlines for notices and liens, and a construction defect claim needs written notice to the contractor before any lawsuit.",
+   "rows": [
+    [
+     "Notice to owner",
+     "Subcontractors and suppliers without a contract with the owner must serve it within 45 days of starting work (Fla. Stat. § 713.06(2)(a))"
+    ],
+    [
+     "Claim of lien",
+     "Recorded no later than 90 days after the final furnishing of labor, services or materials (§ 713.08(5))"
+    ],
+    [
+     "Enforcing a lien",
+     "A lawsuit must be filed within 1 year after the claim of lien is recorded, or the lien expires (§ 713.22(1))"
+    ],
+    [
+     "Defect claims: presuit notice",
+     "Written notice of claim at least 60 days before suing, or 120 days for an association of more than 20 parcels (§ 558.004)"
+    ],
+    [
+     "Defect claims: deadlines",
+     "4 years, generally from the certificate of occupancy or completion, and never more than 7 years for latent defects (§ 95.11(3)(b))"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/713.06",
+     "Florida Statutes, section 713.06 (notice to owner)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/713.08",
+     "Florida Statutes, section 713.08 (claim of lien)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/713.22",
+     "Florida Statutes, section 713.22 (duration of lien)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/558.004",
+     "Florida Statutes, section 558.004 (construction defects: notice and opportunity to repair)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/95.11",
+     "Florida Statutes, section 95.11 (limitations)"
+    ]
+   ],
+   "faq": [
+    [
+     "How long does a contractor have to file a lien in Florida?",
+     "A claim of lien must be recorded no later than 90 days after the lienor's final furnishing of labor, services or materials, and a lawsuit to enforce it must follow within 1 year of recording."
+    ],
+    [
+     "Do I have to notify the contractor before suing over a construction defect?",
+     "Yes. Under chapter 558 you must serve a written notice of claim at least 60 days before filing suit, or 120 days for an association representing more than 20 parcels, giving the contractor a chance to inspect and offer to repair."
+    ],
+    [
+     "How long do I have to sue for a construction defect in Florida?",
+     "Generally 4 years, counted from the certificate of occupancy, certificate of completion or abandonment of construction. For latent defects the time runs from discovery, but no action may be brought more than 7 years after those dates."
+    ],
+    [
+     "Who certifies construction lawyers in Florida?",
+     "The Florida Bar certifies lawyers in Construction Law after at least five years of practice, peer review and a written exam."
+    ]
+   ],
+   "guides": [],
+   "certName": "Board Certified in Construction Law"
   }
  },
  "cities": {

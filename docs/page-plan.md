@@ -51,7 +51,7 @@ trzeba zweryfikować danymi.
 1. Ranking ma **co najmniej 5 prawników** (`min_ranking_entities`), najwyżej 25.
 2. Ranking publikujemy **tylko z kompletną treścią** (`docs/content-plan.md`,
    „Rankings start with their content”). Nowe miasto albo obszar wymaga
-   najpierw wpisu w `src/Content/knowledge/FL.json`: hrabstwo i okręg sądowy
+   najpierw wpisu w pakiecie wiedzy: `src/Content/knowledge/FL.json` albo, od wtyczki 0.28.0, bez aktualizacji wtyczki przez `POST /editorial/knowledge/FL/{areas|cities}/{slug}` (te same reguły kompletności): hrabstwo i okręg sądowy
    sprawdzone na flcourts.gov, przepisy z linkami do ustaw.
 3. Strona poniżej progu jest `noindex` i nie trafia do sitemap.
 4. Płatność nigdy nie zmienia pozycji.
@@ -98,9 +98,9 @@ researchu), C = kontekst w obszarze nadrzędnym.
 | 9 | `workers-compensation` | Workers' Compensation | Workers' Compensation | A | P1 | na żywo |
 | 10 | `tax-law` | Tax | Tax Law | A | P2 | na żywo |
 | 11 | `elder-law` | Elder Law | Elder Law | A | P2 | na żywo |
-| 12 | `appellate` | Appellate | Appellate Practice | A | P1 | nowy obszar |
-| 13 | `condominium-hoa` | Condominium & HOA | Condominium & Planned Development | A | P1 | nowy; bardzo floryjski temat (spory ze wspólnotami, inspekcje budynków) |
-| 14 | `construction-law` | Construction | Construction Law | A | P2 | nowy |
+| 12 | `appellate` | Appellate | Appellate Practice | A | P1 | w wtyczce 0.28.0 (katalog + pakiet wiedzy); research: 10 miast z ≥5 prawnikami z certyfikatem |
+| 13 | `condominium-hoa` | Condo and HOA | Condominium & Planned Development | A | P1 | w wtyczce 0.28.0; research: 11 miast z ≥5 prawnikami (Boca Raton 21, Fort Lauderdale 17) |
+| 14 | `construction-law` | Construction | Construction Law | A | P1 | w wtyczce 0.28.0; research: 12 miast z ≥5 prawnikami |
 | 15 | `adoption` | Adoption | Adoption Law | A | P2 | nowy |
 | 16 | `juvenile-law` | Juvenile | Juvenile Law | A | P2 | nowy |
 | 17 | `criminal-appeals` | Criminal Appeals | Criminal Appellate Law | A | P2 | nowy |
@@ -887,6 +887,14 @@ Każdy wzór dotyczy miast poziomu 1, a potem 2. Wymagają faktów
 
 Top 25 w całym stanie, po jednym na każdy obszar z danymi. **Zmiana kodu:**
 tworzenie rankingu stanowego w researchu i obsługa treści bez miasta.
+
+**Stan (wtyczka 0.28.0):** zrobione. Research sam zakłada ranking stanowy
+dla obszaru, gdy co najmniej 2 × `min_ranking_entities` (10) opublikowanych
+prawników działa w co najmniej 2 miastach; strona pokazuje top 25. Generator
+pisze dla niego własną treść: skąd są najlepsi prawnicy (tabela miast), linki
+do rankingów każdego miasta, przepisy stanowe, FAQ. Z obecnych danych próg
+spełnia 10 obszarów (wszystkie poza Workers' Compensation): pozycje 1–10
+z tabeli powstaną przy pierwszym uruchomieniu publikacji po instalacji.
 
 | # | Tytuł | Adres | Priorytet |
 |---|---|---|---|

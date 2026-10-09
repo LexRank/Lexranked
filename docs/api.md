@@ -173,7 +173,7 @@ Rankings carry `context`: `null` for an ordinary ranking, otherwise:
 
 The `path` includes the segment, e.g. `/rankings/florida/miami/personal-injury/car-accidents/`. A context below its threshold has `isThin: true` and no entries.
 
-`eligibility.verified` counts entities whose context is confirmed by a verified fact or by a fact whose best source is an official (tier 1) record such as the state bar profile (plugin 0.27.0). Research creates language rankings automatically under published rankings (`context.type = language`) when at least `min_ranking_entities` published lawyers list the language and at least `min(3, min_ranking_entities)` of them are confirmed.
+`eligibility.verified` counts entities whose context is confirmed by a verified fact or by a fact whose best source is an official (tier 1) record such as the state bar profile (plugin 0.27.0). Research also creates statewide rankings (location = the state, path `/rankings/{state}/{area}/`) when at least 2 × `min_ranking_entities` published lawyers in at least 2 cities have the practice area (plugin 0.28.0); generated text describes the entries shown (top `max_entities`, default 25). Research creates language rankings automatically under published rankings (`context.type = language`) when at least `min_ranking_entities` published lawyers list the language and at least `min(3, min_ranking_entities)` of them are confirmed.
 
 Entries carry:
 - `keyFacts{yearsExperience, barStatus, practiceAreas[], awards}`: the scored inputs;
@@ -386,5 +386,11 @@ every change is written to the audit log.
 | `POST /editorial/profiles/{id}` | `{summary}` (2–4 plain sentences) | `{id, name, summary}` |
 | `GET /editorial/drafts` | `qa_status?` | AI content drafts with `contentType`, `qaStatus`, `target`, `summary`, `faq`, `body`, `qaReport`, `canApply` |
 | `POST /editorial/drafts/{id}/apply` | `{acknowledge?}` | `{id, status: applied\|partial\|already, errors, article_id}`; `409 lexranked_needs_review` for a draft that failed QA unless `acknowledge: true` |
+| `GET /editorial/knowledge/{STATE}` (plugin 0.28) | — | `{state, areas[], cities[], added{areas, cities}, checked}`: what generated ranking text can use (shipped pack plus additions) |
+| `POST /editorial/knowledge/{STATE}/areas/{slug}` (plugin 0.28) | `{name?, cert, certName, lead, rows[[rule, meaning]], src[[https URL, label]], faq[[question, answer]], guides[[/path/, title]]}` | adds or replaces a practice area's rules; `name` also creates the practice-area term when it does not exist. `400` with `errors[]` unless the entry is as complete as the shipped pack. Needs `edit_others_posts` |
+| `POST /editorial/knowledge/{STATE}/cities/{slug}` (plugin 0.28) | `{county, circuit}` | adds a city, or adds keys to a shipped one (shipped keys such as crash data are kept) |
+| `DELETE /editorial/knowledge/{STATE}/{areas\|cities}/{slug}` (plugin 0.28) | — | removes an addition; the shipped pack is never changed |
 
 Saving runs the same hooks as wp-admin, so the public page is revalidated.
+Knowledge additions apply to text generated afterwards: new rankings, or
+`POST /editorial/rankings/{id}/generate` for an existing one.

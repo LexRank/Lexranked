@@ -87,3 +87,8 @@ export function formatLocation(
   if (location.city && location.state) return `${location.city}, ${location.state}`;
   return location.state ?? location.city ?? null;
 }
+
+/** A name used mid-sentence: lowercase, but acronyms stay ("Condo and HOA" → "condo and HOA", "DUI" → "DUI"). */
+export function inSentence(name: string): string {
+  return name.replace(/[A-Za-z']+/g, (w) => (/^[A-Z]{2,}$/.test(w) ? w : w.toLowerCase()));
+}

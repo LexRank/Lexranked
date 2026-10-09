@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Content\RankingContentBuilder;
 use LexRanked\Core\Market\MarketStatistics;
 use LexRanked\Core\Plugin;
 use LexRanked\Core\Repository\EntityRepository;
@@ -115,7 +116,7 @@ final class MarketController extends RestController {
 			function () use ( $location, $practice ): array {
 				$stats = $this->services->market->for_scope( $location, $practice );
 				$place = $this->place( $location );
-				$noun  = null === $practice ? '' : strtolower( $practice->name ) . ' ';
+				$noun  = null === $practice ? '' : RankingContentBuilder::in_sentence( $practice->name ) . ' ';
 				$scope = null === $practice && '' === $place ? '' : trim( ( '' === $noun ? '' : 'in ' . $noun . 'law' ) . ( '' === $place ? '' : ' in ' . $place ) );
 				return array(
 					'scope'   => array(
