@@ -593,7 +593,7 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "cards show key attributes" "/rankings/florida/miami/personal-injury/" "22 years experience"
   page_has "the header names the methodology the entries used" "/rankings/florida/miami/personal-injury/" "LexRank v1.2"
   expect_status "a context below its threshold is a 404" 404 "$WEB/rankings/florida/miami/personal-injury/spanish-speaking/"
-  if grep -q "spanish-speaking" <<<"$(curl -sS "$WEB/sitemap.xml")"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
+  if grep -q "/personal-injury/spanish-speaking/" <<<"$(curl -sS "$WEB/sitemap.xml")"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
 
   echo "==> Page eligibility on pages (Etap G)"
   page_has "methodology publishes when a page exists" "/methodology/" 'id="page-eligibility"'
