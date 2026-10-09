@@ -3598,3 +3598,53 @@ h2 {
 .editorial__body > section + section {
   margin-top: 2.25rem;
 }
+
+/* Author profiles. */
+.author-profile {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .author-profile {
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+}
+
+.author-profile__portrait {
+  width: 100%;
+  max-width: 16rem;
+  height: auto;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+}
+
+.author-photos {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.author-photos img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.author-box {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.author-box img {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: cover;
+  border-radius: 50%;
+  flex: none;
+}

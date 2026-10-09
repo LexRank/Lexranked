@@ -1,5 +1,6 @@
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/config/site";
 import type { ArticleDetail, LawFirmDetail, LawyerDetail, LocationDto, RankingDetail } from "@/types/api";
+import { authorBySlug, authorPath, type AuthorProfile } from "@/lib/content/authors";
 import { absoluteUrl } from "./urls";
 
 /**
@@ -312,7 +313,7 @@ export function articleJsonLd(article: ArticleDetail): JsonLdObject {
     inLanguage: "en-US",
     datePublished: article.publishedAt ?? undefined,
     dateModified: article.updatedAt ?? undefined,
-    author: { "@type": article.author.name === "LexRanked Editorial Team" ? "Organization" : "Person", name: article.author.name },
+    author: articleAuthor(article.author),
     publisher: { "@id": `${siteUrl}/#organization` },
     image: article.image ? [article.image.url] : undefined,
     wordCount: article.wordCount,
@@ -320,5 +321,36 @@ export function articleJsonLd(article: ArticleDetail): JsonLdObject {
     reviewedBy: article.reviewedBy ? { "@type": "Person", name: article.reviewedBy } : undefined,
     articleSection: article.categories.map((c) => c.name),
     isPartOf: { "@id": `${siteUrl}/#website` },
+  });
+}
+
+/** The byline as schema.org: a Person with a profile URL when one exists. */
+function articleAuthor(author: ArticleDetail["author"]): JsonLdObject {
+  const profile = authorBySlug(author.slug);
+  if (profile) return { "@type": "Person", "@id": `${absoluteUrl(authorPath(profile.slug))}#person`, name: profile.name, url: absoluteUrl(authorPath(profile.slug)) };
+  return { "@type": author.name === "LexRanked Editorial Team" ? "Organization" : "Person", name: author.name };
+}
+
+/** ProfilePage for an author, with the Person as main entity. */
+export function authorJsonLd(profile: AuthorProfile): JsonLdObject {
+  const url = absoluteUrl(authorPath(profile.slug));
+  return compact({
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "@id": `${url}#webpage`,
+    url,
+    name: `${profile.name}, ${profile.jobTitle} at ${SITE_NAME}`,
+    inLanguage: "en-US",
+    isPartOf: { "@id": `${siteUrl}/#website` },
+    mainEntity: {
+      "@type": "Person",
+      "@id": `${url}#person`,
+      name: profile.name,
+      jobTitle: profile.jobTitle,
+      description: profile.summary,
+      image: absoluteUrl(profile.portrait.src),
+      url,
+      worksFor: { "@id": `${siteUrl}/#organization` },
+    },
   });
 }

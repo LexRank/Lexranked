@@ -151,7 +151,14 @@ final class ArticlesController extends RestController {
 			}
 		}
 		$name   = (string) get_the_author_meta( 'display_name', (int) $post->post_author );
-		$author = array( 'name' => '' === $name ? 'LexRanked Editorial Team' : $name );
+		$slug   = (string) get_the_author_meta( 'user_nicename', (int) $post->post_author );
+		$author = '' === $name ? array(
+			'name' => 'LexRanked Editorial Team',
+			'slug' => null,
+		) : array(
+			'name' => $name,
+			'slug' => '' === $slug ? null : $slug,
+		);
 		return ArticleMapper::summary( $record, (string) $post->post_excerpt, $this->body( $post ), $author, $image, $categories );
 	}
 

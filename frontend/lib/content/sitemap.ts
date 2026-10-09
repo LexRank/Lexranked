@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo/urls";
 import { categoryCounts } from "./articles";
+import { AUTHORS, authorPath } from "./authors";
 import type { ArticleSummary, CityDto, LawFirmSummary, LawyerSummary, PracticeAreaDto, RankingSummary, StateDto } from "@/types/api";
 import { articleEligibility, indexPageIndexable, listingEligibility, MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
 
@@ -19,7 +20,7 @@ export interface SitemapInput {
   articles?: ArticleSummary[];
 }
 
-export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/", "/about/", "/editorial-policy/", "/contact/", "/privacy/", "/terms/", "/disclaimer/"];
+export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/", "/about/", "/editorial-policy/", "/contact/", "/privacy/", "/terms/", "/disclaimer/", ...AUTHORS.map((a) => authorPath(a.slug))];
 
 /** Index pages, listed once they link to enough pages (indexPageIndexable). */
 export const INDEX_PATHS = { rankings: "/rankings/", states: "/states/", cities: "/cities/", practiceAreas: "/practice-areas/" } as const;

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { ArticleCard, RankingCard } from "@/components/cards";
+import { authorBySlug, authorPath } from "@/lib/content/authors";
 import { JsonLd } from "@/components/JsonLd";
 import { MethodologyPanel } from "@/components/Methodology";
 import { PageHeader } from "@/components/PageHeader";
@@ -57,6 +58,7 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
   const image = guideImage(article);
   const category = article.categories.find((c) => c.slug !== "uncategorized") ?? null;
 
+  const author = authorBySlug(article.author.slug);
   const published = formatDate(article.publishedAt);
   const updated = formatDate(article.updatedAt);
   const reviewed = formatDate(article.reviewedAt);
@@ -76,7 +78,7 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
       >
         <div className="page-header__meta">
           <span>
-            By <strong>{article.author.name}</strong>
+            By <strong>{author ? <Link href={authorPath(author.slug)}>{author.name}</Link> : article.author.name}</strong>
           </span>
           {published && <span>Published {published}</span>}
           {updated && updated !== published && (
@@ -96,6 +98,23 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
           <div className="card editorial">
             <div className="prose editorial__body" dangerouslySetInnerHTML={{ __html: html }} />
           </div>
+          {author && (
+            <aside className="card author-box" aria-label="About the author">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={author.portrait.src} alt={author.portrait.alt} width={72} height={72} loading="lazy" />
+              <div>
+                <p style={{ margin: 0 }}>
+                  <strong>
+                    <Link href={authorPath(author.slug)}>{author.name}</Link>
+                  </strong>{" "}
+                  · {author.jobTitle}
+                </p>
+                <p className="muted" style={{ margin: "0.25rem 0 0", fontSize: "0.92rem" }}>
+                  {author.summary}
+                </p>
+              </div>
+            </aside>
+          )}
           <p className="card__meta">
             {article.reviewedBy || reviewed ? (
               <>
