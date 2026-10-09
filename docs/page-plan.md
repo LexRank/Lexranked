@@ -142,10 +142,10 @@ researchu), C = kontekst w obszarze nadrzędnym.
 
 ## 5. Miasta (52)
 
-Hrabstwo i okręg sądowy sprawdzić na flcourts.gov przed dodaniem do pakietu
-wiedzy. Ludność podana tylko tam, gdzie mamy źródło: szacunki Census 2024
-dla 10 największych miast. Brevard i Seminole: sprawdzić, czy zmienił się
-podział 18. okręgu.
+Okręgi sądowe potwierdzone w Fla. Stat. § 26.021 (20 okręgów; Brevard i
+Seminole w 18.). Ludność podana tylko tam, gdzie mamy źródło: szacunki Census 2024
+dla 10 największych miast. Miasta poziomu 1 i 2 są już w pakiecie wiedzy
+(`src/Content/knowledge/FL.json`).
 
 | # | Miasto | Slug | Hrabstwo | Okręg sądowy | Ludność 2024 | Poziom | Uwagi |
 |---|---|---|---|---|---|---|---|
@@ -171,7 +171,7 @@ podział 18. okręgu.
 | 20 | Lakeland | `lakeland` | Polk | 10. | — | 2 |  |
 | 21 | Hollywood | `hollywood` | Broward | 17. | — | 2 |  |
 | 22 | Daytona Beach | `daytona-beach` | Volusia | 7. | — | 2 |  |
-| 23 | Melbourne | `melbourne` | Brevard | 18. (sprawdzić podział okręgu) | — | 2 |  |
+| 23 | Melbourne | `melbourne` | Brevard | 18. | — | 2 |  |
 | 24 | Winter Park | `winter-park` | Orange | 9. | — | 2 | zagłębie kancelarii pod Orlando |
 | 25 | Pembroke Pines | `pembroke-pines` | Broward | 17. | — | 3 |  |
 | 26 | Miramar | `miramar` | Broward | 17. | — | 3 |  |
@@ -182,9 +182,9 @@ podział 18. okręgu.
 | 31 | Miami Beach | `miami-beach` | Miami-Dade | 11. | — | 3 |  |
 | 32 | Doral | `doral` | Miami-Dade | 11. | — | 3 |  |
 | 33 | Aventura | `aventura` | Miami-Dade | 11. | — | 3 |  |
-| 34 | Palm Bay | `palm-bay` | Brevard | 18. (sprawdzić) | — | 3 |  |
+| 34 | Palm Bay | `palm-bay` | Brevard | 18. | — | 3 |  |
 | 35 | Kissimmee | `kissimmee` | Osceola | 9. | — | 3 | duża społeczność hiszpańskojęzyczna |
-| 36 | Sanford | `sanford` | Seminole | 18. (sprawdzić) | — | 3 |  |
+| 36 | Sanford | `sanford` | Seminole | 18. | — | 3 |  |
 | 37 | Ocala | `ocala` | Marion | 5. | — | 3 |  |
 | 38 | Bradenton | `bradenton` | Manatee | 12. | — | 3 |  |
 | 39 | Stuart | `stuart` | Martin | 19. | — | 3 |  |

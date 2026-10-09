@@ -132,7 +132,7 @@ final class RankingContentTest extends TestCase {
 	}
 
 	public function testNoCompleteTextMeansNoContent(): void {
-		$this->assertNull( self::build( array( 'city_slug' => 'naples' ) ), 'no city knowledge' );
+		$this->assertNull( self::build( array( 'city_slug' => 'key-west' ) ), 'no city knowledge' );
 		$this->assertNull( self::build( array( 'area_slug' => 'bankruptcy' ) ), 'no practice-area knowledge' );
 		$this->assertNull( self::build( array( 'entity_type' => 'law_firm' ) ), 'firm rankings are written by editors' );
 		$this->assertNull( self::build( array(), array() ), 'no entries' );
