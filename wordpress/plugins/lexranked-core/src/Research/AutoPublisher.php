@@ -14,6 +14,7 @@ use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\PostTypes\Ranking;
 use LexRanked\Core\PostTypes\Source;
 use LexRanked\Core\PostTypes\VerificationRecord;
+use LexRanked\Core\Ranking\RankingQualifier;
 use LexRanked\Core\Repository\ClaimRepository;
 use LexRanked\Core\Security\AuditLog;
 use LexRanked\Core\Services;
@@ -36,6 +37,9 @@ final class AutoPublisher {
 
 	/** Post meta on a draft ranking kept back because its page text cannot be written yet. */
 	public const HELD_META = '_lr_held_for_content';
+
+	/** Verified language facts a language ranking needs (the context default, Ranking min_verified). */
+	public const MIN_VERIFIED_LANGUAGE = 3;
 
 	/** Why a research draft was kept (JSON list of reasons). */
 	public const META_HOLD = '_lr_auto_publish_hold';
@@ -460,7 +464,77 @@ final class AutoPublisher {
 				AuditLog::log( 'research.ranking_created', Ranking::SLUG, $id, array( 'job_id' => $job_id ) );
 			}
 		}//end foreach
+		return array_merge( $created, $this->ensure_language_rankings( $job_id, $pairs, $min ) );
+	}
+
+	/**
+	 * Create a language ranking ("Best Spanish-Speaking Personal Injury Lawyers
+	 * in Miami") under each published lawyer ranking where enough published
+	 * lawyers list the language (AutoPublishPolicy::language_rankings).
+	 *
+	 * @param int                                 $job_id Job ID.
+	 * @param array<string, array<string, mixed>> $pairs  City and practice-area pairs from ensure_rankings.
+	 * @param int                                 $min    Minimum lawyers.
+	 * @return array<int, int> Created ranking IDs.
+	 */
+	private function ensure_language_rankings( int $job_id, array $pairs, int $min ): array {
+		$created = array();
+		foreach ( $pairs as $pair ) {
+			if ( 'lawyer' !== $pair['entity_type'] || ! $this->ranking_exists( 'lawyer', $pair['city']['id'], $pair['area']['id'], true ) ) {
+				continue;
+			}
+			$facts = array();
+			foreach ( $this->published_ids( $pair['post_type'], $pair['city']['id'], $pair['area']['id'] ) as $id ) {
+				$facts[] = $this->services->facts->for_entity( 'lawyer', $id )['languages'] ?? null;
+			}
+			foreach ( array_keys( AutoPublishPolicy::language_rankings( $facts, $min, self::MIN_VERIFIED_LANGUAGE ) ) as $language ) {
+				$existing = $this->language_ranking( $pair['city']['id'], $pair['area']['id'], (string) $language );
+				if ( null !== $existing ) {
+					// Held for missing text: publish it once the text can be written.
+					if ( $existing['_held'] && 'draft' === $existing['_status'] && $this->services->ranking_content->prepare( $existing['_id'] ) && $this->publish_post( $existing['_id'] ) ) {
+						delete_post_meta( $existing['_id'], self::HELD_META );
+						$created[] = $existing['_id'];
+						$this->log->add( $job_id, 'info', 'auto_publish', sprintf( 'Published language ranking #%d with its page text.', $existing['_id'] ) );
+					}
+					continue;
+				}
+				$title = AutoPublishPolicy::language_ranking_title( (string) $language, $pair['area']['name'], $pair['city']['name'], $pair['state']['name'] );
+				$id    = $this->create_ranking(
+					$job_id,
+					$title,
+					'lawyer',
+					$pair['city']['id'],
+					$pair['area']['id'],
+					array(
+						'context_type'  => RankingQualifier::LANGUAGE,
+						'context_value' => (string) $language,
+					)
+				);
+				if ( null !== $id ) {
+					$created[] = $id;
+					$this->log->add( $job_id, 'info', 'auto_publish', sprintf( 'Created language ranking #%d "%s".', $id, $title ) );
+					AuditLog::log( 'research.ranking_created', Ranking::SLUG, $id, array( 'job_id' => $job_id ) );
+				}
+			}//end foreach
+		}//end foreach
 		return $created;
+	}
+
+	/**
+	 * The language ranking for the pair in any status but trash (rankings_in fields), or null.
+	 *
+	 * @param int    $city_id  City term ID.
+	 * @param int    $area_id  Practice-area term ID.
+	 * @param string $language Language slug.
+	 * @return array<string, mixed>|null
+	 */
+	private function language_ranking( int $city_id, int $area_id, string $language ): ?array {
+		foreach ( $this->rankings_in( $city_id, $area_id, false ) as $f ) {
+			if ( RankingQualifier::LANGUAGE === ( $f['context_type'] ?? null ) && ( $f['context_value'] ?? null ) === $language ) {
+				return $f;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -471,7 +545,20 @@ final class AutoPublisher {
 	 * @param int    $area_id   Practice-area term ID.
 	 */
 	private function count_published( string $post_type, int $city_id, int $area_id ): int {
-		return count(
+		return count( $this->published_ids( $post_type, $city_id, $area_id ) );
+	}
+
+	/**
+	 * IDs of the published real (non-demo) entities of a type in a city and practice area.
+	 *
+	 * @param string $post_type Post type.
+	 * @param int    $city_id   City term ID.
+	 * @param int    $area_id   Practice-area term ID.
+	 * @return array<int, int>
+	 */
+	private function published_ids( string $post_type, int $city_id, int $area_id ): array {
+		return array_map(
+			'intval',
 			get_posts(
 				array(
 					'post_type'        => $post_type,
@@ -524,7 +611,8 @@ final class AutoPublisher {
 		);
 		foreach ( $posts as $id ) {
 			$post = get_post( (int) $id );
-			if ( $post instanceof \WP_Post && ( $this->services->entities->record( $post, $this->services->ranking )['fields']['entity_type'] ?? null ) === $entity_type ) {
+			$f    = $post instanceof \WP_Post ? $this->services->entities->record( $post, $this->services->ranking )['fields'] : array();
+			if ( ( $f['entity_type'] ?? null ) === $entity_type && in_array( $f['context_type'] ?? null, array( null, '' ), true ) ) {
 				return (int) $id;
 			}
 		}
@@ -534,24 +622,13 @@ final class AutoPublisher {
 	/**
 	 * Whether a non-contextual ranking for the pair exists in any status but trash.
 	 *
-	 * @param string $entity_type lawyer|law_firm.
-	 * @param int    $city_id     City term ID.
-	 * @param int    $area_id     Practice-area term ID.
+	 * @param string $entity_type    lawyer|law_firm.
+	 * @param int    $city_id        City term ID.
+	 * @param int    $area_id        Practice-area term ID.
+	 * @param bool   $published_only Count published rankings only.
 	 */
-	private function ranking_exists( string $entity_type, int $city_id, int $area_id ): bool {
-		$posts = get_posts(
-			array(
-				'post_type'        => Ranking::SLUG,
-				'post_status'      => array( 'publish', 'draft', 'pending', 'future', 'private' ),
-				'posts_per_page'   => -1,
-				'no_found_rows'    => true,
-				'suppress_filters' => false,
-				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Two exact term IDs.
-				'tax_query'        => self::tax_query( $city_id, $area_id ),
-			)
-		);
-		foreach ( $posts as $post ) {
-			$f = $this->services->entities->record( $post, $this->services->ranking )['fields'];
+	private function ranking_exists( string $entity_type, int $city_id, int $area_id, bool $published_only = false ): bool {
+		foreach ( $this->rankings_in( $city_id, $area_id, $published_only ) as $f ) {
 			if ( ( $f['entity_type'] ?? null ) === $entity_type && in_array( $f['context_type'] ?? null, array( null, '' ), true ) ) {
 				return true;
 			}
@@ -560,16 +637,50 @@ final class AutoPublisher {
 	}
 
 	/**
+	 * Fields of the rankings for a city and practice area (any status but trash),
+	 * with `_id`, `_status` and `_held` added.
+	 *
+	 * @param int  $city_id        City term ID.
+	 * @param int  $area_id        Practice-area term ID.
+	 * @param bool $published_only Published rankings only.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function rankings_in( int $city_id, int $area_id, bool $published_only ): array {
+		$posts = get_posts(
+			array(
+				'post_type'        => Ranking::SLUG,
+				'post_status'      => $published_only ? 'publish' : array( 'publish', 'draft', 'pending', 'future', 'private' ),
+				'posts_per_page'   => -1,
+				'no_found_rows'    => true,
+				'suppress_filters' => false,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Two exact term IDs.
+				'tax_query'        => self::tax_query( $city_id, $area_id ),
+			)
+		);
+		$out = array();
+		foreach ( $posts as $post ) {
+			$out[] = $this->services->entities->record( $post, $this->services->ranking )['fields'] + array(
+				'_id'     => (int) $post->ID,
+				'_status' => (string) $post->post_status,
+				'_held'   => '' !== (string) get_post_meta( $post->ID, self::HELD_META, true ),
+			);
+		}
+		return $out;
+	}
+
+
+	/**
 	 * Create a ranking, calculate it and write its page text; publish it only
 	 * when the text is complete.
 	 *
-	 * @param int    $job_id      Job ID (log).
-	 * @param string $title       Title.
-	 * @param string $entity_type lawyer|law_firm.
-	 * @param int    $city_id     City term ID.
-	 * @param int    $area_id     Practice-area term ID.
+	 * @param int                   $job_id      Job ID (log).
+	 * @param string                $title       Title.
+	 * @param string                $entity_type lawyer|law_firm.
+	 * @param int                   $city_id     City term ID.
+	 * @param int                   $area_id     Practice-area term ID.
+	 * @param array<string, string> $context Context fields (context_type, context_value) for a contextual ranking.
 	 */
-	private function create_ranking( int $job_id, string $title, string $entity_type, int $city_id, int $area_id ): ?int {
+	private function create_ranking( int $job_id, string $title, string $entity_type, int $city_id, int $area_id, array $context = array() ): ?int {
 		$id = wp_insert_post(
 			array(
 				'post_type'   => Ranking::SLUG,
@@ -581,7 +692,7 @@ final class AutoPublisher {
 		if ( is_wp_error( $id ) ) {
 			return null;
 		}
-		$this->services->entities->save_fields( (int) $id, $this->services->ranking, array( 'entity_type' => $entity_type ) );
+		$this->services->entities->save_fields( (int) $id, $this->services->ranking, array( 'entity_type' => $entity_type ) + $context );
 		wp_set_object_terms( (int) $id, array( $city_id ), Location::SLUG );
 		wp_set_object_terms( (int) $id, array( $area_id ), PracticeArea::SLUG );
 		// Complete page text first: without it the ranking stays a draft, never a thin page.

@@ -76,11 +76,16 @@ final class RankingContentService {
 		if ( ! $post instanceof \WP_Post || Ranking::SLUG !== $post->post_type ) {
 			return null;
 		}
-		$record   = $this->services->entities->record( $post, $this->services->ranking );
-		$location = LocationMapper::from_terms( $record['locations'] );
-		$practice = RankingQualifier::primary_practice( $record['practice_areas'], null );
-		$fields   = $record['fields'];
-		if ( null === $location || null === $location['citySlug'] || null === $location['stateCode'] || null === $practice || ! in_array( $fields['context_type'] ?? null, array( null, '' ), true ) ) {
+		$record    = $this->services->entities->record( $post, $this->services->ranking );
+		$location  = LocationMapper::from_terms( $record['locations'] );
+		$practice  = RankingQualifier::primary_practice( $record['practice_areas'], null );
+		$fields    = $record['fields'];
+		$qualifier = RankingQualifier::for_record( $record );
+		// Ordinary rankings and language rankings; case and client types are written by editors.
+		if ( null === $location || null === $location['citySlug'] || null === $location['stateCode'] || null === $practice || ( null !== $qualifier && RankingQualifier::LANGUAGE !== $qualifier->type ) ) {
+			return null;
+		}
+		if ( null === $qualifier && ! in_array( $fields['context_type'] ?? null, array( null, '' ), true ) ) {
 			return null;
 		}
 		$pack = $this->pack( (string) $location['stateCode'] );
@@ -101,7 +106,10 @@ final class RankingContentService {
 				'city_slug'   => (string) $location['citySlug'],
 				'city_name'   => (string) $location['city'],
 				'entity_type' => $type,
-			),
+			) + ( null === $qualifier ? array() : array(
+				'language'    => ucwords( str_replace( '-', ' ', $qualifier->value ) ),
+				'parent_path' => sprintf( '/rankings/%s/%s/%s/', $location['stateSlug'], $location['citySlug'], $practice['slug'] ),
+			) ),
 			$people,
 			gmdate( 'F Y' ),
 			gmdate( 'Y-m-d' )

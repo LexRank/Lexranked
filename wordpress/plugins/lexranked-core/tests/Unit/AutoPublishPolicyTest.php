@@ -197,4 +197,37 @@ final class AutoPublishPolicyTest extends TestCase {
 		$this->assertTrue( Settings::sanitize( array( 'research_autonomy' => '1' ) )['research_autonomy'] );
 		$this->assertFalse( Settings::sanitize( array( 'research_autonomy' => '0' ) )['research_autonomy'] );
 	}
+
+	public function testLanguageRankingsNeedEnoughLawyersAndVerifiedFacts(): void {
+		$fact  = static fn( string $status, array $value ): array => array(
+			'status' => $status,
+			'value'  => $value,
+		);
+		$facts = array(
+			$fact( 'verified', array( 'Spanish', 'French' ) ),
+			$fact( 'verified', array( 'Spanish', 'Spanish' ) ),
+			$fact( 'verified', array( 'Spanish', 'English' ) ),
+			$fact( 'unverified', array( 'Spanish' ) ),
+			$fact( 'unverified', array( 'Spanish', 'French' ) ),
+			$fact( 'conflict', array( 'Spanish' ) ),
+			$fact( 'verified', array( 'English' ) ),
+			null,
+		);
+		// Spanish: 5 qualifying (the conflict does not count), 3 verified. French: 2. English never.
+		$this->assertSame( array( 'spanish' => 5 ), AutoPublishPolicy::language_rankings( $facts, 5, 3 ) );
+		$this->assertSame( array(), AutoPublishPolicy::language_rankings( $facts, 6, 3 ), 'too few lawyers' );
+		$this->assertSame( array(), AutoPublishPolicy::language_rankings( $facts, 5, 4 ), 'too few verified facts' );
+		$this->assertSame(
+			array(
+				'spanish' => 5,
+				'french'  => 2,
+			),
+			AutoPublishPolicy::language_rankings( $facts, 2, 1 )
+		);
+	}
+
+	public function testLanguageRankingTitle(): void {
+		$this->assertSame( 'Best Spanish-Speaking Personal Injury Lawyers in Miami, Florida', AutoPublishPolicy::language_ranking_title( 'spanish', 'Personal Injury', 'Miami', 'Florida' ) );
+		$this->assertSame( 'Best Haitian Creole-Speaking Family Lawyers in Miami, Florida', AutoPublishPolicy::language_ranking_title( 'haitian-creole', 'Family', 'Miami', 'Florida' ) );
+	}
 }
