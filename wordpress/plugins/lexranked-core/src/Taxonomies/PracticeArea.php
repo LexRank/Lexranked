@@ -17,7 +17,7 @@ final class PracticeArea {
 	public const SLUG = 'lr_practice_area';
 
 	public const CATALOG_OPTION  = 'lexranked_practice_catalog';
-	public const CATALOG_VERSION = '1';
+	public const CATALOG_VERSION = '2';
 
 	/**
 	 * The practice areas LexRanked ranks, by slug. Research can only assign
@@ -42,6 +42,9 @@ final class PracticeArea {
 		'wrongful-death'       => 'Wrongful Death',
 		'tax-law'              => 'Tax',
 		'elder-law'            => 'Elder Law',
+		'appellate'            => 'Appellate',
+		'condominium-hoa'      => 'Condo and HOA',
+		'construction-law'     => 'Construction',
 	);
 
 	/**

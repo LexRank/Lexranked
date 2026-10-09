@@ -131,6 +131,35 @@ final class RankingContentTest extends TestCase {
 		$this->assertStringContainsString( 'Thirteenth Judicial Circuit', $c['body'] );
 	}
 
+	public function testNewCertificationAreasUseTheirOwnRulesAndCertification(): void {
+		$cases = array(
+			array( 'appellate', 'Appellate', 'Board Certified in Appellate Practice', 'Rule 9.110' ),
+			array( 'condominium-hoa', 'Condo and HOA', 'Board Certified in Condominium and Planned Development Law', 'section 718.1255' ),
+			array( 'construction-law', 'Construction', 'Board Certified in Construction Law', 'section 713.08' ),
+		);
+		foreach ( $cases as $case ) {
+			$c = self::build(
+				array(
+					'area_slug' => $case[0],
+					'area_name' => $case[1],
+					'city_slug' => 'miami',
+					'city_name' => 'Miami',
+				),
+				array(
+					array(
+						'years'  => 20,
+						'awards' => array( $case[2] ),
+					),
+				)
+			);
+			$this->assertNotNull( $c, $case[0] );
+			$this->assertStringContainsString( 'The lawyer in this ranking is ' . $case[2], $c['body'], $case[0] );
+			$this->assertStringContainsString( $case[3], $c['body'], $case[0] );
+		}
+		$this->assertSame( 'condo and HOA', RankingContentBuilder::in_sentence( 'Condo and HOA' ) );
+		$this->assertSame( "workers' compensation", RankingContentBuilder::in_sentence( "Workers' Compensation" ) );
+	}
+
 	public function testNoCompleteTextMeansNoContent(): void {
 		$this->assertNull( self::build( array( 'city_slug' => 'key-west' ) ), 'no city knowledge' );
 		$this->assertNull( self::build( array( 'area_slug' => 'bankruptcy' ) ), 'no practice-area knowledge' );

@@ -45,7 +45,7 @@ final class RankingContentBuilder {
 		$n         = count( $people );
 		$state     = (string) $pack['name'];
 		$city_name = $context['city_name'];
-		$noun      = strtolower( $context['area_name'] );
+		$noun      = self::in_sentence( (string) $context['area_name'] );
 		$cert      = (string) $area['certName'];
 		$stats     = self::stats( $people, (string) $area['cert'] );
 		$share     = (string) $pack['certification']['share'];
@@ -231,7 +231,7 @@ final class RankingContentBuilder {
 		$n       = count( $people );
 		$tracked = max( $n, (int) ( $context['tracked'] ?? $n ) );
 		$state   = (string) $pack['name'];
-		$noun    = strtolower( (string) $context['area_name'] );
+		$noun    = self::in_sentence( (string) $context['area_name'] );
 		$cert    = (string) $area['certName'];
 		$stats   = self::stats( $people, (string) $area['cert'] );
 		$share   = (string) $pack['certification']['share'];
@@ -432,6 +432,20 @@ final class RankingContentBuilder {
 			return 2 === $n ? 'Both lawyers in this ranking' : sprintf( 'All %d lawyers in this ranking', $n );
 		}
 		return $leading ? sprintf( '%d of the %d', $part, $n ) : sprintf( '%d of the %d lawyers in this ranking', $part, $n );
+	}
+
+	/**
+	 * Area name as a noun inside a sentence: lowercase, except acronyms
+	 * ("Condo and HOA" becomes "condo and HOA", "DUI" stays "DUI").
+	 *
+	 * @param string $name Area name.
+	 */
+	public static function in_sentence( string $name ): string {
+		return (string) preg_replace_callback(
+			'/[A-Za-z\']+/',
+			static fn( array $m ): string => preg_match( '/^[A-Z]{2,}$/', $m[0] ) ? $m[0] : strtolower( $m[0] ),
+			$name
+		);
 	}
 
 	/**

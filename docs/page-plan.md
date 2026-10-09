@@ -98,9 +98,9 @@ researchu), C = kontekst w obszarze nadrzędnym.
 | 9 | `workers-compensation` | Workers' Compensation | Workers' Compensation | A | P1 | na żywo |
 | 10 | `tax-law` | Tax | Tax Law | A | P2 | na żywo |
 | 11 | `elder-law` | Elder Law | Elder Law | A | P2 | na żywo |
-| 12 | `appellate` | Appellate | Appellate Practice | A | P1 | nowy obszar |
-| 13 | `condominium-hoa` | Condominium & HOA | Condominium & Planned Development | A | P1 | nowy; bardzo floryjski temat (spory ze wspólnotami, inspekcje budynków) |
-| 14 | `construction-law` | Construction | Construction Law | A | P2 | nowy |
+| 12 | `appellate` | Appellate | Appellate Practice | A | P1 | w wtyczce 0.28.0 (katalog + pakiet wiedzy); research: 10 miast z ≥5 prawnikami z certyfikatem |
+| 13 | `condominium-hoa` | Condo and HOA | Condominium & Planned Development | A | P1 | w wtyczce 0.28.0; research: 11 miast z ≥5 prawnikami (Boca Raton 21, Fort Lauderdale 17) |
+| 14 | `construction-law` | Construction | Construction Law | A | P1 | w wtyczce 0.28.0; research: 12 miast z ≥5 prawnikami |
 | 15 | `adoption` | Adoption | Adoption Law | A | P2 | nowy |
 | 16 | `juvenile-law` | Juvenile | Juvenile Law | A | P2 | nowy |
 | 17 | `criminal-appeals` | Criminal Appeals | Criminal Appellate Law | A | P2 | nowy |

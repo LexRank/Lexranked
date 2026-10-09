@@ -3,7 +3,7 @@ import { hubEligibility, listingEligibility, profileEligibility, rankingEligibil
 import { finderOptions, rankingScopeLabel, resolveRanking } from "@/lib/content/rankings";
 import { buildSitemap, STATIC_PATHS } from "@/lib/content/sitemap";
 import type { StateStatsDto } from "@/types/api";
-import { formatDate, formatLocation, formatRating, formatScore, humanize, initials, pluralize } from "@/lib/format";
+import { formatDate, formatLocation, formatRating, formatScore, humanize, inSentence, initials, pluralize } from "@/lib/format";
 import { firmSummary, lawyerSummary, rankingSummary } from "./fixtures/api";
 
 describe("eligibility", () => {
@@ -139,6 +139,12 @@ describe("sitemap", () => {
 });
 
 describe("format", () => {
+  it("lowercases names inside a sentence but keeps acronyms", () => {
+    expect(inSentence("Condo and HOA")).toBe("condo and HOA");
+    expect(inSentence("DUI")).toBe("DUI");
+    expect(inSentence("Workers' Compensation")).toBe("workers' compensation");
+  });
+
   it("formats values for US readers and hides unknowns", () => {
     expect(formatDate("2026-09-23T19:14:23Z")).toBe("September 23, 2026");
     expect(formatDate(null)).toBeNull();

@@ -8,6 +8,7 @@ import { hubEligibility } from "@/lib/content/eligibility";
 import { allRankings } from "@/lib/data/loaders";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getLawFirms, getLawyers, getPracticeAreas, getPlacements, getMarket } from "@/lib/wordpress/api";
+import { inSentence } from "@/lib/format";
 
 export const revalidate = 300;
 
@@ -66,7 +67,7 @@ export default async function PracticeAreaPage(props: PageProps<"/practice-areas
       path={a.path}
       eyebrow="Practice area"
       about={[practiceAreaJsonLd({ name: a.name, slug: a.slug })]}
-      title={`Top-rated ${a.name.toLowerCase()} lawyers`}
+      title={`Top-rated ${inSentence(a.name)} lawyers`}
       lead={a.description || `${a.name} lawyers and law firms, ranked by location with the LexRank methodology.`}
       counts={a}
       featured={data.featured}
@@ -75,7 +76,7 @@ export default async function PracticeAreaPage(props: PageProps<"/practice-areas
       rankings={data.rankings}
       lawyers={data.lawyers}
       firms={data.firms}
-      lawyersHeading={`Highest-scoring ${a.name.toLowerCase()} lawyers`}
+      lawyersHeading={`Highest-scoring ${inSentence(a.name)} lawyers`}
       firmsHeading={`${a.name} law firms`}
     />
   );

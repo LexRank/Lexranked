@@ -11,7 +11,7 @@ import { DemoNotice } from "@/components/ui";
 import { addHeadingIds, categoryCounts, guideImage, rankingsForArticle, relatedArticles, wrapTables } from "@/lib/content/articles";
 import { articleEligibility } from "@/lib/content/eligibility";
 import { allArticles, allRankings, load } from "@/lib/data/loaders";
-import { formatDate, isoDate } from "@/lib/format";
+import { formatDate, isoDate, inSentence } from "@/lib/format";
 import { articleJsonLd } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { absoluteUrl } from "@/lib/seo/urls";
@@ -132,7 +132,7 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
           {rankings.length > 0 && (
             <section aria-labelledby="find-lawyer-heading" className="card cta-band">
               <h2 id="find-lawyer-heading" style={{ fontSize: "1.35rem", marginTop: 0 }}>
-                {rankings[0]?.practiceArea ? `Find a ${rankings[0].practiceArea.name.toLowerCase()} lawyer` : "Find a lawyer"}
+                {rankings[0]?.practiceArea ? `Find a ${inSentence(rankings[0].practiceArea.name)} lawyer` : "Find a lawyer"}
               </h2>
               <p className="muted" style={{ marginTop: 0 }}>
                 Rankings built from verified license records and cited sources. Payment never changes a position.
