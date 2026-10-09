@@ -86,7 +86,7 @@ export default async function LanguagesPage() {
         </ul>
       ),
     },
-    figuresSection(stats, `A lawyer counts once for each language listed on their Florida Bar record; English is left out because every Florida lawyer practises in it.`),
+    figuresSection(stats, `A lawyer counts once for each language listed on their Florida Bar record; English is left out because every Florida lawyer practices in it.`),
   ];
 
   return (

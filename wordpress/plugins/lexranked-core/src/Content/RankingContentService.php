@@ -14,6 +14,9 @@ use LexRanked\Core\PostTypes\Ranking;
 use LexRanked\Core\Ranking\RankingQualifier;
 use LexRanked\Core\REST\DTO\LocationMapper;
 use LexRanked\Core\Services;
+use LexRanked\Core\REST\DTO\RankingMapper;
+use LexRanked\Core\Taxonomies\Location;
+use LexRanked\Core\Taxonomies\PracticeArea;
 
 /**
  * Builds and stores ranking text from the ranked lawyers' facts and the
@@ -82,7 +85,8 @@ final class RankingContentService {
 		$fields    = $record['fields'];
 		$qualifier = RankingQualifier::for_record( $record );
 		// Ordinary rankings and language rankings; case and client types are written by editors.
-		if ( null === $location || null === $location['citySlug'] || null === $location['stateCode'] || null === $practice || ( null !== $qualifier && RankingQualifier::LANGUAGE !== $qualifier->type ) ) {
+		$statewide = null !== $location && null === $location['citySlug'];
+		if ( null === $location || null === $location['stateCode'] || null === $practice || ( null !== $qualifier && ( $statewide || RankingQualifier::LANGUAGE !== $qualifier->type ) ) ) {
 			return null;
 		}
 		if ( null === $qualifier && ! in_array( $fields['context_type'] ?? null, array( null, '' ), true ) ) {
@@ -93,10 +97,30 @@ final class RankingContentService {
 		if ( null === $pack || array() === $runs ) {
 			return null;
 		}
-		$type   = 'law_firm' === ( $fields['entity_type'] ?? null ) ? 'law_firm' : 'lawyer';
+		$type = 'law_firm' === ( $fields['entity_type'] ?? null ) ? 'law_firm' : 'lawyer';
+		$rows = $this->services->snapshots->run_rows( $runs[0] );
+		// The text describes the entries the page shows, not every lawyer scored.
+		$shown  = array_slice( $rows, 0, max( 1, (int) ( $fields['max_entities'] ?? RankingMapper::DEFAULT_MAX ) ) );
 		$people = array();
-		foreach ( $this->services->snapshots->run_rows( $runs[0] ) as $row ) {
-			$people[] = self::person( $this->services->facts->for_entity( $type, (int) $row['entity_id'] ) );
+		foreach ( $shown as $row ) {
+			$people[] = self::person( $this->services->facts->for_entity( $type, (int) $row['entity_id'] ) ) + ( $statewide ? array( 'city' => $this->city_name( (int) $row['entity_id'] ) ) : array() );
+		}
+		if ( $statewide ) {
+			return RankingContentBuilder::build(
+				$pack,
+				array(
+					'area_slug'     => (string) $practice['slug'],
+					'area_name'     => (string) $practice['name'],
+					'city_slug'     => '',
+					'city_name'     => '',
+					'entity_type'   => $type,
+					'tracked'       => count( $rows ),
+					'city_rankings' => $this->city_rankings( (int) $practice['id'], (string) $location['stateSlug'] ),
+				),
+				$people,
+				gmdate( 'F Y' ),
+				gmdate( 'Y-m-d' )
+			);
 		}
 		return RankingContentBuilder::build(
 			$pack,
@@ -114,6 +138,64 @@ final class RankingContentService {
 			gmdate( 'F Y' ),
 			gmdate( 'Y-m-d' )
 		);
+	}
+
+	/**
+	 * City name of an entity (its location term with a parent), or ''.
+	 *
+	 * @param int $entity_id Entity post ID.
+	 */
+	private function city_name( int $entity_id ): string {
+		foreach ( (array) get_the_terms( $entity_id, Location::SLUG ) as $term ) {
+			if ( $term instanceof \WP_Term && 0 !== (int) $term->parent ) {
+				return $term->name;
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * Published city rankings (no context) for a practice area in a state, as [path, city name].
+	 *
+	 * @param int    $area_id    Practice-area term ID.
+	 * @param string $state_slug State slug.
+	 * @return array<int, array{0: string, 1: string}>
+	 */
+	private function city_rankings( int $area_id, string $state_slug ): array {
+		$out = array();
+		foreach (
+			get_posts(
+				array(
+					'post_type'        => Ranking::SLUG,
+					'post_status'      => 'publish',
+					'posts_per_page'   => 200,
+					'no_found_rows'    => true,
+					'suppress_filters' => false,
+					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- One term ID.
+					'tax_query'        => array(
+						array(
+							'taxonomy'         => PracticeArea::SLUG,
+							'field'            => 'term_id',
+							'terms'            => array( $area_id ),
+							'include_children' => false,
+						),
+					),
+				)
+			) as $post
+		) {
+			$record   = $this->services->entities->record( $post, $this->services->ranking );
+			$location = LocationMapper::from_terms( $record['locations'] );
+			if ( null === $location || null === $location['citySlug'] || $state_slug !== $location['stateSlug'] || null !== RankingQualifier::for_record( $record ) ) {
+				continue;
+			}
+			$path = RankingMapper::record_path( $record );
+			if ( null !== $path ) {
+				$out[ $path ] = array( $path, (string) $location['city'] );
+			}
+		}
+		$out = array_values( $out );
+		usort( $out, static fn( array $a, array $b ): int => strcmp( $a[1], $b[1] ) );
+		return $out;
 	}
 
 	/**

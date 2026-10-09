@@ -205,4 +205,38 @@ final class RankingContentTest extends TestCase {
 		// An ordinary ranking keeps its own text.
 		$this->assertStringNotContainsString( 'Working with a', self::build()['body'] );
 	}
+
+	public function testStatewideRankingDescribesTheShownLawyersAcrossCities(): void {
+		$people            = self::people();
+		$people[0]['city'] = 'Miami';
+		$people[1]['city'] = 'Miami';
+		$people[2]['city'] = 'Tampa';
+		$c                 = self::build(
+			array(
+				'city_slug'     => '',
+				'city_name'     => '',
+				'tracked'       => 152,
+				'city_rankings' => array( array( '/rankings/florida/miami/personal-injury/', 'Miami' ), array( 'javascript:x', 'Bad' ) ),
+			),
+			$people
+		);
+		$this->assertNotNull( $c );
+		$this->assertStringContainsString( 'lists the top 3 of the 152 personal injury lawyers LexRanked tracks across Florida', $c['summary'] );
+		$this->assertStringContainsString( 'They practice in 2 cities, led by Miami.', $c['summary'] );
+		$this->assertStringContainsString( '<td>Miami</td><td>2</td>', str_replace( "\n", '', $c['body'] ) );
+		$this->assertStringContainsString( 'href="/rankings/florida/miami/personal-injury/"', $c['body'] );
+		$this->assertStringNotContainsString( 'javascript:', $c['body'] );
+		$this->assertStringContainsString( 'href="/data/florida-judicial-circuits/"', $c['body'] );
+		$this->assertStringNotContainsString( 'Judicial Circuit</td>', $c['body'], 'no single court for the whole state' );
+		$this->assertContains( 'Where are the best personal injury lawyers in Florida?', array_column( $c['faq'], 'question' ) );
+		$this->assertNull(
+			self::build(
+				array(
+					'city_slug' => '',
+					'area_slug' => 'bankruptcy',
+				)
+			),
+			'no practice-area knowledge'
+		);
+	}
 }

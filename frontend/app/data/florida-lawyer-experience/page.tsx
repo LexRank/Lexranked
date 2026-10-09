@@ -14,7 +14,7 @@ export const revalidate = 3600;
 const PAGE = dataPage("florida-lawyer-experience");
 const PATH = dataPath(PAGE.slug);
 const DESCRIPTION =
-  "How many years Florida's board-certified lawyers have practised: median and range by practice area and city, and how many have practised 30 years or more.";
+  "How many years Florida's board-certified lawyers have practiced: median and range by practice area and city, and how many have practiced 30 years or more.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const stats = await floridaStats();
@@ -59,7 +59,7 @@ export default async function ExperiencePage() {
     {
       id: "short-version",
       heading: "How experienced are Florida's board-certified lawyers?",
-      answer: `The median lawyer LexRanked tracks has practised ${years(e.median)} years; ${over30} of ${e.sample} (${percent(over30, e.sample)}) have practised 30 years or more.`,
+      answer: `The median lawyer LexRanked tracks has practiced ${years(e.median)} years; ${over30} of ${e.sample} (${percent(over30, e.sample)}) have practiced 30 years or more.`,
       children: (
         <ul>
           <li>
@@ -81,7 +81,7 @@ export default async function ExperiencePage() {
     {
       id: "distribution",
       heading: "How many lawyers fall into each band of experience?",
-      answer: "Most of the lawyers we track have practised for decades; the table counts them by band.",
+      answer: "Most of the lawyers we track have practiced for decades; the table counts them by band.",
       children: (
         <table>
           <thead>

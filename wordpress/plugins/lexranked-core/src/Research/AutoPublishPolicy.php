@@ -171,6 +171,53 @@ final class AutoPublishPolicy {
 	}
 
 	/**
+	 * Decide whether to create a statewide ranking for a practice area: it
+	 * needs at least twice the city minimum of published lawyers, spread over
+	 * at least 2 cities (one city alone would repeat that city's ranking).
+	 *
+	 * @param int  $published_entities Published lawyers in the state and practice area.
+	 * @param int  $cities             Cities they practice in.
+	 * @param int  $min_entities       Minimum entities for a city ranking (Settings).
+	 * @param bool $ranking_exists     A statewide ranking already exists (any status but trash).
+	 * @return array{create: bool, reason: string}
+	 */
+	public static function decide_state_ranking( int $published_entities, int $cities, int $min_entities, bool $ranking_exists ): array {
+		$min = 2 * max( 1, $min_entities );
+		if ( $ranking_exists ) {
+			return array(
+				'create' => false,
+				'reason' => 'a statewide ranking already exists',
+			);
+		}
+		if ( $published_entities < $min ) {
+			return array(
+				'create' => false,
+				'reason' => sprintf( '%d published profiles statewide (needs %d)', $published_entities, $min ),
+			);
+		}
+		if ( $cities < 2 ) {
+			return array(
+				'create' => false,
+				'reason' => 'all published profiles are in one city',
+			);
+		}
+		return array(
+			'create' => true,
+			'reason' => sprintf( '%d published profiles in %d cities', $published_entities, $cities ),
+		);
+	}
+
+	/**
+	 * Title of a statewide ranking: "Best Personal Injury Lawyers in Florida".
+	 *
+	 * @param string $practice_area Practice-area name.
+	 * @param string $state         State.
+	 */
+	public static function state_ranking_title( string $practice_area, string $state ): string {
+		return sprintf( 'Best %s Lawyers in %s', trim( $practice_area ), trim( $state ) );
+	}
+
+	/**
 	 * Languages that earn their own ranking in a city and practice area: at
 	 * least $min lawyers list the language on a qualifying fact, and at least
 	 * $min_verified of those facts are confirmed (RankingQualifier::confirms:

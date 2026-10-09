@@ -173,7 +173,7 @@ Rankings carry `context`: `null` for an ordinary ranking, otherwise:
 
 The `path` includes the segment, e.g. `/rankings/florida/miami/personal-injury/car-accidents/`. A context below its threshold has `isThin: true` and no entries.
 
-`eligibility.verified` counts entities whose context is confirmed by a verified fact or by a fact whose best source is an official (tier 1) record such as the state bar profile (plugin 0.27.0). Research creates language rankings automatically under published rankings (`context.type = language`) when at least `min_ranking_entities` published lawyers list the language and at least `min(3, min_ranking_entities)` of them are confirmed.
+`eligibility.verified` counts entities whose context is confirmed by a verified fact or by a fact whose best source is an official (tier 1) record such as the state bar profile (plugin 0.27.0). Research also creates statewide rankings (location = the state, path `/rankings/{state}/{area}/`) when at least 2 × `min_ranking_entities` published lawyers in at least 2 cities have the practice area (plugin 0.28.0); generated text describes the entries shown (top `max_entities`, default 25). Research creates language rankings automatically under published rankings (`context.type = language`) when at least `min_ranking_entities` published lawyers list the language and at least `min(3, min_ranking_entities)` of them are confirmed.
 
 Entries carry:
 - `keyFacts{yearsExperience, barStatus, practiceAreas[], awards}`: the scored inputs;

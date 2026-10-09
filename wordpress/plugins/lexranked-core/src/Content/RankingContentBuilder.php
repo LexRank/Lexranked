@@ -34,6 +34,9 @@ final class RankingContentBuilder {
 	 * @return array{summary: string, body: string, faq: array<int, array{question: string, answer: string}>, reviewed_by: string, reviewed_at: string}|null
 	 */
 	public static function build( array $pack, array $context, array $people, string $checked, string $today ): ?array {
+		if ( '' === ( $context['city_slug'] ?? '' ) ) {
+			return self::state( $pack, $context, $people, $checked, $today );
+		}
 		$area = $pack['areas'][ $context['area_slug'] ] ?? null;
 		$city = $pack['cities'][ $context['city_slug'] ] ?? null;
 		if ( 'lawyer' !== $context['entity_type'] || ! is_array( $area ) || ! is_array( $city ) || array() === $people ) {
@@ -192,6 +195,163 @@ final class RankingContentBuilder {
 				'answer'   => sprintf( 'Yes. %d of the %d ranked lawyers %s Spanish on their %s profile. Each LexRanked profile shows the languages on record.', $spanish, $n, 1 === $spanish ? 'lists' : 'list', $short ),
 			);
 		}
+		$faq[] = array(
+			'question' => 'How is this ranking ordered?',
+			'answer'   => 'By the LexRank score, calculated from facts with a cited source: experience, credentials, practice relevance, location and data quality. Client reviews are shown on profiles but not scored, and payment never changes a position.',
+		);
+
+		return array(
+			'summary'     => $summary,
+			'body'        => implode( "\n", $body ),
+			'faq'         => $faq,
+			'reviewed_by' => self::REVIEWED_BY,
+			'reviewed_at' => $today,
+		);
+	}
+
+	/**
+	 * Statewide ranking ("Best Personal Injury Lawyers in Florida"): the top
+	 * lawyers across every city we track, with where they practice and links
+	 * to each city's ranking. Context keys: area_slug, area_name, entity_type,
+	 * tracked (lawyers scored statewide), city_rankings ([path, city name]).
+	 * People carry `city`.
+	 *
+	 * @param array<string, mixed>             $pack    State knowledge pack.
+	 * @param array<string, mixed>             $context Ranking context.
+	 * @param array<int, array<string, mixed>> $people  Ranked lawyers, in order.
+	 * @param string                           $checked Month the data was checked.
+	 * @param string                           $today   Review date (Y-m-d).
+	 * @return array{summary: string, body: string, faq: array<int, array{question: string, answer: string}>, reviewed_by: string, reviewed_at: string}|null
+	 */
+	private static function state( array $pack, array $context, array $people, string $checked, string $today ): ?array {
+		$area = $pack['areas'][ $context['area_slug'] ] ?? null;
+		if ( 'lawyer' !== $context['entity_type'] || ! is_array( $area ) || array() === $people ) {
+			return null;
+		}
+		$n       = count( $people );
+		$tracked = max( $n, (int) ( $context['tracked'] ?? $n ) );
+		$state   = (string) $pack['name'];
+		$noun    = strtolower( (string) $context['area_name'] );
+		$cert    = (string) $area['certName'];
+		$stats   = self::stats( $people, (string) $area['cert'] );
+		$share   = (string) $pack['certification']['share'];
+		$bar     = (string) $pack['bar']['name'];
+		$short   = (string) ( $pack['bar']['short'] ?? $bar );
+		$e       = static fn( string $s ): string => htmlspecialchars( $s, ENT_COMPAT | ENT_SUBSTITUTE, 'UTF-8' );
+
+		$cities = array();
+		foreach ( $people as $p ) {
+			$city = (string) ( $p['city'] ?? '' );
+			if ( '' !== $city ) {
+				$cities[ $city ] = ( $cities[ $city ] ?? 0 ) + 1;
+			}
+		}
+		uksort( $cities, static fn( string $a, string $b ): int => array( $cities[ $b ], $a ) <=> array( $cities[ $a ], $b ) );
+
+		$summary = sprintf( 'This ranking lists the top %d of the %d %s lawyers LexRanked tracks across %s, in order of their LexRank score, calculated from their %s records and other cited sources.', $n, $tracked, $noun, $state, $short );
+		if ( $stats['cert'] > 0 ) {
+			$summary .= sprintf( ' %s %s, a credential held by %s of %s lawyers in any field.', self::all_or_some( $stats['cert'], $n, true ), self::verb( $stats['cert'] ) . ' ' . $cert . ' by ' . $bar, $share, $state );
+		}
+		if ( array() !== $cities ) {
+			$summary .= sprintf( ' They practice in %d %s, led by %s.', count( $cities ), 1 === count( $cities ) ? 'city' : 'cities', (string) array_key_first( $cities ) );
+		}
+
+		$rows = array();
+		if ( $stats['cert'] > 0 ) {
+			$rows[] = array( $cert, sprintf( '%d of %d', $stats['cert'], $n ) );
+		}
+		if ( null !== $stats['ymin'] ) {
+			$rows[] = array( 'Years in practice', sprintf( '%d to %d (median %s)', $stats['ymin'], $stats['ymax'], self::number( (float) $stats['ymed'] ) ) );
+		}
+		if ( array() !== $stats['languages'] ) {
+			$langs = array();
+			foreach ( array_slice( $stats['languages'], 0, 4, true ) as $lang => $count ) {
+				$langs[] = sprintf( '%s (%d)', $lang, $count );
+			}
+			$rows[] = array( 'Languages besides English', implode( ', ', $langs ) );
+		}
+		$rows[] = array( 'License status with ' . $bar, 'Eligible to practice, verified for every lawyer' );
+
+		$body   = array();
+		$body[] = '<h2>' . $e( sprintf( 'What sets these %s %s lawyers apart', $state, $noun ) ) . '</h2>';
+		$lead   = $stats['cert'] > 0
+			? sprintf( '%s %s, which only about one in twenty %s lawyers achieves in any field.', self::all_or_some( $stats['cert'], $n, false ), self::verb( $stats['cert'] ) . ' ' . $cert . ' by ' . $bar, $state )
+			: sprintf( 'Every lawyer in this ranking has a %s license verified as eligible to practice, and every fact shown links to its source.', $bar );
+		$body[] = '<p><strong>' . $e( $lead ) . '</strong> The figures come from each lawyer\'s ' . $e( $short ) . ' profile, checked in ' . $e( $checked ) . '.</p>';
+		$body[] = self::table( array( 'Fact about the ' . $n . ' ranked lawyers', 'Figure' ), $rows, $e );
+
+		if ( array() !== $cities ) {
+			$body[]    = '<h2>' . $e( sprintf( 'Where do %s\'s top %s lawyers practice?', $state, $noun ) ) . '</h2>';
+			$body[]    = '<p><strong>' . $e( sprintf( '%d of the %d practice in %s; the table shows every city.', reset( $cities ), $n, (string) array_key_first( $cities ) ) ) . '</strong></p>';
+			$city_rows = array();
+			foreach ( $cities as $city => $count ) {
+				$city_rows[] = array( (string) $city, (string) $count );
+			}
+			$body[] = self::table( array( 'City', 'Lawyers in this ranking' ), $city_rows, $e );
+		}
+
+		$body[] = '<h2>About this ranking</h2>';
+		$body[] = '<p><strong>' . $e( sprintf( 'It ranks every %s lawyer LexRanked tracks in %s by the same score and shows the top %d.', $noun, $state, $n ) ) . '</strong></p>';
+		$body[] = '<ul>';
+		$body[] = '<li><strong>Who is included:</strong> ' . $e( sprintf( 'lawyers eligible to practice in %s, with an office in a %s city we cover and %s as a practice area on record.', $state, $state, $noun ) ) . '</li>';
+		$body[] = '<li><strong>Data checked:</strong> ' . $e( $checked ) . ', against each lawyer\'s ' . $e( $short ) . ' profile.</li>';
+		$body[] = '<li><strong>Order:</strong> the LexRank score (experience, credentials, practice relevance, location and data quality); payment never changes a position. See <a href="/methodology/">how we rank</a>.</li>';
+		$body[] = '</ul>';
+
+		$city_links = array_values( array_filter( (array) ( $context['city_rankings'] ?? array() ), static fn( $c ): bool => is_array( $c ) && str_starts_with( (string) ( $c[0] ?? '' ), '/' ) ) );
+		if ( array() !== $city_links ) {
+			$body[] = '<h2>' . $e( sprintf( 'Find a %s lawyer in your city', $noun ) ) . '</h2>';
+			$body[] = '<p><strong>' . $e( sprintf( 'A lawyer near you knows the local courts; each city has its own ranking of %s lawyers.', $noun ) ) . '</strong></p>';
+			$body[] = '<ul>' . implode( '', array_map( static fn( array $c ): string => '<li><a href="' . $e( (string) $c[0] ) . '">' . $e( sprintf( 'Best %s lawyers in %s', $noun, (string) $c[1] ) ) . '</a></li>', $city_links ) ) . '</ul>';
+		}
+
+		$body[] = '<h2>' . $e( $state ) . ' rules to know</h2>';
+		$body[] = '<p><strong>' . $e( (string) $area['lead'] ) . '</strong></p>';
+		$body[] = self::table( array( 'Rule', 'What it means' ), (array) $area['rows'], $e );
+		$body[] = '<p>Cases are heard in the county where they arise; see <a href="/data/florida-judicial-circuits/">which judicial circuit covers each county</a>.</p>';
+
+		$body[] = '<h2>How to choose among these lawyers</h2>';
+		$body[] = '<p><strong>Confirm the license, prefer a lawyer who regularly works in your county, ask who will handle your matter, and get the fee terms in writing.</strong></p>';
+		$body[] = '<ol>';
+		$body[] = '<li>' . $e( sprintf( 'Look up the lawyer in %s\'s directory and check the bar number shown on their LexRanked profile.', $bar ) ) . '</li>';
+		$body[] = '<li>Ask how many matters like yours the lawyer has handled in your county recently.</li>';
+		$body[] = '<li>Ask how they charge and what costs are extra, and get the agreement in writing.</li>';
+		$body[] = '</ol>';
+
+		$guides    = array_merge( (array) ( $area['guides'] ?? array() ), array( array( '/articles/questions-to-ask-a-lawyer/', 'Questions to ask a lawyer before hiring' ), array( '/articles/how-to-check-a-miami-lawyer-florida-bar/', 'How to check a Florida lawyer before you hire them' ) ) );
+		$body[]    = '<h2>Further reading</h2>';
+		$body[]    = '<ul>' . implode( '', array_map( static fn( array $g ): string => '<li><a href="' . $e( (string) $g[0] ) . '">' . $e( (string) $g[1] ) . '</a></li>', $guides ) ) . '</ul>';
+		$sources   = array( array( (string) $pack['bar']['directory'], $bar . ': member directory (license, certification, languages, admission dates)' ) );
+		$sources[] = (array) $pack['certification']['source'];
+		foreach ( (array) $area['src'] as $src ) {
+			$sources[] = (array) $src;
+		}
+		$body[] = '<h2>Sources</h2>';
+		$body[] = '<ul>' . implode( '', array_map( static fn( array $s ): string => '<li><a href="' . $e( (string) $s[0] ) . '">' . $e( (string) $s[1] ) . '</a></li>', $sources ) ) . '</ul>';
+
+		$faq = array();
+		foreach ( (array) $area['faq'] as $item ) {
+			$faq[] = array(
+				'question' => (string) $item[0],
+				'answer'   => (string) $item[1],
+			);
+		}
+		if ( $stats['cert'] > 0 ) {
+			$faq[] = array(
+				'question' => sprintf( 'What does %s mean?', $cert ),
+				'answer'   => sprintf( 'It is a credential from %s for lawyers with substantial experience in the field who have passed peer review and a written exam. %d of the %d lawyers in this ranking hold it; %s of %s lawyers hold a board certification in any field.', $bar, $stats['cert'], $n, $share, $state ),
+			);
+		}
+		if ( array() !== $cities ) {
+			$faq[] = array(
+				'question' => sprintf( 'Where are the best %s lawyers in %s?', $noun, $state ),
+				'answer'   => sprintf( 'Of the %d lawyers in this ranking, %s. Each city also has its own ranking.', $n, implode( ', ', array_map( static fn( string $c, int $k ): string => sprintf( '%d %s in %s', $k, 1 === $k ? 'practices' : 'practice', $c ), array_slice( array_keys( $cities ), 0, 3 ), array_slice( array_values( $cities ), 0, 3 ) ) ) ),
+			);
+		}
+		$faq[] = array(
+			'question' => sprintf( 'Do I need a %s lawyer in my own city?', $noun ),
+			'answer'   => sprintf( 'Any lawyer licensed by %s may practice anywhere in %s, but a lawyer who regularly appears in your county knows its judges and procedures.', $bar, $state ),
+		);
 		$faq[] = array(
 			'question' => 'How is this ranking ordered?',
 			'answer'   => 'By the LexRank score, calculated from facts with a cited source: experience, credentials, practice relevance, location and data quality. Client reviews are shown on profiles but not scored, and payment never changes a position.',

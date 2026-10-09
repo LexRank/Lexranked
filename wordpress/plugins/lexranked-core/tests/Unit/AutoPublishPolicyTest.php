@@ -260,4 +260,12 @@ final class AutoPublishPolicyTest extends TestCase {
 		$this->assertSame( 'Best Spanish-Speaking Personal Injury Lawyers in Miami, Florida', AutoPublishPolicy::language_ranking_title( 'spanish', 'Personal Injury', 'Miami', 'Florida' ) );
 		$this->assertSame( 'Best Haitian Creole-Speaking Family Lawyers in Miami, Florida', AutoPublishPolicy::language_ranking_title( 'haitian-creole', 'Family', 'Miami', 'Florida' ) );
 	}
+
+	public function testStatewideRankingNeedsTwiceTheCityMinimumAcrossCities(): void {
+		$this->assertTrue( AutoPublishPolicy::decide_state_ranking( 10, 2, 5, false )['create'] );
+		$this->assertFalse( AutoPublishPolicy::decide_state_ranking( 9, 4, 5, false )['create'] );
+		$this->assertSame( 'all published profiles are in one city', AutoPublishPolicy::decide_state_ranking( 40, 1, 5, false )['reason'] );
+		$this->assertFalse( AutoPublishPolicy::decide_state_ranking( 40, 4, 5, true )['create'] );
+		$this->assertSame( 'Best Personal Injury Lawyers in Florida', AutoPublishPolicy::state_ranking_title( 'Personal Injury', 'Florida' ) );
+	}
 }

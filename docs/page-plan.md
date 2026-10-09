@@ -888,6 +888,14 @@ Każdy wzór dotyczy miast poziomu 1, a potem 2. Wymagają faktów
 Top 25 w całym stanie, po jednym na każdy obszar z danymi. **Zmiana kodu:**
 tworzenie rankingu stanowego w researchu i obsługa treści bez miasta.
 
+**Stan (wtyczka 0.28.0):** zrobione. Research sam zakłada ranking stanowy
+dla obszaru, gdy co najmniej 2 × `min_ranking_entities` (10) opublikowanych
+prawników działa w co najmniej 2 miastach; strona pokazuje top 25. Generator
+pisze dla niego własną treść: skąd są najlepsi prawnicy (tabela miast), linki
+do rankingów każdego miasta, przepisy stanowe, FAQ. Z obecnych danych próg
+spełnia 10 obszarów (wszystkie poza Workers' Compensation): pozycje 1–10
+z tabeli powstaną przy pierwszym uruchomieniu publikacji po instalacji.
+
 | # | Tytuł | Adres | Priorytet |
 |---|---|---|---|
 | 1 | Best Personal Injury Lawyers in Florida | `/rankings/florida/personal-injury/` | P1 |

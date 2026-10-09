@@ -175,11 +175,11 @@ export default function JudicialCircuitsPage() {
     {
       id: "why",
       heading: "Why does the circuit matter when you choose a lawyer?",
-      answer: "Each circuit has its own local rules, judges and procedures, so a lawyer who practises regularly in your circuit knows how its courts work.",
+      answer: "Each circuit has its own local rules, judges and procedures, so a lawyer who practices regularly in your circuit knows how its courts work.",
       children: (
         <ul>
           <li>Your case is normally filed in the county where the defendant lives or where the events happened.</li>
-          <li>Any Florida Bar member may practise in every circuit; local experience is an advantage, not a requirement.</li>
+          <li>Any Florida Bar member may practice in every circuit; local experience is an advantage, not a requirement.</li>
           <li>
             Our <Link href="/rankings/">rankings</Link> name the circuit for each city.
           </li>
