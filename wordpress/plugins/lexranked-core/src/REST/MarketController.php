@@ -50,6 +50,39 @@ final class MarketController extends RestController {
 				),
 			)
 		);
+		register_rest_route(
+			Plugin::REST_NAMESPACE,
+			'/stats/(?P<state>[a-z0-9-]+)',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'state' ),
+				'permission_callback' => array( $this, 'public_read_permission' ),
+			)
+		);
+	}
+
+	/**
+	 * Statewide figures for the data pages (API 1.23): counts by city and
+	 * practice area, certifications, languages, law schools and experience.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function state( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$state = get_term_by( 'slug', (string) $request['state'], Location::SLUG );
+		if ( ! $state instanceof \WP_Term || 0 !== (int) $state->parent ) {
+			return $this->not_found( 'State' );
+		}
+		[ $body ] = ResponseCache::remember(
+			'/stats',
+			array( 'state' => $state->slug ),
+			fn(): array => array(
+				'state' => array(
+					'slug' => $state->slug,
+					'name' => $this->place( $state ),
+				),
+			) + $this->services->market->for_state( $state )
+		);
+		return $this->item_response( $body );
 	}
 
 	/**

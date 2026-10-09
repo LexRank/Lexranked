@@ -354,3 +354,32 @@ export function authorJsonLd(profile: AuthorProfile): JsonLdObject {
     },
   });
 }
+
+/** Dataset (data pages): what the figures cover, where they come from and when they were calculated. */
+export function datasetJsonLd(input: {
+  name: string;
+  path: string;
+  description: string;
+  dateModified: string;
+  sources: string[];
+  variables: string[];
+  spatial?: string;
+}): JsonLdObject {
+  const url = absoluteUrl(input.path);
+  return compact({
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    "@id": `${url}#dataset`,
+    name: input.name,
+    description: input.description,
+    url,
+    isAccessibleForFree: true,
+    license: `${siteUrl}/terms/`,
+    creator: { "@id": `${siteUrl}/#organization` },
+    dateModified: input.dateModified,
+    isBasedOn: input.sources,
+    variableMeasured: input.variables,
+    spatialCoverage: input.spatial ? { "@type": "Place", name: input.spatial } : undefined,
+    inLanguage: "en-US",
+  });
+}

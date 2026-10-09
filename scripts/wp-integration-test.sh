@@ -237,6 +237,8 @@ expect "the summary states computed numbers only" '(.summary | startswith("LexRa
 expect "a place-level market names its most common practice area" '.stats.mostCommonPractice.slug == "personal-injury" and (.summary | test("most common practice area in Miami, Florida is Personal Injury"))' "$API/market?location=miami"
 expect "too little data is withheld, not estimated" '.stats.lawyers == 0 and .stats.averageRating == null and .stats.medianReviewCount == null and .summary == ""' "$API/market?practice_area=car-accidents"
 expect_status "unknown market" 404 "$API/market?location=atlantis"
+expect "state figures count every published lawyer with samples" '.version == "sd-1.0" and .state.name == "Florida" and .lawyers >= 8 and (.cities | map(.slug) | index("miami")) != null and (.practiceAreas | length) > 0 and .experience.sample <= .lawyers' "$API/stats/florida"
+expect_status "state figures for a city slug are not found" 404 "$API/stats/miami"
 
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
