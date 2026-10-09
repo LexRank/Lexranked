@@ -14,7 +14,7 @@ a po publikacji zmienia status na ✅. Stan na: 9 października 2026.
 | Huby miast | 6 | Miami, Tampa, Orlando, Jacksonville, Fort Lauderdale + Coral Gables (1 prawnik) |
 | Huby obszarów praktyki | 11 | 11 z 16 obszarów katalogu ma dane |
 | Hub stanu | 1 | Floryda |
-| Poradniki | 13 | plan poradników: 100 pozycji w `docs/content-plan.md` (3 opublikowane z planu) |
+| Poradniki | 14 | plan poradników: 100 pozycji w `docs/content-plan.md` (3 opublikowane z planu) |
 | Strony zaufania | 10 | metodologia, weryfikacja, polityka reklamowa, status, o nas, polityka redakcyjna, kontakt, prywatność, regulamin, zastrzeżenia prawne |
 
 ## 2. Analiza
@@ -979,7 +979,7 @@ linkują do nich w sekcji „Further reading”. Fakty sprawdzać w ustawach (za
 | 5 | How to Check a Florida Lawyer Before You Hire Them | how-to-check-a-miami-lawyer-florida-bar | wszystkie | P1 | ✅ |
 | 6 | What Questions Should You Ask a Lawyer Before Hiring? | questions-to-ask-a-lawyer | wszystkie | P1 | ✅ |
 | 7 | How to Get Divorced in Florida: Steps, Costs and Timeline | florida-divorce-process | Family, Divorce | P1 | ✅ |
-| 8 | Florida Child Custody and Time-Sharing Explained | florida-child-custody-time-sharing | Family, Child Custody | P1 | planowany |
+| 8 | Florida Child Custody and Time-Sharing Explained | florida-child-custody-time-sharing | Family, Child Custody | P1 | ✅ |
 | 9 | Florida Alimony Rules After the 2023 Reform | florida-alimony-rules | Family | P2 | planowany |
 | 10 | Florida DUI Penalties: First, Second and Third Offense | florida-dui-penalties | Criminal, DUI | P1 | ✅ |
 | 11 | What Happens After an Arrest in Florida | florida-arrest-process | Criminal | P1 | planowany |
