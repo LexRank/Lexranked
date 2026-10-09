@@ -17,7 +17,7 @@ const DESCRIPTION =
   "How many years Florida's board-certified lawyers have practised: median and range by practice area and city, and how many have practised 30 years or more.";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const stats = await floridaStats().catch(() => null);
+  const stats = await floridaStats();
   return buildMetadata({ title: PAGE.title, description: DESCRIPTION, path: PATH, noindex: !dataPageReady(PAGE, stats) });
 }
 

@@ -1,7 +1,7 @@
 # LexRanked: plan podstron (rankingi, huby, strony danych, poradniki)
 
 Lista bazowa do dalszej pracy. Każda nowa podstrona powstaje z tej listy,
-a po publikacji zmienia status na ✅. Stan na: 5 października 2026.
+a po publikacji zmienia status na ✅. Stan na: 9 października 2026.
 
 ## 1. Stan obecny (produkcja)
 
@@ -948,6 +948,12 @@ przeliczeniu.
 | 8 | Florida Lawyer Fee Rules: Contingency Fee Caps Explained | `/data/florida-contingency-fee-caps/` | Rule 4-1.5 | P2 |
 | 9 | Florida Car Crashes by County | `/data/florida-car-crashes-by-county/` | FLHSMV Crash Facts | P3 |
 | 10 | Lawyer Market Snapshot per City (liczba prawników, obszary, języki) | `/data/{city}-lawyer-market/` | endpoint `/market` (jest w API, brak strony) | P3 |
+
+**Stan (9 października 2026):** indeks `/data/` i strony 3 i 4 są gotowe
+(statyczne, źródła: Florida Statutes 2025 i rozdział 2023-15). Strony 1, 2, 5,
+6 i 7 są gotowe i liczą się z endpointu `GET /stats/florida` (wtyczka 0.26.0,
+API 1.23); bez niego są ukryte (404, poza sitemapą). Do zrobienia: 8 (Rule
+4-1.5 — tekst reguły z floridabar.org), 9 i 10.
 
 ## 13. Poradniki
 

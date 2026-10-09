@@ -16,7 +16,7 @@ const DESCRIPTION =
   "How many of the Florida lawyers LexRanked tracks list Spanish on their Florida Bar record, city by city and practice area by practice area, and how to find one.";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const stats = await floridaStats().catch(() => null);
+  const stats = await floridaStats();
   return buildMetadata({ title: PAGE.title, description: DESCRIPTION, path: PATH, noindex: !dataPageReady(PAGE, stats) });
 }
 

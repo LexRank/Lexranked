@@ -16,7 +16,7 @@ const DESCRIPTION =
   "How many board-certified lawyers LexRanked tracks in each Florida city and practice area, which Florida Bar certifications they hold and how many hold two or more.";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const stats = await floridaStats().catch(() => null);
+  const stats = await floridaStats();
   return buildMetadata({ title: PAGE.title, description: DESCRIPTION, path: PATH, noindex: !dataPageReady(PAGE, stats) });
 }
 

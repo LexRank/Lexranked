@@ -15,7 +15,7 @@ const DESCRIPTION =
 export const metadata: Metadata = buildMetadata({ title: "Florida Legal Data and Lawyer Statistics", description: DESCRIPTION, path: DATA_INDEX_PATH });
 
 export default async function DataIndexPage() {
-  const stats = await floridaStats().catch(() => null);
+  const stats = await floridaStats();
   const pages = publishedDataPages(stats);
   return (
     <>

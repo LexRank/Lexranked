@@ -15,7 +15,7 @@ const DESCRIPTION =
   "The law schools most often attended by the board-certified Florida lawyers LexRanked tracks, with counts and shares, from the education on their Florida Bar records.";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const stats = await floridaStats().catch(() => null);
+  const stats = await floridaStats();
   return buildMetadata({ title: PAGE.title, description: DESCRIPTION, path: PATH, noindex: !dataPageReady(PAGE, stats) });
 }
 

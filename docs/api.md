@@ -127,6 +127,13 @@ description}], expected{lawyer: {attribute: weight}, law_firm: …},
 sourceTierScores, summary{count, average, bands} }`. See
 [knowledge-base.md](knowledge-base.md#etap-c-data-quality-score-implemented).
 
+### `GET /stats/{state}` (API 1.23)
+Statewide figures for the `/data/` pages, from every published lawyer in the state (a city slug or unknown slug is 404). Cached until the next content change.
+
+`{ version: "sd-1.0", state{slug, name}, lawyers, certified, multiCertified, spanish, cities[{slug, name, lawyers, certified, spanish, experience, areas[{slug, name, count}]}], practiceAreas[{slug, name, lawyers, certified, spanish, cities, experience}], certifications[{name, count}], languages{sample, items[{name, count}]}, schools{sample, items[{name, count}]} (top 25), experience{sample, min, median, max, buckets[{label, count}]}, calculatedAt }`
+
+`experience` objects are `{sample, min, median, max}` in years. `certified` counts lawyers with at least one "Board Certified in …" award; facts in conflict are ignored. Nothing identifies a single lawyer.
+
 ### `GET /market?location=&practice_area=` (API 1.16)
 Statistics for a market. Both parameters are optional slugs; an unknown slug is 404.
 

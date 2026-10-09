@@ -655,6 +655,10 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "legal disclaimer" "/disclaimer/" "is not a law firm"
   page_has "contact page has the form" "/contact/" "Send message"
   page_has "author profile" "/authors/ryan-mitchell/" "Is Ryan a lawyer?"
+  page_has "statutes of limitations table" "/data/florida-statutes-of-limitations/" "Which negligence claims still have 4 years?"
+  page_has "judicial circuits table" "/data/florida-judicial-circuits/" "Which counties are in each Florida judicial circuit?"
+  page_has "data index lists statistics pages" "/data/" "/data/florida-lawyer-experience/"
+  page_has "experience statistics page" "/data/florida-lawyer-experience/" "How many lawyers fall into each band of experience?"
   sitemap="$(curl -sS "$WEB/sitemap.xml")"
   if grep -q "/advertising/" <<<"$sitemap" && ! grep -q "/claim/" <<<"$sitemap"; then pass "sitemap lists the policy, not claim pages"; else fail "sitemap commercial pages"; fi
   sitemap="$(curl -sS "$WEB/sitemap.xml")"

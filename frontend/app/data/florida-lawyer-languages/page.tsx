@@ -16,7 +16,7 @@ const DESCRIPTION =
   "Every language other than English listed on the Florida Bar records of the lawyers LexRanked tracks, how many lawyers list each one, and what the records do not show.";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const stats = await floridaStats().catch(() => null);
+  const stats = await floridaStats();
   return buildMetadata({ title: PAGE.title, description: DESCRIPTION, path: PATH, noindex: !dataPageReady(PAGE, stats) });
 }
 
