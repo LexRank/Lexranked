@@ -24,6 +24,7 @@ describe('featured images', () => {
     expect(prompt).toContain('no text');
     expect(prompt).toContain('No human people');
     expect(prompt).not.toContain('<b>');
+    expect(buildImagePrompt({ title: 'T', excerpt: '', scene: 'The owl on a <i>Miami</i> sidewalk' })).toContain('Scene: The owl on a Miami sidewalk');
     expect(altText({ title: 'Car Accidents in Miami', excerpt: '' })).toBe('The LexRanked owl illustrating “Car Accidents in Miami”');
   });
 
@@ -79,6 +80,7 @@ describe('featured images', () => {
   it('parses CLI arguments and the WordPress base URL', () => {
     expect(parseArgs(['--post', '10', '--post', '12', '--force'])).toEqual({ posts: [10, 12], force: true });
     expect(parseArgs(['--post', 'x'])).toEqual({ posts: [], force: false });
+    expect(parseArgs(['--post', '974', '--scenes', 'scenes.json'])).toEqual({ posts: [974], force: false, scenes: 'scenes.json' });
     expect(wpJsonBase('https://wp.lexranked.com/wp-json/lexranked/v1/')).toBe('https://wp.lexranked.com/wp-json');
   });
 });

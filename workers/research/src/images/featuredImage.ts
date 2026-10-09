@@ -17,15 +17,20 @@ export class ImageError extends Error {}
 export interface ArticleInput {
   title: string;
   excerpt: string;
+  /** Optional art direction for this post: the setting and what the owl is doing. */
+  scene?: string;
 }
 
 const STYLE =
-  'Featured image for a legal-information guide. The main character is the LexRanked owl from the reference image: ' +
-  'a blue owl with round gold glasses, a navy suit and white shirt. Keep the character exactly as in the reference (same colours, glasses, suit, proportions). ' +
-  'Show the owl in one simple scene with at most two or three props that represent the topic. ' +
-  'Clean flat illustration, soft shading, light plain background, navy, blue and warm gold palette, generous empty space, landscape composition. ' +
-  'Absolutely no text, letters, numbers, words, logos, labels, signs or captions anywhere in the image (blank book covers and screens). ' +
-  'No human people.';
+  'Featured image for a legal-information guide: a rich, detailed editorial illustration that tells a small story. ' +
+  'The main character is the LexRanked owl from the reference image: a blue owl with round gold glasses, a navy suit and white shirt. ' +
+  'Keep the character exactly as in the reference (same colours, glasses, suit, proportions), shown actively doing something that represents the topic. ' +
+  'Place the owl in a complete, believable setting with a detailed background and depth (foreground, middle ground, background), ' +
+  'for example a Florida street, a courthouse hallway, a law library or an office at golden hour, with objects that belong to the topic. ' +
+  'Cinematic composition, warm directional light and soft shadows, textured painterly-digital style, navy, blue and warm gold accents, landscape format, ' +
+  'with a calm area on one side so the image reads well as a banner. ' +
+  'Absolutely no text, letters, numbers, words, logos, labels, signs or captions anywhere in the image (blank documents, book spines, screens and signs). ' +
+  'No human people; other animals may appear only as background figures.';
 
 function plain(text: string): string {
   return text
@@ -39,7 +44,8 @@ function plain(text: string): string {
 export function buildImagePrompt(article: ArticleInput): string {
   const title = plain(article.title).slice(0, 200);
   const excerpt = plain(article.excerpt).slice(0, 400);
-  return `${STYLE}\n\nThe scene represents this article: "${title}". ${excerpt ? `Context: ${excerpt}` : ''}`.trim();
+  const scene = article.scene ? plain(article.scene).slice(0, 600) : '';
+  return `${STYLE}\n\nThe scene represents this article: "${title}". ${excerpt ? `Context: ${excerpt}` : ''}${scene ? `\n\nScene: ${scene}` : ''}`.trim();
 }
 
 /** Alt text that describes what the image is for, not what a model claims it shows. */
@@ -186,13 +192,13 @@ export type FeaturedImageOutcome = { status: 'skipped'; reason: string } | { sta
 /** Generate, upload and attach a featured image for one post. */
 export async function addFeaturedImage(
   postId: number,
-  deps: { wp: WordPressMedia; images: OpenAIImageGenerator; force?: boolean; reference?: { bytes: Uint8Array; filename: string; type: string } },
+  deps: { wp: WordPressMedia; images: OpenAIImageGenerator; force?: boolean; reference?: { bytes: Uint8Array; filename: string; type: string }; scene?: string },
 ): Promise<FeaturedImageOutcome> {
   const post = await deps.wp.post(postId);
   if (post.featuredMedia > 0 && !deps.force) {
     return { status: 'skipped', reason: `post ${postId} already has featured image ${post.featuredMedia}` };
   }
-  const article = { title: post.title, excerpt: post.excerpt };
+  const article = { title: post.title, excerpt: post.excerpt, ...(deps.scene ? { scene: deps.scene } : {}) };
   const bytes = await deps.images.generate(buildImagePrompt(article), deps.reference);
   const slug = plain(post.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || `post-${postId}`;
   const media = await deps.wp.upload(bytes, `${slug}.png`, altText(article), plain(post.title));

@@ -108,7 +108,7 @@ export function unitsOf(c: Generated & { title?: string }): Unit[] {
 
 export const HUB_PROMPT_VERSION = 'hub-content/2';
 export const PROFILE_PROMPT_VERSION = 'profile-summary/2';
-export const ARTICLE_PROMPT_VERSION = 'article/3';
+export const ARTICLE_PROMPT_VERSION = 'article/4';
 
 /** Hub pages (state, city, practice area): same shape as ranking content. */
 export async function generateHubContent(ai: AiClient, page: { title: string; place: string }, facts: Fact[]): Promise<{ content: Generated; model: string }> {
@@ -175,8 +175,8 @@ export function articleSchema(factIds: string[]): JsonSchema {
       summaryFactRefs: refs,
       sections: {
         type: 'array',
-        minItems: 2,
-        maxItems: 6,
+        minItems: 3,
+        maxItems: 8,
         items: {
           type: 'object',
           additionalProperties: false,
@@ -199,7 +199,8 @@ export function articleSchema(factIds: string[]): JsonSchema {
       },
       faq: {
         type: 'array',
-        maxItems: 5,
+        minItems: 6,
+        maxItems: 10,
         items: { type: 'object', additionalProperties: false, required: ['question', 'answer', 'factRefs'], properties: { question: { type: 'string', maxLength: 200 }, answer: { type: 'string', maxLength: 600 }, factRefs: refs } },
       },
     },
@@ -214,7 +215,9 @@ export async function generateArticle(ai: AiClient, topic: string, facts: Fact[]
     'Cover the topic completely: every question a reader searching for it would ask, each answered.',
     'Under every heading, the first paragraph answers that heading directly in one or two sentences; the detail follows in the next paragraphs.',
     'Use a short bullet list in a section when it helps (steps, checklists, what to bring, red flags); leave bullets empty otherwise.',
-    'Write a clear title, a 1–2 sentence answer-first summary, 3–6 sections and up to 5 FAQs whose answers start with the direct answer.',
+    'Make the first section "The short version": 4–6 bullets with the key answers.',
+    'Be as short as possible while leaving no question unanswered: no filler, no repetition, no padding to reach a length.',
+    'Write a clear title, a 1–2 sentence answer-first summary, 3–8 sections and 6–10 FAQs covering the follow-up questions a reader would still have; each answer starts with the direct answer.',
   ]);
   const res = await ai.structured<GeneratedArticle>({
     name: 'article_draft',
