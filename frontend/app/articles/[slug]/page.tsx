@@ -77,7 +77,11 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
         lead={article.excerpt}
       >
         <div className="page-header__meta">
-          <span>
+          <span className="byline">
+            {author && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="byline__avatar" src={author.portrait.src} alt="" width={28} height={28} />
+            )}
             By <strong>{author ? <Link href={authorPath(author.slug)}>{author.name}</Link> : article.author.name}</strong>
           </span>
           {published && <span>Published {published}</span>}

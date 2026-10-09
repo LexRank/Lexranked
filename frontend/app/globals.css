@@ -3635,6 +3635,17 @@ h2 {
   border-radius: var(--radius);
 }
 
+.byline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.byline__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 .author-box {
   display: flex;
   gap: 1rem;

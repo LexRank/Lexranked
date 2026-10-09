@@ -327,7 +327,19 @@ export function articleJsonLd(article: ArticleDetail): JsonLdObject {
 /** The byline as schema.org: a Person with a profile URL when one exists. */
 function articleAuthor(author: ArticleDetail["author"]): JsonLdObject {
   const profile = authorBySlug(author.slug);
-  if (profile) return { "@type": "Person", "@id": `${absoluteUrl(authorPath(profile.slug))}#person`, name: profile.name, url: absoluteUrl(authorPath(profile.slug)) };
+  if (profile) {
+    const url = absoluteUrl(authorPath(profile.slug));
+    return {
+      "@type": "Person",
+      "@id": `${url}#person`,
+      name: profile.name,
+      url,
+      image: absoluteUrl(profile.portrait.src),
+      jobTitle: profile.jobTitle,
+      description: profile.summary,
+      worksFor: { "@id": `${siteUrl}/#organization` },
+    };
+  }
   return { "@type": author.name === "LexRanked Editorial Team" ? "Organization" : "Person", name: author.name };
 }
 
