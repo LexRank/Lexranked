@@ -60,7 +60,7 @@ export function relatedQuestions(ranking: RankingDetail, all: RankingSummary[] =
           : c.type === "client_type"
             ? `Which ${noun} serve ${c.value}?`
             : `Which ${noun} list ${c.label.toLowerCase()} among their case types?`,
-      answer: `${c.eligibility.qualified} of the ${c.eligibility.parentCount} ${noun} in this ranking have it on record, ${c.eligibility.verified} confirmed by a verified fact. They are ranked separately by the same LexRank score.`,
+      answer: `${c.eligibility.qualified} of the ${c.eligibility.parentCount} ${noun} in this ranking have it on record, ${c.eligibility.verified} confirmed by a verified fact or an official record. They are ranked separately by the same LexRank score.`,
       link: { href: child.path as string, label: child.title },
     });
   }

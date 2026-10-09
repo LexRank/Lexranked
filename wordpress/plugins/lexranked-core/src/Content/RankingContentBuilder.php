@@ -26,11 +26,11 @@ final class RankingContentBuilder {
 	/**
 	 * Build summary, body (HTML) and FAQ.
 	 *
-	 * @param array<string, mixed>                                                                                   $pack    State knowledge pack.
-	 * @param array{area_slug: string, area_name: string, city_slug: string, city_name: string, entity_type: string} $context Ranking context.
-	 * @param array<int, array<string, mixed>>                                                                       $people  Ranked lawyers, in order: years ?int, languages string[], awards string[], schools string[].
-	 * @param string                                                                                                 $checked Month the data was checked, e.g. "October 2026".
-	 * @param string                                                                                                 $today   Review date (Y-m-d).
+	 * @param array<string, mixed>                                                                                                                            $pack    State knowledge pack.
+	 * @param array{area_slug: string, area_name: string, city_slug: string, city_name: string, entity_type: string, language?: string, parent_path?: string} $context Ranking context; `language` (e.g. "Spanish") for a language ranking, with the broader ranking's `parent_path`.
+	 * @param array<int, array<string, mixed>>                                                                                                                $people  Ranked lawyers, in order: years ?int, languages string[], awards string[], schools string[].
+	 * @param string                                                                                                                                          $checked Month the data was checked, e.g. "October 2026".
+	 * @param string                                                                                                                                          $today   Review date (Y-m-d).
 	 * @return array{summary: string, body: string, faq: array<int, array{question: string, answer: string}>, reviewed_by: string, reviewed_at: string}|null
 	 */
 	public static function build( array $pack, array $context, array $people, string $checked, string $today ): ?array {
@@ -49,9 +49,14 @@ final class RankingContentBuilder {
 		$bar       = (string) $pack['bar']['name'];
 		$short     = (string) ( $pack['bar']['short'] ?? $bar );
 		$e         = static fn( string $s ): string => htmlspecialchars( $s, ENT_COMPAT | ENT_SUBSTITUTE, 'UTF-8' );
+		$language  = isset( $context['language'] ) && '' !== $context['language'] ? (string) $context['language'] : null;
+		$parent    = isset( $context['parent_path'] ) && str_starts_with( (string) $context['parent_path'], '/' ) ? (string) $context['parent_path'] : null;
+		$who       = null === $language ? $noun : $language . '-speaking ' . $noun;
 
 		// Summary: what the page is, the strongest verified common fact, the spread of experience.
-		$summary = sprintf( 'This ranking lists %s %s %s in %s, %s, in order of their LexRank score, calculated from their %s records and other cited sources.', $n, $noun, 1 === $n ? 'lawyer' : 'lawyers', $city_name, $state, $short );
+		$summary = null === $language
+			? sprintf( 'This ranking lists %s %s %s in %s, %s, in order of their LexRank score, calculated from their %s records and other cited sources.', $n, $noun, 1 === $n ? 'lawyer' : 'lawyers', $city_name, $state, $short )
+			: sprintf( 'This ranking lists %s %s %s in %s, %s, whose %s profile lists %s, in order of their LexRank score, calculated from their %s records and other cited sources.', $n, $noun, 1 === $n ? 'lawyer' : 'lawyers', $city_name, $state, $short, $language, $short );
 		if ( $stats['cert'] > 0 ) {
 			$summary .= sprintf( ' %s %s, a credential held by %s of %s lawyers in any field.', self::all_or_some( $stats['cert'], $n, true ), self::verb( $stats['cert'] ) . ' ' . $cert . ' by ' . $bar, $share, $state );
 		}
@@ -59,7 +64,7 @@ final class RankingContentBuilder {
 			$summary .= sprintf( ' Their experience ranges from %d to %d years in practice.', $stats['ymin'], $stats['ymax'] );
 		}
 		$spanish = $stats['languages']['Spanish'] ?? 0;
-		if ( $spanish > 0 ) {
+		if ( $spanish > 0 && null === $language ) {
 			$summary .= sprintf( ' %d of the %d %s Spanish on their %s profile.', $spanish, $n, 1 === $spanish ? 'lists' : 'list', $short );
 		}
 
@@ -88,18 +93,31 @@ final class RankingContentBuilder {
 			: sprintf( 'Every lawyer in this ranking has a %s license verified as eligible to practice, and every fact shown links to its source.', $bar );
 
 		$body         = array();
-		$body[]       = '<h2>What sets these ' . $e( $city_name ) . ' lawyers apart</h2>';
+		$body[]       = '<h2>What sets these ' . $e( null === $language ? $city_name : $city_name . ' ' . $language . '-speaking' ) . ' lawyers apart</h2>';
 		$requirements = $stats['cert'] > 0 && isset( $pack['certification']['requirements'] ) ? ' ' . $e( (string) $pack['certification']['requirements'] ) : '';
 		$body[]       = '<p><strong>' . $e( $lead ) . '</strong>' . $requirements . ' The figures below come from each lawyer\'s ' . $e( $short ) . ' profile, checked in ' . $e( $checked ) . '.</p>';
 		$body[]       = self::table( array( 'Fact about the ' . $n . ' ranked lawyers', 'Figure' ), $rows, $e );
 
 		$body[] = '<h2>About this ranking</h2>';
-		$body[] = '<p><strong>' . $e( sprintf( 'It compares %d %s lawyers whose office is in %s, using only facts with a cited source.', $n, $noun, $city_name ) ) . '</strong></p>';
+		$body[] = '<p><strong>' . $e( sprintf( 'It compares %d %s lawyers whose office is in %s, using only facts with a cited source.', $n, $who, $city_name ) ) . '</strong></p>';
 		$body[] = '<ul>';
-		$body[] = '<li><strong>Who is included:</strong> ' . $e( sprintf( 'lawyers eligible to practice in %s, with a %s office address and %s as a practice area on record.', $state, $city_name, $noun ) ) . '</li>';
+		$body[] = '<li><strong>Who is included:</strong> ' . $e( sprintf( 'lawyers eligible to practice in %s, with a %s office address and %s as a practice area on record', $state, $city_name, $noun ) . ( null === $language ? '.' : sprintf( ', whose %s profile lists %s among the languages they speak.', $short, $language ) ) ) . '</li>';
 		$body[] = '<li><strong>Data checked:</strong> ' . $e( $checked ) . ', against each lawyer\'s ' . $e( $short ) . ' profile.</li>';
 		$body[] = '<li><strong>Order:</strong> the LexRank score (experience, credentials, practice relevance, location and data quality); payment never changes a position. See <a href="/methodology/">how we rank</a>.</li>';
+		if ( null !== $parent ) {
+			$body[] = '<li><strong>All ' . $e( $noun ) . ' lawyers:</strong> <a href="' . $e( $parent ) . '">' . $e( sprintf( 'the full ranking of %s lawyers in %s', $noun, $city_name ) ) . '</a>, whatever language they speak.</li>';
+		}
 		$body[] = '</ul>';
+
+		if ( null !== $language ) {
+			$body[] = '<h2>' . $e( sprintf( 'Working with a %s-speaking lawyer', $language ) ) . '</h2>';
+			$body[] = '<p><strong>' . $e( sprintf( 'You can discuss your case, documents and fees directly in %s, but court hearings and filings in %s are in English.', $language, $state ) ) . '</strong></p>';
+			$body[] = '<ul>';
+			$body[] = '<li>' . $e( sprintf( 'Ask whether the lawyer will speak with you in %s personally or through bilingual staff.', $language ) ) . '</li>';
+			$body[] = '<li>' . $e( sprintf( 'Ask for the fee agreement and key letters in %s as well as English, so you know exactly what you sign.', $language ) ) . '</li>';
+			$body[] = '<li>' . $e( sprintf( 'When a witness cannot understand or speak English well enough, the judge has a qualified interpreter sworn in (section 90.606, %s Statutes).', $state ) ) . '</li>';
+			$body[] = '</ul>';
+		}
 
 		$body[] = '<h2>' . $e( $state ) . ' rules to know</h2>';
 		$body[] = '<p><strong>' . $e( (string) $area['lead'] ) . '</strong></p>';
@@ -118,7 +136,7 @@ final class RankingContentBuilder {
 		$body[] = '<li>' . $e( sprintf( 'Look up the lawyer in %s\'s directory and check the bar number shown on their LexRanked profile.', $bar ) ) . '</li>';
 		$body[] = '<li>Ask whether the lawyer you meet will handle your matter personally, and how many matters like yours they have handled recently.</li>';
 		$body[] = '<li>Ask how they charge and what costs are extra, and get the agreement in writing.</li>';
-		if ( array() !== $stats['languages'] ) {
+		if ( array() !== $stats['languages'] && null === $language ) {
 			$body[] = '<li>If you prefer to work in another language, check the languages listed on each profile.</li>';
 		}
 		$body[] = '</ol>';
@@ -134,6 +152,9 @@ final class RankingContentBuilder {
 		}
 		if ( $crash ) {
 			$sources[] = (array) $pack['crashSource'];
+		}
+		if ( null !== $language ) {
+			$sources[] = array( 'https://www.flsenate.gov/Laws/Statutes/2025/90.606', $state . ' Statutes, section 90.606: interpreters and translators' );
 		}
 		$body[] = '<h2>Sources</h2>';
 		$body[] = '<ul>' . implode( '', array_map( static fn( array $s ): string => '<li><a href="' . $e( (string) $s[0] ) . '">' . $e( (string) $s[1] ) . '</a></li>', $sources ) ) . '</ul>';
@@ -156,7 +177,16 @@ final class RankingContentBuilder {
 			'question' => sprintf( 'Which court handles cases in %s?', $city_name ),
 			'answer'   => sprintf( 'State court cases in %s County are heard in %s\'s %s Judicial Circuit.', $city['county'], $state, $city['circuit'] ) . ( 'immigration' === $context['area_slug'] ? ' Immigration cases are decided by USCIS and the federal immigration courts instead.' : '' ),
 		);
-		if ( $spanish > 0 ) {
+		if ( null !== $language ) {
+			$faq[] = array(
+				'question' => sprintf( 'How do I know a lawyer really speaks %s?', $language ),
+				'answer'   => sprintf( 'Every lawyer here lists %s on their %s profile, which LexRanked checked in %s. Ask at the first call whether the lawyer will handle your matter in %s personally.', $language, $short, $checked, $language ),
+			);
+			$faq[] = array(
+				'question' => sprintf( 'Will my court hearing be in %s?', $language ),
+				'answer'   => sprintf( 'No. Court proceedings in %s are held in English. When a witness cannot understand or speak English well enough, the judge has a qualified interpreter sworn in (section 90.606, %s Statutes).', $state, $state ),
+			);
+		} elseif ( $spanish > 0 ) {
 			$faq[] = array(
 				'question' => sprintf( 'Are there Spanish-speaking %s lawyers in %s?', $noun, $city_name ),
 				'answer'   => sprintf( 'Yes. %d of the %d ranked lawyers %s Spanish on their %s profile. Each LexRanked profile shows the languages on record.', $spanish, $n, 1 === $spanish ? 'lists' : 'list', $short ),

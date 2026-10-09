@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace LexRanked\Core\Research;
 
 use LexRanked\Core\Domain\VerificationStatus;
+use LexRanked\Core\Ranking\RankingQualifier;
 
 /**
  * Autonomous research (Settings → "Autonomous research") publishes what a
@@ -167,6 +168,59 @@ final class AutoPublishPolicy {
 			'create' => true,
 			'reason' => sprintf( '%d published profiles', $published_entities ),
 		);
+	}
+
+	/**
+	 * Languages that earn their own ranking in a city and practice area: at
+	 * least $min lawyers list the language on a qualifying fact, and at least
+	 * $min_verified of those facts are confirmed (RankingQualifier::confirms:
+	 * verified, or from an official record). English never does.
+	 *
+	 * @param array<int, array<string, mixed>|null> $language_facts One `languages` fact row (status, value) per published lawyer.
+	 * @param int                                   $min            Minimum lawyers (min_ranking_entities).
+	 * @param int                                   $min_verified   Minimum confirmed facts.
+	 * @return array<string, int> Language slug => lawyers, most first.
+	 */
+	public static function language_rankings( array $language_facts, int $min, int $min_verified ): array {
+		$all      = array();
+		$verified = array();
+		foreach ( $language_facts as $fact ) {
+			if ( ! is_array( $fact ) || ! in_array( (string) ( $fact['status'] ?? '' ), RankingQualifier::QUALIFYING_STATUSES, true ) ) {
+				continue;
+			}
+			$slugs = array();
+			foreach ( (array) ( $fact['value'] ?? array() ) as $item ) {
+				if ( is_scalar( $item ) && '' !== RankingQualifier::slug( (string) $item ) ) {
+					$slugs[ RankingQualifier::slug( (string) $item ) ] = true;
+				}
+			}
+			foreach ( array_keys( $slugs ) as $slug ) {
+				$all[ $slug ] = ( $all[ $slug ] ?? 0 ) + 1;
+				if ( RankingQualifier::confirms( $fact ) ) {
+					$verified[ $slug ] = ( $verified[ $slug ] ?? 0 ) + 1;
+				}
+			}
+		}
+		$out = array();
+		foreach ( $all as $slug => $count ) {
+			if ( 'english' !== $slug && $count >= $min && ( $verified[ $slug ] ?? 0 ) >= $min_verified ) {
+				$out[ $slug ] = $count;
+			}
+		}
+		arsort( $out );
+		return $out;
+	}
+
+	/**
+	 * Title of a language ranking: "Best Spanish-Speaking Personal Injury Lawyers in Miami, Florida".
+	 *
+	 * @param string $language      Language slug (spanish, haitian-creole).
+	 * @param string $practice_area Practice-area name.
+	 * @param string $city          City.
+	 * @param string $state         State.
+	 */
+	public static function language_ranking_title( string $language, string $practice_area, string $city, string $state ): string {
+		return self::ranking_title( 'lawyer', ucwords( str_replace( '-', ' ', $language ) ) . '-Speaking ' . trim( $practice_area ), $city, $state );
 	}
 
 	/**

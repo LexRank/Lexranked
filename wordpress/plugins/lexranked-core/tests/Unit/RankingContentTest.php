@@ -179,4 +179,30 @@ final class RankingContentTest extends TestCase {
 		$c                    = self::build( array(), $people );
 		$this->assertStringNotContainsString( '<script>', $c['body'] );
 	}
+
+	public function testLanguageRankingTextIsAboutTheLanguage(): void {
+		$people = self::people();
+		foreach ( $people as $k => $p ) {
+			$people[ $k ]['languages'] = array( 'Spanish' );
+		}
+		$c = self::build(
+			array(
+				'language'    => 'Spanish',
+				'parent_path' => '/rankings/florida/miami/personal-injury/',
+			),
+			$people
+		);
+		$this->assertNotNull( $c );
+		$this->assertStringContainsString( 'lists 3 personal injury lawyers in Miami, Florida, whose Florida Bar profile lists Spanish', $c['summary'] );
+		$this->assertStringNotContainsString( 'of the 3 list Spanish', $c['summary'], 'the language is the premise, not a finding' );
+		$this->assertStringContainsString( '<h2>Working with a Spanish-speaking lawyer</h2>', $c['body'] );
+		$this->assertStringContainsString( 'section 90.606', $c['body'] );
+		$this->assertStringContainsString( 'href="/rankings/florida/miami/personal-injury/"', $c['body'] );
+		$this->assertStringContainsString( 'https://www.flsenate.gov/Laws/Statutes/2025/90.606', $c['body'] );
+		$questions = array_column( $c['faq'], 'question' );
+		$this->assertContains( 'Will my court hearing be in Spanish?', $questions );
+		$this->assertNotContains( 'Are there Spanish-speaking personal injury lawyers in Miami?', $questions );
+		// An ordinary ranking keeps its own text.
+		$this->assertStringNotContainsString( 'Working with a', self::build()['body'] );
+	}
 }

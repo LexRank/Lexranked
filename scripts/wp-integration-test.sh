@@ -379,6 +379,26 @@ check "a completed job's publication can be finished through the API, idempotent
 wp user create itEditor editor@example.com --role=editor >/dev/null
 ED_PW="$(wp user application-password create itEditor it --porcelain | tail -1)"
 HIALEAH_RANKING="$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Personal Injury Lawyers in Hialeah, Florida' --field=ID | tail -1)"
+# A ranking held for missing text is published by a later re-run, even though its profiles were published earlier.
+wp post update "$HIALEAH_RANKING" --post_status=draft >/dev/null
+wp post meta update "$HIALEAH_RANKING" _lr_held_for_content 1 >/dev/null
+check "a re-run publishes a held ranking whose profiles an earlier run published" ".rankings == [$HIALEAH_RANKING]" "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
+check "the held ranking is public and no longer marked held" '. == "publish"' "\"$(wp post get "$HIALEAH_RANKING" --field=post_status)$(wp post meta get "$HIALEAH_RANKING" _lr_held_for_content)\""
+# Enough lawyers listing a language on official records earn a language ranking under the published one
+# (2 of the 3 Hialeah lawyers, with a minimum of 2: a page listing all 3 would repeat the broader ranking).
+wp option update lexranked_settings '{"search_rate_per_minute":5,"research_autonomy":true,"min_ranking_entities":2}' --format=json >/dev/null
+cat >"$DATA_DIR/autonomy-languages.csv" <<'CSV'
+entity_type,name,city,state,practice_area,website,source_url,source_type,retrieved_at,phone,bar_state,bar_number,bar_status,languages
+lawyer,Avery Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2001,bar_association,2026-09-01,,FL,2001,active,Spanish
+lawyer,Blake Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2002,bar_association,2026-09-01,,FL,2002,active,Spanish
+CSV
+languages_job="$(curl -sS -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-languages","fetch_websites":false}}' "$API/research/jobs" | jq -r '.id')"
+run_worker && pass "worker adds languages to published profiles" || fail "languages job failed (see $DATA_DIR/worker.log)"
+check "a re-run creates a language ranking once enough lawyers list the language" '(.rankings | length) == 1' "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
+SPANISH_RANKING="$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Spanish-Speaking Personal Injury Lawyers in Hialeah, Florida' --field=ID | tail -1)"
+expect "the language ranking is public with its context and language-specific text" '.context.type == "language" and .context.segment == "spanish-speaking" and (.entries | length) == 2 and (.faq | map(.question) | index("Will my court hearing be in Spanish?")) != null' "$API/rankings/$SPANISH_RANKING"
+check "re-running does not create it twice" '(.rankings | length) == 0' "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
+wp option update lexranked_settings '{"search_rate_per_minute":5,"research_autonomy":true,"min_ranking_entities":3}' --format=json >/dev/null
 expect "an automatically created ranking is published with complete generated page text" '(.summary | test("personal injury lawyers? in Hialeah, Florida")) and (.body | test("<h2>Florida rules to know</h2>")) and (.body | test("Eleventh Judicial Circuit")) and (.body | test("<h2>Sources</h2>")) and (.faq | length) >= 6 and .generated == true' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW"
 expect "an editor's text replaces the generated text and is kept" '.summary == "Edited by hand." and .generated == false' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"summary":"Edited by hand."}'
 expect "generated text can be restored on request" '.generated == true and (.summary | test("Hialeah"))' "$API/editorial/rankings/$HIALEAH_RANKING/generate" -u "itEditor:$ED_PW" -X POST
@@ -386,6 +406,8 @@ expect "generated text can be restored on request" '.generated == true and (.sum
 auto_ids="$(wp post list --post_type=lr_lawyer,lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --field=ID --format=csv | tr -dc '0-9\n')"
 auto_ids+=" $(wp post list --post_type=lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$awards_job" --field=ID --format=csv | tr -dc '0-9\n')"
 auto_ids+=" $(wp post list --post_type=lr_ranking --post_status=any --title='Best Personal Injury Lawyers in Hialeah, Florida' --field=ID --format=csv | tr -dc '0-9\n')"
+auto_ids+=" $(wp post list --post_type=lr_ranking --post_status=any --title='Best Spanish-Speaking Personal Injury Lawyers in Hialeah, Florida' --field=ID --format=csv | tr -dc '0-9\n')"
+auto_ids+=" $(wp post list --post_type=lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$languages_job" --field=ID --format=csv | tr -dc '0-9\n')"
 # shellcheck disable=SC2086 # Word splitting on IDs is intended.
 wp post delete $auto_ids --force >/dev/null
 wp option update lexranked_settings '{"search_rate_per_minute":5}' --format=json >/dev/null

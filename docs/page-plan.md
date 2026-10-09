@@ -705,6 +705,15 @@ kodu:** research powinien sam zakładać ranking językowy, gdy w rankingu
 nadrzędnym jest co najmniej 5 prawników z danym językiem. Do tego generator
 treści musi obsłużyć rankingi kontekstowe.
 
+**Stan (wtyczka 0.27.0):** zrobione. Research sam zakłada ranking językowy
+pod opublikowanym rankingiem, gdy co najmniej `min_ranking_entities` (5)
+opublikowanych prawników podaje język, a 3 z tych faktów są zweryfikowane;
+generator pisze dla niego własną treść (praca z prawnikiem w danym języku,
+tłumacz w sądzie wg s. 90.606, FAQ). Z obecnych danych (9 października 2026)
+próg spełnia 6 stron: Miami (Personal Injury 10, Immigration 9, Real Estate 5),
+Tampa (Personal Injury 7), Coral Gables (Personal Injury 6, Real Estate 5).
+Hialeah nie ma jeszcze prawników w bazie.
+
 | # | Tytuł | Adres | Priorytet |
 |---|---|---|---|
 | 1 | Spanish-Speaking Personal Injury Lawyers in Miami | `/rankings/florida/miami/personal-injury/spanish-speaking/` | P1 |
