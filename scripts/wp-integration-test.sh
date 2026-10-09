@@ -652,6 +652,7 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "terms of use" "/terms/" "What are the rules for client reviews?"
   page_has "legal disclaimer" "/disclaimer/" "is not a law firm"
   page_has "contact page has the form" "/contact/" "Send message"
+  page_has "author profile" "/authors/ryan-mitchell/" "Is Ryan a lawyer?"
   sitemap="$(curl -sS "$WEB/sitemap.xml")"
   if grep -q "/advertising/" <<<"$sitemap" && ! grep -q "/claim/" <<<"$sitemap"; then pass "sitemap lists the policy, not claim pages"; else fail "sitemap commercial pages"; fi
   sitemap="$(curl -sS "$WEB/sitemap.xml")"

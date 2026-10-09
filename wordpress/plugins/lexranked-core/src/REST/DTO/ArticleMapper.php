@@ -47,7 +47,7 @@ final class ArticleMapper {
 	 * @param array<string, mixed>                          $record     Record from EntityRepository.
 	 * @param string                                        $excerpt    Manual excerpt.
 	 * @param string                                        $body_html  Sanitized body HTML.
-	 * @param array{name: string}                           $author     Author byline.
+	 * @param array{name: string, slug?: string|null}       $author     Author byline and profile slug.
 	 * @param array<string, mixed>|null                     $image      {url, width, height, alt}.
 	 * @param array<int, array{slug: string, name: string}> $categories Categories.
 	 * @return array<string, mixed>

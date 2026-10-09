@@ -497,7 +497,8 @@ export interface ArticleSummary {
   path: string;
   title: string;
   excerpt: string;
-  author: { name: string };
+  /** Byline; `slug` links to an author profile when one exists (lib/content/authors.ts). */
+  author: { name: string; slug?: string | null };
   publishedAt: string | null;
   updatedAt: string | null;
   reviewedBy: string | null;
