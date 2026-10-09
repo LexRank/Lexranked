@@ -90,6 +90,10 @@
     [
      "/articles/personal-injury-case-timeline/",
      "How long a personal injury case takes"
+    ],
+    [
+     "/articles/florida-medical-malpractice-rules/",
+     "Florida medical malpractice: pre-suit rules and deadlines"
     ]
    ],
    "certName": "Board Certified in Civil Trial Law"
@@ -135,7 +139,16 @@
      "You can ask the court to appoint the public defender, who represents people who cannot afford a lawyer."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-dui-penalties/",
+     "Florida DUI penalties: first, second and third offense"
+    ],
+    [
+     "/articles/florida-arrest-process/",
+     "What happens after an arrest in Florida"
+    ]
+   ],
    "certName": "Board Certified in Criminal Trial Law"
   },
   "family-law": {
@@ -183,7 +196,16 @@
      "Yes. Florida law presumes equal time-sharing is in the child's best interests, but a parent can rebut that by showing it is not."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-divorce-process/",
+     "How to get divorced in Florida: steps, costs and timeline"
+    ],
+    [
+     "/articles/florida-child-custody-time-sharing/",
+     "Florida child custody and time-sharing explained"
+    ]
+   ],
    "certName": "Board Certified in Marital and Family Law"
   },
   "immigration": {
@@ -271,7 +293,12 @@
      "A simpler probate for estates worth $75,000 or less, not counting exempt property, or where the person died more than 2 years ago."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-probate-process/",
+     "Florida probate: how it works and how long it takes"
+    ]
+   ],
    "certName": "Board Certified in Wills, Trusts and Estates Law"
   },
   "real-estate": {
@@ -311,7 +338,16 @@
      "It removes up to $50,000 from the assessed value of a primary residence, and the Save Our Homes cap limits yearly increases to 3% or inflation."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-condo-hoa-disputes/",
+     "Florida condo and HOA disputes: your rights as an owner"
+    ],
+    [
+     "/articles/florida-hurricane-insurance-claims/",
+     "Hurricane insurance claims in Florida: deadlines and disputes"
+    ]
+   ],
    "certName": "Board Certified in Real Estate Law"
   },
   "business-law": {
@@ -479,7 +515,12 @@
      "Call the Florida Abuse Hotline at 1-800-962-2873."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-probate-process/",
+     "Florida probate: how it works and how long it takes"
+    ]
+   ],
    "certName": "Board Certified in Elder Law"
   },
   "workers-compensation": {
@@ -527,7 +568,12 @@
      "Fees are set by law: 20% of the first $5,000 of benefits secured, 15% of the next $5,000 and 10% of the rest during the first 10 years."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-workers-compensation-benefits/",
+     "Florida workers' compensation benefits: what you can get"
+    ]
+   ],
    "certName": "Board Certified in Workers' Compensation Law"
   }
  },
