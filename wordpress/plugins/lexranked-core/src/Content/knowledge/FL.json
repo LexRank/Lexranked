@@ -587,6 +587,86 @@
    "injuries": "29,816",
    "deaths": "325",
    "crashRank": "the most of any Florida county"
+  },
+  "st-petersburg": {
+   "county": "Pinellas",
+   "circuit": "Sixth"
+  },
+  "tallahassee": {
+   "county": "Leon",
+   "circuit": "Second"
+  },
+  "west-palm-beach": {
+   "county": "Palm Beach",
+   "circuit": "Fifteenth"
+  },
+  "boca-raton": {
+   "county": "Palm Beach",
+   "circuit": "Fifteenth"
+  },
+  "port-st-lucie": {
+   "county": "St. Lucie",
+   "circuit": "Nineteenth"
+  },
+  "cape-coral": {
+   "county": "Lee",
+   "circuit": "Twentieth"
+  },
+  "fort-myers": {
+   "county": "Lee",
+   "circuit": "Twentieth"
+  },
+  "naples": {
+   "county": "Collier",
+   "circuit": "Twentieth"
+  },
+  "sarasota": {
+   "county": "Sarasota",
+   "circuit": "Twelfth"
+  },
+  "gainesville": {
+   "county": "Alachua",
+   "circuit": "Eighth"
+  },
+  "clearwater": {
+   "county": "Pinellas",
+   "circuit": "Sixth"
+  },
+  "pensacola": {
+   "county": "Escambia",
+   "circuit": "First"
+  },
+  "lakeland": {
+   "county": "Polk",
+   "circuit": "Tenth"
+  },
+  "hollywood": {
+   "county": "Broward",
+   "circuit": "Seventeenth",
+   "crashes": "40,304",
+   "injuries": "24,540",
+   "deaths": "219",
+   "crashRank": "the second most of any Florida county"
+  },
+  "daytona-beach": {
+   "county": "Volusia",
+   "circuit": "Seventh"
+  },
+  "melbourne": {
+   "county": "Brevard",
+   "circuit": "Eighteenth"
+  },
+  "winter-park": {
+   "county": "Orange",
+   "circuit": "Ninth",
+   "crashes": "26,263",
+   "injuries": "19,618",
+   "deaths": "172",
+   "crashRank": "the fourth most of any Florida county"
   }
- }
+ },
+ "circuitSource": [
+  "https://www.flsenate.gov/Laws/Statutes/2025/26.021",
+  "Florida Statutes, section 26.021 (judicial circuits)"
+ ]
 }
