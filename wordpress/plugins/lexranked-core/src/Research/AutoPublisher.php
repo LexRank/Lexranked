@@ -286,7 +286,8 @@ final class AutoPublisher {
 	}
 
 	/**
-	 * Draft lawyers and firms created by the job.
+	 * Lawyers and firms created by the job: drafts, and those an earlier run
+	 * published (they count for rankings, so a re-run can publish held ones).
 	 *
 	 * @param int $job_id Job ID.
 	 * @return array<int, \WP_Post>
@@ -295,7 +296,7 @@ final class AutoPublisher {
 		return get_posts(
 			array(
 				'post_type'        => array( Lawyer::SLUG, LawFirm::SLUG ),
-				'post_status'      => 'draft',
+				'post_status'      => array( 'draft', 'publish' ),
 				'posts_per_page'   => -1,
 				'orderby'          => 'ID',
 				'order'            => 'ASC',

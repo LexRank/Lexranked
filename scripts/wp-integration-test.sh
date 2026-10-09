@@ -379,6 +379,11 @@ check "a completed job's publication can be finished through the API, idempotent
 wp user create itEditor editor@example.com --role=editor >/dev/null
 ED_PW="$(wp user application-password create itEditor it --porcelain | tail -1)"
 HIALEAH_RANKING="$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Personal Injury Lawyers in Hialeah, Florida' --field=ID | tail -1)"
+# A ranking held for missing text is published by a later re-run, even though its profiles were published earlier.
+wp post update "$HIALEAH_RANKING" --post_status=draft >/dev/null
+wp post meta update "$HIALEAH_RANKING" _lr_held_for_content 1 >/dev/null
+check "a re-run publishes a held ranking whose profiles an earlier run published" ".rankings == [$HIALEAH_RANKING]" "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
+check "the held ranking is public and no longer marked held" '. == "publish"' "\"$(wp post get "$HIALEAH_RANKING" --field=post_status)$(wp post meta get "$HIALEAH_RANKING" _lr_held_for_content)\""
 expect "an automatically created ranking is published with complete generated page text" '(.summary | test("personal injury lawyers? in Hialeah, Florida")) and (.body | test("<h2>Florida rules to know</h2>")) and (.body | test("Eleventh Judicial Circuit")) and (.body | test("<h2>Sources</h2>")) and (.faq | length) >= 6 and .generated == true' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW"
 expect "an editor's text replaces the generated text and is kept" '.summary == "Edited by hand." and .generated == false' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"summary":"Edited by hand."}'
 expect "generated text can be restored on request" '.generated == true and (.summary | test("Hialeah"))' "$API/editorial/rankings/$HIALEAH_RANKING/generate" -u "itEditor:$ED_PW" -X POST
