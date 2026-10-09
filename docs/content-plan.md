@@ -30,7 +30,9 @@ state, city and practice-area pages, FAQs and profile summaries.
    use: a "short version" bullet list at the top, numbered steps,
    checklists, comparison tables (fee models, deadlines by claim type,
    process stages), and definition boxes. A guide without at least one list
-   or table needs a reason.
+   or table needs a reason. Every guide has a "short version" list and an
+   FAQ that answers the reader's remaining follow-up questions (usually 8–12).
+   As short as possible: nothing is added only to make a text longer.
 4. **Researched and true.** Every legal rule, number, deadline, fee or
    procedure is checked against a primary source (statute, court rule,
    state bar, agency) before publishing, with the current version and its
@@ -87,7 +89,12 @@ are researched and written by the editorial assistant with web research and
 primary sources. The AI content generator (`content_generation` with
 `kind: article`) only writes from LexRanked's own data and is for guides
 about rankings and profiles; it also follows rules 1–3 and 8 (answer-first
-paragraphs, bullet lists, one distinctive point drawn from the facts).
+paragraphs, bullet lists, one distinctive point drawn from the facts;
+prompt `article/4`: a "short version" section first and 6–10 FAQs).
+
+Featured images (`lexranked-images`) are full illustrated scenes with the
+LexRanked owl in a real setting tied to the topic; pass per-post art
+direction with `--scenes scenes.json` so each image is specific to its guide.
 
 Status: ✅ published · 🟡 draft · blank = not started. Published so far:
 `personal-injury-claims-miami-florida-law` (Personal Injury, overlaps 11/15),

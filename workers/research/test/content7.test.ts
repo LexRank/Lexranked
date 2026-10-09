@@ -68,7 +68,8 @@ describe('Phase 7 facts', () => {
 
   it('constrains profile and article schemas', () => {
     expect(profileSchema(['F1']).properties?.summaryFactRefs?.minItems).toBe(1);
-    expect(articleSchema(['F1']).properties?.sections?.minItems).toBe(2);
+    expect(articleSchema(['F1']).properties?.sections?.minItems).toBe(3);
+    expect(articleSchema(['F1']).properties?.faq?.minItems).toBe(6);
   });
 });
 
@@ -169,15 +170,23 @@ describe('content_generation kinds', () => {
         sections: [
           { heading: 'What the score measures', paragraphs: [{ text: 'Reputation carries 30% of the score under methodology v1.0.', factRefs: [refsFor(req, 'Score components and weights'), refsFor(req, 'Methodology version')] }], bullets: [] },
           { heading: 'What to check yourself', paragraphs: [{ text: 'Ask who will handle your case day to day and how fees work.', factRefs: [] }], bullets: [{ text: 'Who will handle your case day to day', factRefs: [] }, { text: 'How fees and costs are charged', factRefs: [] }] },
+          { heading: 'What a ranking does not tell you', paragraphs: [{ text: 'A ranking compares documented facts; it does not predict the result of your case.', factRefs: [] }], bullets: [] },
         ],
-        faq: [],
+        faq: [
+          { question: 'Does payment change a position?', answer: 'No. Positions follow the published score.', factRefs: [] },
+          { question: 'Should I check the license myself?', answer: 'Yes. Look the lawyer up in the state bar directory before you sign.', factRefs: [] },
+          { question: 'Who will handle my case?', answer: 'Ask the lawyer directly at the first meeting.', factRefs: [] },
+          { question: 'How are fees charged?', answer: 'Ask for the fee terms in writing before work starts.', factRefs: [] },
+          { question: 'Can I compare several lawyers?', answer: 'Yes. Talking to more than one lawyer helps you judge experience and fees.', factRefs: [] },
+          { question: 'Is a ranking a guarantee of results?', answer: 'No. It compares documented facts, not outcomes.', factRefs: [] },
+        ],
       }),
     });
     const { wp, deps } = setup(ai);
     wp.publicRoutes = { '/score-versions': METHODOLOGY };
     wp.addJob('content_generation', { kind: 'article', topic: 'How to read a lawyer ranking' });
     expect(await runOnce(deps)).toBe('completed');
-    expect(wp.drafts[0]).toMatchObject({ content_type: 'article', target_id: null, content: { title: 'How to read a lawyer ranking' }, prompt_version: 'interp/2+article/3' });
+    expect(wp.drafts[0]).toMatchObject({ content_type: 'article', target_id: null, content: { title: 'How to read a lawyer ranking' }, prompt_version: 'interp/2+article/4' });
     expect((wp.drafts[0] as { content: { sections: unknown[] } }).content.sections[1]).toMatchObject({ bullets: ['Who will handle your case day to day', 'How fees and costs are charged'] });
   });
 

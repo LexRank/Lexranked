@@ -47,8 +47,16 @@ function answer(name, user) {
         sections: [
           { heading: 'How positions are decided', paragraphs: [{ text: 'Positions follow the LexRank score, and payment never affects positions.', factRefs: [how.id] }], bullets: [{ text: 'Payment never affects positions.', factRefs: [how.id] }] },
           { heading: 'What to check yourself', paragraphs: [{ text: 'Ask who will handle your case and how you will be kept informed.', factRefs: [] }], bullets: [] },
+          { heading: 'What a ranking does not tell you', paragraphs: [{ text: 'A ranking compares documented facts; it does not predict the result of your case.', factRefs: [] }], bullets: [] },
         ],
-        faq: [],
+        faq: [
+          { question: 'Does payment change a position?', answer: 'No. Positions follow the published score.', factRefs: [] },
+          { question: 'Should I check the license myself?', answer: 'Yes. Look the lawyer up in the state bar directory before you sign.', factRefs: [] },
+          { question: 'Who will handle my case?', answer: 'Ask the lawyer directly at the first meeting.', factRefs: [] },
+          { question: 'How are fees charged?', answer: 'Ask for the fee terms in writing before work starts.', factRefs: [] },
+          { question: 'Can I compare several lawyers?', answer: 'Yes. Talking to more than one lawyer helps you judge experience and fees.', factRefs: [] },
+          { question: 'Is a ranking a guarantee of results?', answer: 'No. It compares documented facts, not outcomes.', factRefs: [] },
+        ],
       };
     }
     case 'content_qa':

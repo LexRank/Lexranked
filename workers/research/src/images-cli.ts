@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /**
- * lexranked-images --post <id> [--post <id> …] [--force]
+ * lexranked-images --post <id> [--post <id> …] [--force] [--scenes scenes.json]
+ *
+ * scenes.json (optional) maps a post ID to art direction for its image:
+ * {"974": "The owl at a desk in a Miami office at sunset, weighing coins on a scale"}.
  *
  * Generates an illustration for each article and sets it as its featured
  * image. Needs OPENAI_API_KEY (the image model is picked from ai/models.ts
@@ -14,12 +17,14 @@ import { readFile } from 'node:fs/promises';
 import { resolveModel } from './ai/models.js';
 import { addFeaturedImage, OpenAIImageGenerator, WordPressMedia } from './images/featuredImage.js';
 
-export function parseArgs(argv: string[]): { posts: number[]; force: boolean } {
+export function parseArgs(argv: string[]): { posts: number[]; force: boolean; scenes?: string } {
   const posts: number[] = [];
+  let scenes: string | undefined;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--post' && /^\d+$/.test(argv[i + 1] ?? '')) posts.push(Number(argv[++i]));
+    else if (argv[i] === '--scenes' && argv[i + 1]) scenes = argv[++i];
   }
-  return { posts, force: argv.includes('--force') };
+  return { posts, force: argv.includes('--force'), ...(scenes ? { scenes } : {}) };
 }
 
 /** `…/wp-json/lexranked/v1` → `…/wp-json`. */
@@ -28,7 +33,8 @@ export function wpJsonBase(apiUrl: string): string {
 }
 
 async function main(argv: string[]): Promise<number> {
-  const { posts, force } = parseArgs(argv);
+  const { posts, force, scenes: scenesPath } = parseArgs(argv);
+  const scenes: Record<string, string> = scenesPath ? (JSON.parse(await readFile(scenesPath, 'utf8')) as Record<string, string>) : {};
   const env = process.env;
   const missing = ['OPENAI_API_KEY', 'LEXRANKED_API_URL', 'LEXRANKED_WORKER_USER', 'LEXRANKED_WORKER_APP_PASSWORD'].filter((k) => !env[k]);
   if (missing.length > 0 || posts.length === 0) {
@@ -46,7 +52,8 @@ async function main(argv: string[]): Promise<number> {
   let failed = 0;
   for (const id of posts) {
     try {
-      const outcome = await addFeaturedImage(id, { wp, images, force, reference });
+      const scene = scenes[String(id)];
+      const outcome = await addFeaturedImage(id, { wp, images, force, reference, ...(scene ? { scene } : {}) });
       process.stdout.write(JSON.stringify({ post: id, ...outcome }) + '\n');
     } catch (err) {
       failed++;
