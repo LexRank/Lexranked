@@ -27,6 +27,7 @@ export default async function AuthorPage(props: PageProps<"/authors/[slug]">) {
   const author = authorBySlug(slug);
   if (!author) notFound();
   const articles = await load(allArticles);
+  const first = author.name.split(" ")[0];
   const guides = articles.ok ? articles.data.filter((a) => a.author.slug === author.slug) : [];
   return (
     <>
@@ -46,7 +47,7 @@ export default async function AuthorPage(props: PageProps<"/authors/[slug]">) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="author-profile__portrait" src={author.portrait.src} alt={author.portrait.alt} width={author.portrait.width} height={author.portrait.height} />
           <div className="prose editorial__body">
-            <h2>Who is {author.name}?</h2>
+            <h2>{`Who is ${author.name}?`}</h2>
             <p>
               <strong>{author.summary}</strong>
             </p>
@@ -61,7 +62,7 @@ export default async function AuthorPage(props: PageProps<"/authors/[slug]">) {
               </tbody>
             </table>
 
-            <h2>What does {author.name.split(" ")[0]} cover at LexRanked?</h2>
+            <h2>{`What does ${first} cover at LexRanked?`}</h2>
             <p>
               <strong>He edits guides about the financial side of hiring a lawyer and of legal claims.</strong>
             </p>
@@ -80,9 +81,9 @@ export default async function AuthorPage(props: PageProps<"/authors/[slug]">) {
               <strong>{author.background}</strong>
             </p>
 
-            <h2>Is {author.name.split(" ")[0]} a lawyer?</h2>
+            <h2>{`Is ${first} a lawyer?`}</h2>
             <p>
-              <strong>No. {author.name} is not a lawyer, and LexRanked does not give legal advice.</strong> The legal rules in his guides are taken
+              <strong>{`No. ${author.name} is not a lawyer, and LexRanked does not give legal advice.`}</strong> The legal rules in his guides are taken
               from primary sources and linked so you can check them; for advice on your situation, speak to a lawyer licensed in your state.
             </p>
 
