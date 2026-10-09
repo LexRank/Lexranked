@@ -14,7 +14,7 @@ a po publikacji zmienia status na ✅. Stan na: 9 października 2026.
 | Huby miast | 6 | Miami, Tampa, Orlando, Jacksonville, Fort Lauderdale + Coral Gables (1 prawnik) |
 | Huby obszarów praktyki | 11 | 11 z 16 obszarów katalogu ma dane |
 | Hub stanu | 1 | Floryda |
-| Poradniki | 11 | plan poradników: 100 pozycji w `docs/content-plan.md` (3 opublikowane z planu) |
+| Poradniki | 13 | plan poradników: 100 pozycji w `docs/content-plan.md` (3 opublikowane z planu) |
 | Strony zaufania | 10 | metodologia, weryfikacja, polityka reklamowa, status, o nas, polityka redakcyjna, kontakt, prywatność, regulamin, zastrzeżenia prawne |
 
 ## 2. Analiza
@@ -985,7 +985,7 @@ linkują do nich w sekcji „Further reading”. Fakty sprawdzać w ustawach (za
 | 11 | What Happens After an Arrest in Florida | florida-arrest-process | Criminal | P1 | planowany |
 | 12 | Sealing and Expunging a Criminal Record in Florida | florida-expungement-record-sealing | Criminal | P2 | planowany |
 | 13 | Florida Workers' Compensation Benefits: What You Can Get | florida-workers-compensation-benefits | Workers' Comp | P1 | ✅ |
-| 14 | Florida Probate: How It Works and How Long It Takes | florida-probate-process | Estate, Probate | P1 | planowany |
+| 14 | Florida Probate: How It Works and How Long It Takes | florida-probate-process | Estate, Probate | P1 | ✅ |
 | 15 | Wills vs. Trusts in Florida | florida-wills-vs-trusts | Estate | P2 | planowany |
 | 16 | Florida Homestead Protection Explained | florida-homestead-protection | Estate, Real Estate | P2 | planowany |
 | 17 | Hurricane Insurance Claims in Florida: Deadlines and Disputes | florida-hurricane-insurance-claims | Insurance Claims | P1 | ✅ |
@@ -994,7 +994,7 @@ linkują do nich w sekcji „Further reading”. Fakty sprawdzać w ustawach (za
 | 20 | Florida Eviction Process for Landlords and Tenants | florida-eviction-process | Real Estate, Landlord-Tenant | P2 | planowany |
 | 21 | Buying a Home in Florida: What a Real Estate Lawyer Does | florida-real-estate-lawyer-closing | Real Estate | P2 | planowany |
 | 22 | Florida Employment Law: At-Will, Discrimination and Unpaid Wages | florida-employment-rights | Employment | P2 | planowany |
-| 23 | Florida Medical Malpractice: Pre-Suit Rules and Deadlines | florida-medical-malpractice-rules | Medical Malpractice | P1 | planowany |
+| 23 | Florida Medical Malpractice: Pre-Suit Rules and Deadlines | florida-medical-malpractice-rules | Medical Malpractice | P1 | ✅ |
 | 24 | Florida Wrongful Death Claims: Who Can Sue | florida-wrongful-death-claims | Wrongful Death | P2 | planowany |
 | 25 | Boating Accidents in Florida: Liability and Claims | florida-boating-accident-claims | Boating Accident | P2 | planowany |
 | 26 | Immigration Court in Florida: Locations and What to Expect | florida-immigration-courts | Immigration | P2 | planowany |

@@ -90,6 +90,10 @@
     [
      "/articles/personal-injury-case-timeline/",
      "How long a personal injury case takes"
+    ],
+    [
+     "/articles/florida-medical-malpractice-rules/",
+     "Florida medical malpractice: pre-suit rules and deadlines"
     ]
    ],
    "certName": "Board Certified in Civil Trial Law"
@@ -281,7 +285,12 @@
      "A simpler probate for estates worth $75,000 or less, not counting exempt property, or where the person died more than 2 years ago."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-probate-process/",
+     "Florida probate: how it works and how long it takes"
+    ]
+   ],
    "certName": "Board Certified in Wills, Trusts and Estates Law"
   },
   "real-estate": {
@@ -489,7 +498,12 @@
      "Call the Florida Abuse Hotline at 1-800-962-2873."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-probate-process/",
+     "Florida probate: how it works and how long it takes"
+    ]
+   ],
    "certName": "Board Certified in Elder Law"
   },
   "workers-compensation": {
