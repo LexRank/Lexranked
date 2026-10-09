@@ -7,10 +7,10 @@ a po publikacji zmienia status na ✅. Stan na: 5 października 2026.
 
 | Co | Ile | Szczegóły |
 |---|---|---|
-| Rankingi | 40 | 5 miast × 7–9 obszarów, wszystkie na Florydzie, wszystkie rankingi prawników |
+| Rankingi | 47 | Floryda: 5 miast poziomu 1 i Coral Gables; 35 kolejnych czeka jako szkice na wtyczkę 0.25.2 |
 | Rankingi kontekstowe | 0 | mechanizm gotowy (język, typ sprawy, typ klienta), brak stron |
 | Rankingi kancelarii | 0 | brak danych o kancelariach (0 profili firm) |
-| Profile prawników | 513 | Floryda, prawnicy z certyfikatem Florida Bar |
+| Profile prawników | 948 | Floryda, prawnicy z certyfikatem Florida Bar |
 | Huby miast | 6 | Miami, Tampa, Orlando, Jacksonville, Fort Lauderdale + Coral Gables (1 prawnik) |
 | Huby obszarów praktyki | 11 | 11 z 16 obszarów katalogu ma dane |
 | Hub stanu | 1 | Floryda |
@@ -348,12 +348,12 @@ Podsumowanie: ✅ 40 na żywo · P1 146 · P2 237 · P3 56.
 | 128 | Best Medical Malpractice Lawyers in Fort Lauderdale, Florida | `/rankings/florida/fort-lauderdale/medical-malpractice/` | 1 | P1 | planowany |
 | 129 | Best Bankruptcy Lawyers in Fort Lauderdale, Florida | `/rankings/florida/fort-lauderdale/bankruptcy/` | 1 | P1 | planowany |
 | 130 | Best Insurance Claim Lawyers in Fort Lauderdale, Florida | `/rankings/florida/fort-lauderdale/insurance-claims/` | 1 | P1 | planowany |
-| 131 | Best Personal Injury Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/personal-injury/` | 2 | P1 | planowany |
+| 131 | Best Personal Injury Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/personal-injury/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 132 | Best Criminal Defense Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/criminal-defense/` | 2 | P1 | planowany |
 | 133 | Best Family Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/family-law/` | 2 | P1 | planowany |
 | 134 | Best Immigration Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/immigration/` | 2 | P2 | planowany |
 | 135 | Best Estate Planning Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/estate-planning/` | 2 | P1 | planowany |
-| 136 | Best Real Estate Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/real-estate/` | 2 | P1 | planowany |
+| 136 | Best Real Estate Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/real-estate/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 137 | Best Business Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/business-law/` | 2 | P2 | planowany |
 | 138 | Best Employment Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/employment-law/` | 2 | P2 | planowany |
 | 139 | Best Workers' Compensation Lawyers in St. Petersburg, Florida | `/rankings/florida/st-petersburg/workers-compensation/` | 2 | P2 | planowany |
@@ -364,44 +364,44 @@ Podsumowanie: ✅ 40 na żywo · P1 146 · P2 237 · P3 56.
 | 144 | Best Family Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/family-law/` | 2 | P1 | planowany |
 | 145 | Best Immigration Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/immigration/` | 2 | P2 | planowany |
 | 146 | Best Estate Planning Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/estate-planning/` | 2 | P1 | planowany |
-| 147 | Best Real Estate Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/real-estate/` | 2 | P1 | planowany |
+| 147 | Best Real Estate Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/real-estate/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 148 | Best Business Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/business-law/` | 2 | P2 | planowany |
 | 149 | Best Employment Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/employment-law/` | 2 | P2 | planowany |
 | 150 | Best Workers' Compensation Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/workers-compensation/` | 2 | P2 | planowany |
 | 151 | Best Tax Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/tax-law/` | 2 | P2 | planowany |
-| 152 | Best Elder Law Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/elder-law/` | 2 | P2 | planowany |
-| 153 | Best Personal Injury Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/personal-injury/` | 2 | P1 | planowany |
-| 154 | Best Criminal Defense Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/criminal-defense/` | 2 | P1 | planowany |
-| 155 | Best Family Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/family-law/` | 2 | P1 | planowany |
+| 152 | Best Elder Law Lawyers in Tallahassee, Florida | `/rankings/florida/tallahassee/elder-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 153 | Best Personal Injury Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/personal-injury/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 154 | Best Criminal Defense Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/criminal-defense/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 155 | Best Family Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/family-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 156 | Best Immigration Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/immigration/` | 2 | P2 | planowany |
-| 157 | Best Estate Planning Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/estate-planning/` | 2 | P1 | planowany |
-| 158 | Best Real Estate Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/real-estate/` | 2 | P1 | planowany |
-| 159 | Best Business Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/business-law/` | 2 | P2 | planowany |
+| 157 | Best Estate Planning Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/estate-planning/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 158 | Best Real Estate Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/real-estate/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 159 | Best Business Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/business-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 160 | Best Employment Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/employment-law/` | 2 | P2 | planowany |
 | 161 | Best Workers' Compensation Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/workers-compensation/` | 2 | P2 | planowany |
-| 162 | Best Tax Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/tax-law/` | 2 | P2 | planowany |
+| 162 | Best Tax Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/tax-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 163 | Best Elder Law Lawyers in West Palm Beach, Florida | `/rankings/florida/west-palm-beach/elder-law/` | 2 | P2 | planowany |
-| 164 | Best Personal Injury Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/personal-injury/` | 2 | P1 | planowany |
+| 164 | Best Personal Injury Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/personal-injury/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 165 | Best Criminal Defense Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/criminal-defense/` | 2 | P1 | planowany |
-| 166 | Best Family Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/family-law/` | 2 | P1 | planowany |
+| 166 | Best Family Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/family-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 167 | Best Immigration Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/immigration/` | 2 | P2 | planowany |
-| 168 | Best Estate Planning Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/estate-planning/` | 2 | P1 | planowany |
-| 169 | Best Real Estate Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/real-estate/` | 2 | P1 | planowany |
-| 170 | Best Business Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/business-law/` | 2 | P2 | planowany |
+| 168 | Best Estate Planning Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/estate-planning/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 169 | Best Real Estate Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/real-estate/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 170 | Best Business Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/business-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 171 | Best Employment Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/employment-law/` | 2 | P2 | planowany |
 | 172 | Best Workers' Compensation Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/workers-compensation/` | 2 | P2 | planowany |
 | 173 | Best Tax Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/tax-law/` | 2 | P2 | planowany |
 | 174 | Best Elder Law Lawyers in Boca Raton, Florida | `/rankings/florida/boca-raton/elder-law/` | 2 | P2 | planowany |
-| 175 | Best Personal Injury Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/personal-injury/` | 2 | P1 | planowany |
+| 175 | Best Personal Injury Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/personal-injury/` | 2 | ✅ | ✅ na żywo (10) |
 | 176 | Best Criminal Defense Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/criminal-defense/` | 2 | P1 | planowany |
-| 177 | Best Family Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/family-law/` | 2 | P1 | planowany |
-| 178 | Best Immigration Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/immigration/` | 2 | P2 | planowany |
-| 179 | Best Estate Planning Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/estate-planning/` | 2 | P1 | planowany |
-| 180 | Best Real Estate Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/real-estate/` | 2 | P1 | planowany |
-| 181 | Best Business Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/business-law/` | 2 | P2 | planowany |
+| 177 | Best Family Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/family-law/` | 2 | ✅ | ✅ na żywo (5) |
+| 178 | Best Immigration Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/immigration/` | 2 | ✅ | ✅ na żywo (6) |
+| 179 | Best Estate Planning Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/estate-planning/` | 2 | ✅ | ✅ na żywo (5) |
+| 180 | Best Real Estate Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/real-estate/` | 2 | ✅ | ✅ na żywo (11) |
+| 181 | Best Business Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/business-law/` | 2 | ✅ | ✅ na żywo (5) |
 | 182 | Best Employment Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/employment-law/` | 2 | P2 | planowany |
 | 183 | Best Workers' Compensation Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/workers-compensation/` | 2 | P2 | planowany |
-| 184 | Best Tax Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/tax-law/` | 2 | P2 | planowany |
+| 184 | Best Tax Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/tax-law/` | 2 | ✅ | ✅ na żywo (6) |
 | 185 | Best Elder Law Lawyers in Coral Gables, Florida | `/rankings/florida/coral-gables/elder-law/` | 2 | P2 | planowany |
 | 186 | Best Personal Injury Lawyers in Hialeah, Florida | `/rankings/florida/hialeah/personal-injury/` | 2 | P1 | planowany |
 | 187 | Best Criminal Defense Lawyers in Hialeah, Florida | `/rankings/florida/hialeah/criminal-defense/` | 2 | P1 | planowany |
@@ -436,12 +436,12 @@ Podsumowanie: ✅ 40 na żywo · P1 146 · P2 237 · P3 56.
 | 216 | Best Workers' Compensation Lawyers in Cape Coral, Florida | `/rankings/florida/cape-coral/workers-compensation/` | 2 | P2 | planowany |
 | 217 | Best Tax Lawyers in Cape Coral, Florida | `/rankings/florida/cape-coral/tax-law/` | 2 | P2 | planowany |
 | 218 | Best Elder Law Lawyers in Cape Coral, Florida | `/rankings/florida/cape-coral/elder-law/` | 2 | P2 | planowany |
-| 219 | Best Personal Injury Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/personal-injury/` | 2 | P1 | planowany |
+| 219 | Best Personal Injury Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/personal-injury/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 220 | Best Criminal Defense Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/criminal-defense/` | 2 | P1 | planowany |
 | 221 | Best Family Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/family-law/` | 2 | P1 | planowany |
 | 222 | Best Immigration Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/immigration/` | 2 | P2 | planowany |
-| 223 | Best Estate Planning Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/estate-planning/` | 2 | P1 | planowany |
-| 224 | Best Real Estate Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/real-estate/` | 2 | P1 | planowany |
+| 223 | Best Estate Planning Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/estate-planning/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 224 | Best Real Estate Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/real-estate/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 225 | Best Business Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/business-law/` | 2 | P2 | planowany |
 | 226 | Best Employment Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/employment-law/` | 2 | P2 | planowany |
 | 227 | Best Workers' Compensation Lawyers in Fort Myers, Florida | `/rankings/florida/fort-myers/workers-compensation/` | 2 | P2 | planowany |
@@ -451,9 +451,9 @@ Podsumowanie: ✅ 40 na żywo · P1 146 · P2 237 · P3 56.
 | 231 | Best Criminal Defense Lawyers in Naples, Florida | `/rankings/florida/naples/criminal-defense/` | 2 | P1 | planowany |
 | 232 | Best Family Lawyers in Naples, Florida | `/rankings/florida/naples/family-law/` | 2 | P1 | planowany |
 | 233 | Best Immigration Lawyers in Naples, Florida | `/rankings/florida/naples/immigration/` | 2 | P2 | planowany |
-| 234 | Best Estate Planning Lawyers in Naples, Florida | `/rankings/florida/naples/estate-planning/` | 2 | P1 | planowany |
-| 235 | Best Real Estate Lawyers in Naples, Florida | `/rankings/florida/naples/real-estate/` | 2 | P1 | planowany |
-| 236 | Best Business Lawyers in Naples, Florida | `/rankings/florida/naples/business-law/` | 2 | P2 | planowany |
+| 234 | Best Estate Planning Lawyers in Naples, Florida | `/rankings/florida/naples/estate-planning/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 235 | Best Real Estate Lawyers in Naples, Florida | `/rankings/florida/naples/real-estate/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 236 | Best Business Lawyers in Naples, Florida | `/rankings/florida/naples/business-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 237 | Best Employment Lawyers in Naples, Florida | `/rankings/florida/naples/employment-law/` | 2 | P2 | planowany |
 | 238 | Best Workers' Compensation Lawyers in Naples, Florida | `/rankings/florida/naples/workers-compensation/` | 2 | P2 | planowany |
 | 239 | Best Tax Lawyers in Naples, Florida | `/rankings/florida/naples/tax-law/` | 2 | P2 | planowany |
@@ -462,13 +462,13 @@ Podsumowanie: ✅ 40 na żywo · P1 146 · P2 237 · P3 56.
 | 242 | Best Criminal Defense Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/criminal-defense/` | 2 | P1 | planowany |
 | 243 | Best Family Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/family-law/` | 2 | P1 | planowany |
 | 244 | Best Immigration Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/immigration/` | 2 | P2 | planowany |
-| 245 | Best Estate Planning Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/estate-planning/` | 2 | P1 | planowany |
-| 246 | Best Real Estate Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/real-estate/` | 2 | P1 | planowany |
-| 247 | Best Business Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/business-law/` | 2 | P2 | planowany |
+| 245 | Best Estate Planning Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/estate-planning/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 246 | Best Real Estate Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/real-estate/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 247 | Best Business Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/business-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 248 | Best Employment Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/employment-law/` | 2 | P2 | planowany |
 | 249 | Best Workers' Compensation Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/workers-compensation/` | 2 | P2 | planowany |
-| 250 | Best Tax Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/tax-law/` | 2 | P2 | planowany |
-| 251 | Best Elder Law Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/elder-law/` | 2 | P2 | planowany |
+| 250 | Best Tax Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/tax-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 251 | Best Elder Law Lawyers in Sarasota, Florida | `/rankings/florida/sarasota/elder-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 252 | Best Personal Injury Lawyers in Gainesville, Florida | `/rankings/florida/gainesville/personal-injury/` | 2 | P1 | planowany |
 | 253 | Best Criminal Defense Lawyers in Gainesville, Florida | `/rankings/florida/gainesville/criminal-defense/` | 2 | P1 | planowany |
 | 254 | Best Family Lawyers in Gainesville, Florida | `/rankings/florida/gainesville/family-law/` | 2 | P1 | planowany |
@@ -480,23 +480,23 @@ Podsumowanie: ✅ 40 na żywo · P1 146 · P2 237 · P3 56.
 | 260 | Best Workers' Compensation Lawyers in Gainesville, Florida | `/rankings/florida/gainesville/workers-compensation/` | 2 | P2 | planowany |
 | 261 | Best Tax Lawyers in Gainesville, Florida | `/rankings/florida/gainesville/tax-law/` | 2 | P2 | planowany |
 | 262 | Best Elder Law Lawyers in Gainesville, Florida | `/rankings/florida/gainesville/elder-law/` | 2 | P2 | planowany |
-| 263 | Best Personal Injury Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/personal-injury/` | 2 | P1 | planowany |
-| 264 | Best Criminal Defense Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/criminal-defense/` | 2 | P1 | planowany |
-| 265 | Best Family Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/family-law/` | 2 | P1 | planowany |
+| 263 | Best Personal Injury Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/personal-injury/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 264 | Best Criminal Defense Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/criminal-defense/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 265 | Best Family Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/family-law/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 266 | Best Immigration Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/immigration/` | 2 | P2 | planowany |
 | 267 | Best Estate Planning Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/estate-planning/` | 2 | P1 | planowany |
-| 268 | Best Real Estate Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/real-estate/` | 2 | P1 | planowany |
+| 268 | Best Real Estate Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/real-estate/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 269 | Best Business Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/business-law/` | 2 | P2 | planowany |
 | 270 | Best Employment Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/employment-law/` | 2 | P2 | planowany |
 | 271 | Best Workers' Compensation Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/workers-compensation/` | 2 | P2 | planowany |
 | 272 | Best Tax Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/tax-law/` | 2 | P2 | planowany |
 | 273 | Best Elder Law Lawyers in Clearwater, Florida | `/rankings/florida/clearwater/elder-law/` | 2 | P2 | planowany |
-| 274 | Best Personal Injury Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/personal-injury/` | 2 | P1 | planowany |
+| 274 | Best Personal Injury Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/personal-injury/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 275 | Best Criminal Defense Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/criminal-defense/` | 2 | P1 | planowany |
 | 276 | Best Family Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/family-law/` | 2 | P1 | planowany |
 | 277 | Best Immigration Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/immigration/` | 2 | P2 | planowany |
-| 278 | Best Estate Planning Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/estate-planning/` | 2 | P1 | planowany |
-| 279 | Best Real Estate Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/real-estate/` | 2 | P1 | planowany |
+| 278 | Best Estate Planning Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/estate-planning/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
+| 279 | Best Real Estate Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/real-estate/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 280 | Best Business Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/business-law/` | 2 | P2 | planowany |
 | 281 | Best Employment Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/employment-law/` | 2 | P2 | planowany |
 | 282 | Best Workers' Compensation Lawyers in Pensacola, Florida | `/rankings/florida/pensacola/workers-compensation/` | 2 | P2 | planowany |
@@ -546,7 +546,7 @@ Podsumowanie: ✅ 40 na żywo · P1 146 · P2 237 · P3 56.
 | 326 | Best Workers' Compensation Lawyers in Melbourne, Florida | `/rankings/florida/melbourne/workers-compensation/` | 2 | P2 | planowany |
 | 327 | Best Tax Lawyers in Melbourne, Florida | `/rankings/florida/melbourne/tax-law/` | 2 | P2 | planowany |
 | 328 | Best Elder Law Lawyers in Melbourne, Florida | `/rankings/florida/melbourne/elder-law/` | 2 | P2 | planowany |
-| 329 | Best Personal Injury Lawyers in Winter Park, Florida | `/rankings/florida/winter-park/personal-injury/` | 2 | P1 | planowany |
+| 329 | Best Personal Injury Lawyers in Winter Park, Florida | `/rankings/florida/winter-park/personal-injury/` | 2 | P1 | szkic gotowy (czeka na wtyczkę 0.25.2) |
 | 330 | Best Criminal Defense Lawyers in Winter Park, Florida | `/rankings/florida/winter-park/criminal-defense/` | 2 | P1 | planowany |
 | 331 | Best Family Lawyers in Winter Park, Florida | `/rankings/florida/winter-park/family-law/` | 2 | P1 | planowany |
 | 332 | Best Immigration Lawyers in Winter Park, Florida | `/rankings/florida/winter-park/immigration/` | 2 | P2 | planowany |
