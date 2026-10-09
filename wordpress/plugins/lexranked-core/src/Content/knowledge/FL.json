@@ -135,7 +135,12 @@
      "You can ask the court to appoint the public defender, who represents people who cannot afford a lawyer."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-dui-penalties/",
+     "Florida DUI penalties: first, second and third offense"
+    ]
+   ],
    "certName": "Board Certified in Criminal Trial Law"
   },
   "family-law": {
@@ -183,7 +188,12 @@
      "Yes. Florida law presumes equal time-sharing is in the child's best interests, but a parent can rebut that by showing it is not."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-divorce-process/",
+     "How to get divorced in Florida: steps, costs and timeline"
+    ]
+   ],
    "certName": "Board Certified in Marital and Family Law"
   },
   "immigration": {
@@ -527,7 +537,12 @@
      "Fees are set by law: 20% of the first $5,000 of benefits secured, 15% of the next $5,000 and 10% of the rest during the first 10 years."
     ]
    ],
-   "guides": [],
+   "guides": [
+    [
+     "/articles/florida-workers-compensation-benefits/",
+     "Florida workers' compensation benefits: what you can get"
+    ]
+   ],
    "certName": "Board Certified in Workers' Compensation Law"
   }
  },
