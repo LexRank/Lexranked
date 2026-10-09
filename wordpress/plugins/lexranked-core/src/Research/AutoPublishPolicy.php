@@ -173,11 +173,12 @@ final class AutoPublishPolicy {
 	/**
 	 * Languages that earn their own ranking in a city and practice area: at
 	 * least $min lawyers list the language on a qualifying fact, and at least
-	 * $min_verified of those facts are verified. English never does.
+	 * $min_verified of those facts are confirmed (RankingQualifier::confirms:
+	 * verified, or from an official record). English never does.
 	 *
 	 * @param array<int, array<string, mixed>|null> $language_facts One `languages` fact row (status, value) per published lawyer.
 	 * @param int                                   $min            Minimum lawyers (min_ranking_entities).
-	 * @param int                                   $min_verified   Minimum verified facts.
+	 * @param int                                   $min_verified   Minimum confirmed facts.
 	 * @return array<string, int> Language slug => lawyers, most first.
 	 */
 	public static function language_rankings( array $language_facts, int $min, int $min_verified ): array {
@@ -195,7 +196,7 @@ final class AutoPublishPolicy {
 			}
 			foreach ( array_keys( $slugs ) as $slug ) {
 				$all[ $slug ] = ( $all[ $slug ] ?? 0 ) + 1;
-				if ( 'verified' === $fact['status'] ) {
+				if ( RankingQualifier::confirms( $fact ) ) {
 					$verified[ $slug ] = ( $verified[ $slug ] ?? 0 ) + 1;
 				}
 			}

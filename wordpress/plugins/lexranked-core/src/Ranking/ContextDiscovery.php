@@ -53,7 +53,7 @@ final class ContextDiscovery {
 					$evidence = $qualifier->qualify( $facts );
 					if ( null !== $evidence ) {
 						++$qualified;
-						$verified += 'verified' === $evidence['status'] ? 1 : 0;
+						$verified += RankingQualifier::confirms( $evidence ) ? 1 : 0;
 					}
 				}
 				$problem = RankingQualifier::CASE_TYPE === $type && ! in_array( $slug, $case_types, true ) ? 'Not a sub-area of the practice area in the taxonomy.' : null;

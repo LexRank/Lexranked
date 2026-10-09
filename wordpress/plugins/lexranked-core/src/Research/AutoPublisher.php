@@ -38,7 +38,7 @@ final class AutoPublisher {
 	/** Post meta on a draft ranking kept back because its page text cannot be written yet. */
 	public const HELD_META = '_lr_held_for_content';
 
-	/** Verified language facts a language ranking needs (the context default, Ranking min_verified). */
+	/** Confirmed language facts a language ranking needs (the context default, Ranking min_verified). */
 	public const MIN_VERIFIED_LANGUAGE = 3;
 
 	/** Why a research draft was kept (JSON list of reasons). */
@@ -487,7 +487,9 @@ final class AutoPublisher {
 			foreach ( $this->published_ids( $pair['post_type'], $pair['city']['id'], $pair['area']['id'] ) as $id ) {
 				$facts[] = $this->services->facts->for_entity( 'lawyer', $id )['languages'] ?? null;
 			}
-			foreach ( array_keys( AutoPublishPolicy::language_rankings( $facts, $min, self::MIN_VERIFIED_LANGUAGE ) ) as $language ) {
+			// Never ask for more confirmed facts than lawyers a ranking needs.
+			$min_confirmed = min( self::MIN_VERIFIED_LANGUAGE, $min );
+			foreach ( array_keys( AutoPublishPolicy::language_rankings( $facts, $min, $min_confirmed ) ) as $language ) {
 				$existing = $this->language_ranking( $pair['city']['id'], $pair['area']['id'], (string) $language );
 				if ( null !== $existing ) {
 					// Held for missing text: publish it once the text can be written.
@@ -508,6 +510,7 @@ final class AutoPublisher {
 					array(
 						'context_type'  => RankingQualifier::LANGUAGE,
 						'context_value' => (string) $language,
+						'min_verified'  => $min_confirmed,
 					)
 				);
 				if ( null !== $id ) {
@@ -673,12 +676,12 @@ final class AutoPublisher {
 	 * Create a ranking, calculate it and write its page text; publish it only
 	 * when the text is complete.
 	 *
-	 * @param int                   $job_id      Job ID (log).
-	 * @param string                $title       Title.
-	 * @param string                $entity_type lawyer|law_firm.
-	 * @param int                   $city_id     City term ID.
-	 * @param int                   $area_id     Practice-area term ID.
-	 * @param array<string, string> $context Context fields (context_type, context_value) for a contextual ranking.
+	 * @param int                  $job_id      Job ID (log).
+	 * @param string               $title       Title.
+	 * @param string               $entity_type lawyer|law_firm.
+	 * @param int                  $city_id     City term ID.
+	 * @param int                  $area_id     Practice-area term ID.
+	 * @param array<string, mixed> $context Context fields (context_type, context_value, min_verified) for a contextual ranking.
 	 */
 	private function create_ranking( int $job_id, string $title, string $entity_type, int $city_id, int $area_id, array $context = array() ): ?int {
 		$id = wp_insert_post(

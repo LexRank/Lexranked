@@ -217,7 +217,7 @@ final class RankingRunner {
 					array(
 						'parent'        => $parent_count,
 						'qualified'     => count( $qualifications ),
-						'verified'      => count( array_filter( $qualifications, static fn( array $q ): bool => 'verified' === $q['status'] ) ),
+						'verified'      => count( array_filter( $qualifications, array( RankingQualifier::class, 'confirms' ) ) ),
 						'qualifier'     => $qualifier->to_array(),
 						'calculated_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
 					)

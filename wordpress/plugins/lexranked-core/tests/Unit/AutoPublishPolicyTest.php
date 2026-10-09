@@ -226,6 +226,36 @@ final class AutoPublishPolicyTest extends TestCase {
 		);
 	}
 
+	public function testOfficialRecordsConfirmAContext(): void {
+		$this->assertTrue( \LexRanked\Core\Ranking\RankingQualifier::confirms( array( 'status' => 'verified' ) ) );
+		$this->assertTrue(
+			\LexRanked\Core\Ranking\RankingQualifier::confirms(
+				array(
+					'status'      => 'unverified',
+					'source_tier' => 1,
+				)
+			),
+			'the state bar profile'
+		);
+		$this->assertFalse(
+			\LexRanked\Core\Ranking\RankingQualifier::confirms(
+				array(
+					'status'     => 'unverified',
+					'sourceTier' => 2,
+				)
+			),
+			'a law firm website'
+		);
+		$this->assertFalse(
+			\LexRanked\Core\Ranking\RankingQualifier::confirms(
+				array(
+					'status'      => 'conflict',
+					'source_tier' => 1,
+				)
+			)
+		);
+	}
+
 	public function testLanguageRankingTitle(): void {
 		$this->assertSame( 'Best Spanish-Speaking Personal Injury Lawyers in Miami, Florida', AutoPublishPolicy::language_ranking_title( 'spanish', 'Personal Injury', 'Miami', 'Florida' ) );
 		$this->assertSame( 'Best Haitian Creole-Speaking Family Lawyers in Miami, Florida', AutoPublishPolicy::language_ranking_title( 'haitian-creole', 'Family', 'Miami', 'Florida' ) );

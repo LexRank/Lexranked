@@ -298,7 +298,7 @@ function ContextNote({ context, noun }: { context: RankingContextDto; noun: stri
     <p className="context-note">
       <strong>Who is included:</strong> only {noun}s whose sourced records {what}: {e.qualified} of the {e.parentCount} in{" "}
       {context.parent?.path ? <Link href={context.parent.path}>{context.parent.title}</Link> : "the broader ranking"}, {e.verified} of them confirmed by a
-      verified fact. Scores are the same LexRank scores; the context selects who is ranked and never changes a score.
+      verified fact or an official record such as the state bar profile. Scores are the same LexRank scores; the context selects who is ranked and never changes a score.
     </p>
   );
 }
