@@ -14,7 +14,7 @@ a po publikacji zmienia status na ✅. Stan na: 9 października 2026.
 | Huby miast | 6 | Miami, Tampa, Orlando, Jacksonville, Fort Lauderdale + Coral Gables (1 prawnik) |
 | Huby obszarów praktyki | 11 | 11 z 16 obszarów katalogu ma dane |
 | Hub stanu | 1 | Floryda |
-| Poradniki | 15 | plan poradników: 100 pozycji w `docs/content-plan.md` (3 opublikowane z planu) |
+| Poradniki | 16 | plan poradników: 100 pozycji w `docs/content-plan.md` (3 opublikowane z planu) |
 | Strony zaufania | 10 | metodologia, weryfikacja, polityka reklamowa, status, o nas, polityka redakcyjna, kontakt, prywatność, regulamin, zastrzeżenia prawne |
 
 ## 2. Analiza
@@ -989,7 +989,7 @@ linkują do nich w sekcji „Further reading”. Fakty sprawdzać w ustawach (za
 | 15 | Wills vs. Trusts in Florida | florida-wills-vs-trusts | Estate | P2 | planowany |
 | 16 | Florida Homestead Protection Explained | florida-homestead-protection | Estate, Real Estate | P2 | planowany |
 | 17 | Hurricane Insurance Claims in Florida: Deadlines and Disputes | florida-hurricane-insurance-claims | Insurance Claims | P1 | ✅ |
-| 18 | Florida Condo and HOA Disputes: Your Rights as an Owner | florida-condo-hoa-disputes | Condominium & HOA | P1 | planowany |
+| 18 | Florida Condo and HOA Disputes: Your Rights as an Owner | florida-condo-hoa-disputes | Condominium & HOA | P1 | ✅ |
 | 19 | Florida Condo Milestone Inspections and Reserve Rules | florida-condo-inspections-reserves | Condominium & HOA | P2 | planowany |
 | 20 | Florida Eviction Process for Landlords and Tenants | florida-eviction-process | Real Estate, Landlord-Tenant | P2 | planowany |
 | 21 | Buying a Home in Florida: What a Real Estate Lawyer Does | florida-real-estate-lawyer-closing | Real Estate | P2 | planowany |
