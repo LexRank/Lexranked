@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\Market;
 
+use LexRanked\Core\Content\RankingContentService;
 use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\Services;
@@ -103,5 +104,52 @@ final class MarketService {
 			$names[ $term->slug ] = $term->name;
 		}
 		return MarketStatistics::compute( $entities, $names, $now->format( 'Y-m-d\TH:i:s\Z' ) );
+	}
+	/**
+	 * Statewide figures for the data pages: every published lawyer in the state.
+	 *
+	 * @param \WP_Term $state State term.
+	 * @return array<string, mixed>
+	 */
+	public function for_state( \WP_Term $state ): array {
+		$posts  = get_posts(
+			array(
+				'post_type'              => Lawyer::SLUG,
+				'post_status'            => 'publish',
+				'posts_per_page'         => 10000,
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'suppress_filters'       => false,
+				'tax_query'              => array(
+					array(
+						'taxonomy' => Location::SLUG,
+						'field'    => 'term_id',
+						'terms'    => array( (int) $state->term_id ),
+					),
+				),
+			)
+		);
+		$people = array();
+		foreach ( $posts as $post ) {
+			$city = null;
+			foreach ( (array) get_the_terms( $post, Location::SLUG ) as $term ) {
+				if ( $term instanceof \WP_Term && 0 !== (int) $term->parent ) {
+					$city = $term;
+					break;
+				}
+			}
+			$areas = array();
+			foreach ( (array) get_the_terms( $post, PracticeArea::SLUG ) as $term ) {
+				if ( $term instanceof \WP_Term ) {
+					$areas[] = array( $term->slug, $term->name );
+				}
+			}
+			$people[] = array(
+				'city_slug' => $city?->slug,
+				'city_name' => $city?->name,
+				'areas'     => $areas,
+			) + RankingContentService::person( $this->services->facts->for_entity( 'lawyer', (int) $post->ID ) );
+		}
+		return StateData::compute( $people, gmdate( 'Y-m-d\TH:i:s\Z' ) );
 	}
 }

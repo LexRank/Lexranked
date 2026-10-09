@@ -327,7 +327,19 @@ export function articleJsonLd(article: ArticleDetail): JsonLdObject {
 /** The byline as schema.org: a Person with a profile URL when one exists. */
 function articleAuthor(author: ArticleDetail["author"]): JsonLdObject {
   const profile = authorBySlug(author.slug);
-  if (profile) return { "@type": "Person", "@id": `${absoluteUrl(authorPath(profile.slug))}#person`, name: profile.name, url: absoluteUrl(authorPath(profile.slug)) };
+  if (profile) {
+    const url = absoluteUrl(authorPath(profile.slug));
+    return {
+      "@type": "Person",
+      "@id": `${url}#person`,
+      name: profile.name,
+      url,
+      image: absoluteUrl(profile.portrait.src),
+      jobTitle: profile.jobTitle,
+      description: profile.summary,
+      worksFor: { "@id": `${siteUrl}/#organization` },
+    };
+  }
   return { "@type": author.name === "LexRanked Editorial Team" ? "Organization" : "Person", name: author.name };
 }
 
@@ -352,5 +364,34 @@ export function authorJsonLd(profile: AuthorProfile): JsonLdObject {
       url,
       worksFor: { "@id": `${siteUrl}/#organization` },
     },
+  });
+}
+
+/** Dataset (data pages): what the figures cover, where they come from and when they were calculated. */
+export function datasetJsonLd(input: {
+  name: string;
+  path: string;
+  description: string;
+  dateModified: string;
+  sources: string[];
+  variables: string[];
+  spatial?: string;
+}): JsonLdObject {
+  const url = absoluteUrl(input.path);
+  return compact({
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    "@id": `${url}#dataset`,
+    name: input.name,
+    description: input.description,
+    url,
+    isAccessibleForFree: true,
+    license: `${siteUrl}/terms/`,
+    creator: { "@id": `${siteUrl}/#organization` },
+    dateModified: input.dateModified,
+    isBasedOn: input.sources,
+    variableMeasured: input.variables,
+    spatialCoverage: input.spatial ? { "@type": "Place", name: input.spatial } : undefined,
+    inLanguage: "en-US",
   });
 }

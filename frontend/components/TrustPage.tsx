@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { JsonLd } from "@/components/JsonLd";
 import { PageHeader } from "@/components/PageHeader";
-import { rankingPageJsonLd } from "@/lib/seo/jsonld";
+import { rankingPageJsonLd, type Crumb, type JsonLdObject } from "@/lib/seo/jsonld";
 
 /** One section: a heading, the direct answer (bold, highlighted) and the detail. */
 export interface TrustSection {
@@ -25,6 +25,9 @@ export function TrustPage({
   updated,
   sections,
   children,
+  eyebrow = "Trust",
+  parent,
+  jsonLd,
 }: {
   path: string;
   crumb: string;
@@ -35,17 +38,24 @@ export function TrustPage({
   updated: string;
   sections: TrustSection[];
   children?: ReactNode;
+  eyebrow?: string;
+  /** Breadcrumb between Home and this page (e.g. the /data/ index). */
+  parent?: Crumb;
+  /** Extra structured data (e.g. a Dataset). */
+  jsonLd?: JsonLdObject;
 }) {
   const updatedLabel = new Date(`${updated}T00:00:00Z`).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
   return (
     <>
       <JsonLd data={rankingPageJsonLd({ name: title, path, description, dateModified: updated, reviewedBy: null, reviewedAt: null })} />
+      {jsonLd ? <JsonLd data={jsonLd} /> : null}
       <PageHeader
         crumbs={[
           { name: "Home", path: "/" },
+          ...(parent ? [parent] : []),
           { name: crumb, path },
         ]}
-        eyebrow="Trust"
+        eyebrow={eyebrow}
         title={title}
         lead={lead}
       />

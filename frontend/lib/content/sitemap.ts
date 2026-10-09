@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo/urls";
 import { categoryCounts } from "./articles";
 import { AUTHORS, authorPath } from "./authors";
-import type { ArticleSummary, CityDto, LawFirmSummary, LawyerSummary, PracticeAreaDto, RankingSummary, StateDto } from "@/types/api";
+import { DATA_INDEX_PATH, DATA_PAGES, dataPath, publishedDataPages } from "./data-pages";
+import type { ArticleSummary, CityDto, LawFirmSummary, LawyerSummary, PracticeAreaDto, RankingSummary, StateDto, StateStatsDto } from "@/types/api";
 import { articleEligibility, indexPageIndexable, listingEligibility, MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
 
 /**
@@ -18,9 +19,11 @@ export interface SitemapInput {
   cities: CityDto[];
   practiceAreas: PracticeAreaDto[];
   articles?: ArticleSummary[];
+  /** Statewide figures (API 1.23): the statistics pages that have enough data are listed too. */
+  stats?: StateStatsDto | null;
 }
 
-export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/", "/about/", "/editorial-policy/", "/contact/", "/privacy/", "/terms/", "/disclaimer/", ...AUTHORS.map((a) => authorPath(a.slug))];
+export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/", "/about/", "/editorial-policy/", "/contact/", "/privacy/", "/terms/", "/disclaimer/", ...AUTHORS.map((a) => authorPath(a.slug)), DATA_INDEX_PATH, ...DATA_PAGES.filter((p) => !p.stats).map((p) => dataPath(p.slug))];
 
 /** Index pages, listed once they link to enough pages (indexPageIndexable). */
 export const INDEX_PATHS = { rankings: "/rankings/", states: "/states/", cities: "/cities/", practiceAreas: "/practice-areas/" } as const;
@@ -49,6 +52,7 @@ function realLawyerCount(lawyers: LawyerSummary[], match: (l: LawyerSummary) => 
 
 export function buildSitemap(input: SitemapInput): MetadataRoute.Sitemap {
   const entries: Entry[] = STATIC_PATHS.map((p) => entry(p, undefined, p === "/" ? 1 : 0.6));
+  for (const p of publishedDataPages(input.stats ?? null).filter((d) => d.stats)) entries.push(entry(dataPath(p.slug), undefined, 0.6));
   if (listingEligibility(input.lawyers).indexable) entries.push(entry(LISTING_PATHS.lawyers, undefined, 0.6));
   if (listingEligibility(input.lawFirms).indexable) entries.push(entry(LISTING_PATHS.lawFirms, undefined, 0.6));
 

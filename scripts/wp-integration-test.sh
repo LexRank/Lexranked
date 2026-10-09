@@ -237,6 +237,8 @@ expect "the summary states computed numbers only" '(.summary | startswith("LexRa
 expect "a place-level market names its most common practice area" '.stats.mostCommonPractice.slug == "personal-injury" and (.summary | test("most common practice area in Miami, Florida is Personal Injury"))' "$API/market?location=miami"
 expect "too little data is withheld, not estimated" '.stats.lawyers == 0 and .stats.averageRating == null and .stats.medianReviewCount == null and .summary == ""' "$API/market?practice_area=car-accidents"
 expect_status "unknown market" 404 "$API/market?location=atlantis"
+expect "state figures count every published lawyer with samples" '.version == "sd-1.0" and .state.name == "Florida" and .lawyers >= 8 and (.cities | map(.slug) | index("miami")) != null and (.practiceAreas | length) > 0 and .experience.sample <= .lawyers' "$API/stats/florida"
+expect_status "state figures for a city slug are not found" 404 "$API/stats/miami"
 
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
@@ -591,7 +593,7 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "cards show key attributes" "/rankings/florida/miami/personal-injury/" "22 years experience"
   page_has "the header names the methodology the entries used" "/rankings/florida/miami/personal-injury/" "LexRank v1.2"
   expect_status "a context below its threshold is a 404" 404 "$WEB/rankings/florida/miami/personal-injury/spanish-speaking/"
-  if grep -q "spanish-speaking" <<<"$(curl -sS "$WEB/sitemap.xml")"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
+  if grep -q "/personal-injury/spanish-speaking/" <<<"$(curl -sS "$WEB/sitemap.xml")"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
 
   echo "==> Page eligibility on pages (Etap G)"
   page_has "methodology publishes when a page exists" "/methodology/" 'id="page-eligibility"'
@@ -653,6 +655,10 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "legal disclaimer" "/disclaimer/" "is not a law firm"
   page_has "contact page has the form" "/contact/" "Send message"
   page_has "author profile" "/authors/ryan-mitchell/" "Is Ryan a lawyer?"
+  page_has "statutes of limitations table" "/data/florida-statutes-of-limitations/" "Which negligence claims still have 4 years?"
+  page_has "judicial circuits table" "/data/florida-judicial-circuits/" "Which counties are in each Florida judicial circuit?"
+  page_has "data index lists statistics pages" "/data/" "/data/florida-lawyer-experience/"
+  page_has "experience statistics page" "/data/florida-lawyer-experience/" "How many lawyers fall into each band of experience?"
   sitemap="$(curl -sS "$WEB/sitemap.xml")"
   if grep -q "/advertising/" <<<"$sitemap" && ! grep -q "/claim/" <<<"$sitemap"; then pass "sitemap lists the policy, not claim pages"; else fail "sitemap commercial pages"; fi
   sitemap="$(curl -sS "$WEB/sitemap.xml")"

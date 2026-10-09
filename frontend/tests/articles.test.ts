@@ -58,6 +58,17 @@ describe("articles", () => {
     expect(articleJsonLd({ ...article, author: { name: "LexRanked Editorial Team" }, image: null, reviewedBy: null })).not.toHaveProperty("image");
   });
 
+  it("links a known author to their profile with photo and role", () => {
+    const ld = articleJsonLd({ ...article, author: { name: "Ryan Mitchell", slug: "ryan-mitchell" } });
+    expect(ld.author).toMatchObject({
+      "@type": "Person",
+      "@id": "https://lexranked.com/authors/ryan-mitchell/#person",
+      url: "https://lexranked.com/authors/ryan-mitchell/",
+      image: "https://lexranked.com/authors/ryan-mitchell/portrait.webp",
+      jobTitle: "Editor",
+    });
+  });
+
   it("uses the article image and dates in social metadata", () => {
     const meta = buildMetadata({ title: article.title, description: article.excerpt, path: article.path, type: "article", image: article.image, publishedTime: article.publishedAt });
     expect(meta.openGraph).toMatchObject({ type: "article", publishedTime: article.publishedAt, images: [{ url: "https://cms.example/img.jpg" }] });

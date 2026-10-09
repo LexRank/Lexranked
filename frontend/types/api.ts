@@ -682,3 +682,29 @@ export interface MarketDto {
   };
   summary: string;
 }
+
+/** Spread of a numeric fact with its sample (API 1.23). */
+export interface SpreadDto {
+  sample: number;
+  min: number | null;
+  median: number | null;
+  max: number | null;
+}
+
+/** Statewide figures for the data pages: GET /stats/{state} (API 1.23). */
+export interface StateStatsDto {
+  version: string;
+  state: { slug: string; name: string };
+  lawyers: number;
+  /** Lawyers with at least one Florida Bar board certification; with two or more; listing Spanish. */
+  certified: number;
+  multiCertified: number;
+  spanish: number;
+  cities: Array<{ slug: string; name: string; lawyers: number; certified: number; spanish: number; experience: SpreadDto; areas: Array<{ slug: string; name: string; count: number }> }>;
+  practiceAreas: Array<{ slug: string; name: string; lawyers: number; certified: number; spanish: number; cities: number; experience: SpreadDto }>;
+  certifications: Array<{ name: string; count: number }>;
+  languages: { sample: number; items: Array<{ name: string; count: number }> };
+  schools: { sample: number; items: Array<{ name: string; count: number }> };
+  experience: SpreadDto & { buckets: Array<{ label: string; count: number }> };
+  calculatedAt: string;
+}

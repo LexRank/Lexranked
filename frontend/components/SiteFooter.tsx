@@ -42,6 +42,7 @@ export function SiteFooter() {
           <h2>LexRanked</h2>
           <ul>
             <li><Link href="/about/">About</Link></li>
+            <li><Link href="/data/">Data</Link></li>
             <li><Link href="/contact/">Contact</Link></li>
             <li><Link href="/privacy/">Privacy policy</Link></li>
             <li><Link href="/terms/">Terms of use</Link></li>
