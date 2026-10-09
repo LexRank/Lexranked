@@ -441,6 +441,18 @@ curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -
 curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$ED_LAWYER_BEFORE" "$API/editorial/profiles/$ED_LAWYER"
 expect "original ranking text restored" "(.summary // \"\") == $(jq '.summary' <<<"$ED_RANKING_BEFORE")" "$API/editorial/rankings/$ED_RANKING" -u "itEditor:$ED_PW"
 
+echo "==> Knowledge added over the API (no plugin update)"
+KN_AREA='{"name":"Health Care","cert":"Health","certName":"Board Certified in Health Law","lead":"A lead about Florida health law.","rows":[["Rule","What it means"]],"src":[["https://www.flsenate.gov/Laws/Statutes/2025/456.057","Florida Statutes, section 456.057"]],"faq":[["A question?","An answer."]],"guides":[]}'
+expect_status "research workers cannot change knowledge" 403 "$API/editorial/knowledge/FL/areas/health-law" -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' -d "$KN_AREA"
+expect_status "an incomplete area is rejected" 400 "$API/editorial/knowledge/FL/areas/health-law" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"cert":"Health","certName":"Board Certified in Health Law","lead":"x","rows":[],"src":[["http://insecure.test/","x"]],"faq":[]}'
+expect "an editor adds a practice area and its term" '.stored == true and (.practiceAreaId | type) == "number"' "$API/editorial/knowledge/FL/areas/health-law" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$KN_AREA"
+expect "an editor adds a city" '.stored == true' "$API/editorial/knowledge/FL/cities/key-west" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"county":"Monroe","circuit":"Sixteenth"}'
+expect "the pack lists the additions next to the shipped entries" '(.areas | index("health-law")) != null and (.areas | index("personal-injury")) != null and (.cities | index("key-west")) != null and .added.cities["key-west"].county == "Monroe"' "$API/editorial/knowledge/FL" -u "itEditor:$ED_PW"
+expect "removing an addition leaves the shipped pack" '.removed == true' "$API/editorial/knowledge/FL/cities/key-west" -u "itEditor:$ED_PW" -X DELETE
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -X DELETE "$API/editorial/knowledge/FL/areas/health-law"
+wp term delete lr_practice_area "$(wp term get lr_practice_area health-law --by=slug --field=term_id)" >/dev/null
+expect "additions removed" '(.areas | index("health-law")) == null and (.cities | index("key-west")) == null and (.cities | index("miami")) != null' "$API/editorial/knowledge/FL" -u "itEditor:$ED_PW"
+
 echo "==> Client reviews (email-confirmed, editor-approved)"
 AVERY_ID="$(curl -sS "$API/lawyers/avery-example-demo" | jq .id)"
 REVIEW="{\"entityType\":\"lawyer\",\"entityId\":$AVERY_ID,\"rating\":5,\"title\":\"Clear and responsive\",\"body\":\"She explained every step of my case and returned my calls the same day. I would hire her again.\",\"name\":\"jordan taylor\",\"email\":\"jordan@example.com\",\"serviceYear\":2024,\"client\":true}"

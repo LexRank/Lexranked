@@ -386,5 +386,11 @@ every change is written to the audit log.
 | `POST /editorial/profiles/{id}` | `{summary}` (2–4 plain sentences) | `{id, name, summary}` |
 | `GET /editorial/drafts` | `qa_status?` | AI content drafts with `contentType`, `qaStatus`, `target`, `summary`, `faq`, `body`, `qaReport`, `canApply` |
 | `POST /editorial/drafts/{id}/apply` | `{acknowledge?}` | `{id, status: applied\|partial\|already, errors, article_id}`; `409 lexranked_needs_review` for a draft that failed QA unless `acknowledge: true` |
+| `GET /editorial/knowledge/{STATE}` (plugin 0.28) | — | `{state, areas[], cities[], added{areas, cities}, checked}`: what generated ranking text can use (shipped pack plus additions) |
+| `POST /editorial/knowledge/{STATE}/areas/{slug}` (plugin 0.28) | `{name?, cert, certName, lead, rows[[rule, meaning]], src[[https URL, label]], faq[[question, answer]], guides[[/path/, title]]}` | adds or replaces a practice area's rules; `name` also creates the practice-area term when it does not exist. `400` with `errors[]` unless the entry is as complete as the shipped pack. Needs `edit_others_posts` |
+| `POST /editorial/knowledge/{STATE}/cities/{slug}` (plugin 0.28) | `{county, circuit}` | adds a city, or adds keys to a shipped one (shipped keys such as crash data are kept) |
+| `DELETE /editorial/knowledge/{STATE}/{areas\|cities}/{slug}` (plugin 0.28) | — | removes an addition; the shipped pack is never changed |
 
 Saving runs the same hooks as wp-admin, so the public page is revalidated.
+Knowledge additions apply to text generated afterwards: new rankings, or
+`POST /editorial/rankings/{id}/generate` for an existing one.

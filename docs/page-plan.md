@@ -51,7 +51,7 @@ trzeba zweryfikować danymi.
 1. Ranking ma **co najmniej 5 prawników** (`min_ranking_entities`), najwyżej 25.
 2. Ranking publikujemy **tylko z kompletną treścią** (`docs/content-plan.md`,
    „Rankings start with their content”). Nowe miasto albo obszar wymaga
-   najpierw wpisu w `src/Content/knowledge/FL.json`: hrabstwo i okręg sądowy
+   najpierw wpisu w pakiecie wiedzy: `src/Content/knowledge/FL.json` albo, od wtyczki 0.28.0, bez aktualizacji wtyczki przez `POST /editorial/knowledge/FL/{areas|cities}/{slug}` (te same reguły kompletności): hrabstwo i okręg sądowy
    sprawdzone na flcourts.gov, przepisy z linkami do ustaw.
 3. Strona poniżej progu jest `noindex` i nie trafia do sitemap.
 4. Płatność nigdy nie zmienia pozycji.

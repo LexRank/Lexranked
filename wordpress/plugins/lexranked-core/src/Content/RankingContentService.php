@@ -300,7 +300,8 @@ final class RankingContentService {
 	}
 
 	/**
-	 * Read a pack file.
+	 * Read a pack file, with the practice areas and cities added since
+	 * release (KnowledgeStore).
 	 *
 	 * @param string $code Two-letter state code.
 	 * @return array<string, mixed>|null
@@ -315,7 +316,7 @@ final class RankingContentService {
 		}
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local plugin file.
 		$data = json_decode( (string) file_get_contents( $file ), true );
-		return is_array( $data ) ? $data : null;
+		return is_array( $data ) ? KnowledgeStore::merge( $data, KnowledgeStore::additions( $code ) ) : null;
 	}
 
 	/**
