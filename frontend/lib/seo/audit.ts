@@ -1,5 +1,5 @@
 /**
- * SEO and structured-data audit of rendered HTML (spec §19–20, Phase 8).
+ * SEO and structured-data audit of rendered HTML (spec §19-20, Phase 8).
  * Pure functions: the live runner (tests/seo-audit.live.test.ts) fetches
  * pages and the sitemap; unit tests feed fixtures.
  *
@@ -161,7 +161,7 @@ export function auditPage(html: string, ctx: AuditContext): AuditIssue[] {
   if (!p.title) add("error", "title_missing", "No <title>.");
   else if (p.title.length > 70) add("warning", "title_long", `Title is ${p.title.length} characters (> 70).`);
   if (!p.description) add("error", "description_missing", "No meta description.");
-  else if (p.description.length < 50 || p.description.length > 170) add("warning", "description_length", `Description is ${p.description.length} characters (50–170 recommended).`);
+  else if (p.description.length < 50 || p.description.length > 170) add("warning", "description_length", `Description is ${p.description.length} characters (50-170 recommended).`);
   if (!p.robots) add("error", "robots_missing", "No robots meta tag.");
   if (!p.canonical) add("error", "canonical_missing", "No canonical link.");
   else if (!/^https:\/\//.test(p.canonical)) add("error", "canonical_not_absolute", `Canonical ${p.canonical} is not an absolute https URL.`);

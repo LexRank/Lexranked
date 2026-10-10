@@ -17,10 +17,10 @@ import { getArticles, getPracticeAreas, getScoreVersions, getStates } from "@/li
 export const revalidate = 300;
 
 export const metadata: Metadata = buildMetadata({
-  title: `${SITE_NAME} — Top-rated lawyers, ranked by data`,
+  title: `${SITE_NAME} - Top-rated lawyers, ranked by data`,
   absoluteTitle: true,
   description:
-    "Find top-rated lawyers and law firms in the United States. Transparent, source-backed rankings with verified credentials — payment never changes a ranking.",
+    "Find top-rated lawyers and law firms in the United States. Transparent, source-backed rankings with verified credentials - payment never changes a ranking.",
   path: "/",
 });
 
@@ -77,7 +77,7 @@ export default async function HomePage() {
           <div className="hero__copy">
             <p className="eyebrow">Independent lawyer rankings · United States</p>
             <h1>
-              Find the right lawyer, <em>ranked by data</em> — not by ads.
+              Find the right lawyer, <em>ranked by data</em> - not by ads.
             </h1>
             <p className="lead">
               LexRanked compares lawyers and law firms on verified facts: licenses, experience, practice focus and client reviews.
@@ -103,11 +103,11 @@ export default async function HomePage() {
         <dl className="trust-strip">
           <div>
             <dt>Published {published.length === 1 ? "ranking" : "rankings"}</dt>
-            <dd>{formatCount(published.length) ?? "—"}</dd>
+            <dd>{formatCount(published.length) ?? "-"}</dd>
           </div>
           <div>
             <dt>Ranked profiles</dt>
-            <dd>{formatCount(lawyersCovered) ?? "—"}</dd>
+            <dd>{formatCount(lawyersCovered) ?? "-"}</dd>
           </div>
           <div>
             <dt>Transparent scoring factors</dt>
@@ -208,7 +208,7 @@ export default async function HomePage() {
         <div className="container decides">
           <div>
             <p className="eyebrow">Why you can trust a position</p>
-            <h2>What decides a ranking — and what never does</h2>
+            <h2>What decides a ranking - and what never does</h2>
             <p className="lead">
               A position is the result of {components.length} weighted factors calculated from sourced facts. The ranking code cannot
               read commercial data at all.

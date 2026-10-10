@@ -20,10 +20,10 @@ use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
 
 /**
- * POST /claims, POST /claims/confirm — called by the frontend server on
+ * POST /claims, POST /claims/confirm - called by the frontend server on
  *   behalf of visitors (lexranked_api role). Responses never reveal whether a
  *   profile is already claimed or whether an email was used before.
- * GET  /placements — public: the labelled featured / sponsored block of one
+ * GET  /placements - public: the labelled featured / sponsored block of one
  *   page. Kept out of ranking entries by design.
  */
 final class CommercialController extends RestController {

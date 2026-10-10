@@ -52,7 +52,7 @@ export function ListingPage({
   );
 }
 
-/** Parse ?page= safely (1–1000). */
+/** Parse ?page= safely (1-1000). */
 export function parsePage(value: string | string[] | undefined): number {
   const n = Number.parseInt(Array.isArray(value) ? (value[0] ?? "1") : (value ?? "1"), 10);
   return Number.isFinite(n) && n >= 1 && n <= 1000 ? n : 1;

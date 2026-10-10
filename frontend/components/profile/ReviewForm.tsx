@@ -87,7 +87,7 @@ export function ReviewForm({ entityType, entityId, entityName }: { entityType: "
         <div className="field">
           <label htmlFor="review-year">Year the lawyer worked for you</label>
           <select id="review-year" name="serviceYear" required defaultValue="" {...described("serviceYear")}>
-            <option value="">—</option>
+            <option value="">-</option>
             {Array.from({ length: 30 }, (_, i) => thisYear - i).map((y) => (
               <option key={y} value={y}>
                 {y}

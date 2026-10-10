@@ -151,7 +151,7 @@ check "raw and normalised values are stored side by side" '. > 0' "$(wp db query
 expect "profile facts: one per attribute, with source, tier and freshness" '(.facts | map(.attribute) | index("bar_status") != null) and ((.facts[] | select(.attribute == "bar_status")) | .status == "verified" and .value == "active" and .source.tier == 1 and .source.tierLabel == "Official / regulatory" and .freshness.category == "bar_status" and .verifiedAt != null) and ((.facts[] | select(.attribute == "review_count")) | .value == 387 and .freshness.category == "review_data")' "$API/lawyers/avery-example-demo"
 expect "evidence keeps the raw value and the normalised one" '[.sources[] | select(.field == "website")][0] | (.normalizedValue | type) == "string"' "$API/lawyers/avery-example-demo"
 expect "sources are objects: domain, tier label, status" 'all(.[]; .domain != null and .tierLabel != null and .status != null)' "$API/sources"
-check "provenance traces fact → claim → source → ranking input" '.[0].attribute == "bar_status" and (.[0].claim | test("raw=")) and (.[0].source | test("tier 1")) and (.[0].ranking_input != "—")' "$(wp lexranked provenance lawyer:avery-example-demo --attribute=bar_status --format=json)"
+check "provenance traces fact → claim → source → ranking input" '.[0].attribute == "bar_status" and (.[0].claim | test("raw=")) and (.[0].source | test("tier 1")) and (.[0].ranking_input != "-")' "$(wp lexranked provenance lawyer:avery-example-demo --attribute=bar_status --format=json)"
 
 echo "==> Data Quality Score (Etap C)"
 expect "the Data Quality model is published (weights sum to 100)" '.version == "dq-1.0" and ([.dimensions[].weight] | add) == 100 and .summary.count >= 11' "$API/data-quality"

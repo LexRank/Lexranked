@@ -3,7 +3,7 @@ import { formatDate, formatShortDate, isoDate } from "@/lib/format";
 import { factValue, groupFacts } from "@/lib/content/facts";
 
 function FactStatus({ fact }: { fact: FactDto }) {
-  if (fact.status === "conflict") return <span className="fact__status fact__status--conflict">Sources disagree — not used</span>;
+  if (fact.status === "conflict") return <span className="fact__status fact__status--conflict">Sources disagree - not used</span>;
   const date = fact.verifiedAt ?? fact.observedAt;
   return (
     <span className={`fact__status fact__status--${fact.status}`}>
@@ -16,7 +16,7 @@ function FactStatus({ fact }: { fact: FactDto }) {
 }
 
 /**
- * "Sources & Verification" (spec §16–18): every fact with the source it rests
+ * "Sources & Verification" (spec §16-18): every fact with the source it rests
  * on and its own date, grouped by category.
  */
 export function SourcesAndVerification({ facts, practiceNames = {} }: { facts: FactDto[]; practiceNames?: Record<string, string> }) {

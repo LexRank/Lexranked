@@ -17,7 +17,7 @@ use LexRanked\Core\Taxonomies\PracticeArea;
 
 /**
  * Summary (above), guide body and FAQ (below) for hub pages, stored as term
- * meta and edited on the term screen — the same SEO/GEO layout rankings use.
+ * meta and edited on the term screen - the same SEO/GEO layout rankings use.
  * The frontend only shows it when the hub page exists (enough data); the
  * text never creates a page on its own.
  */
@@ -63,7 +63,7 @@ final class TermContent {
 		wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD );
 		$faq_lines = implode( "\n", array_map( static fn( array $f ): string => $f['question'] . ' | ' . $f['answer'], $c['faq'] ) );
 		$rows      = array(
-			array( 'summary', 'Page summary (above the list)', sprintf( '<textarea name="%1$s[summary]" rows="3" class="large-text">%2$s</textarea>', esc_attr( self::INPUT ), esc_textarea( $c['summary'] ) ), '1–3 plain-text sentences, only facts backed by stored data. Shown on the hub page when it has enough profiles.' ),
+			array( 'summary', 'Page summary (above the list)', sprintf( '<textarea name="%1$s[summary]" rows="3" class="large-text">%2$s</textarea>', esc_attr( self::INPUT ), esc_textarea( $c['summary'] ) ), '1-3 plain-text sentences, only facts backed by stored data. Shown on the hub page when it has enough profiles.' ),
 			array( 'body', 'Guide (below the list)', sprintf( '<textarea name="%1$s[body]" rows="10" class="large-text code">%2$s</textarea>', esc_attr( self::INPUT ), esc_textarea( $c['body'] ) ), 'Basic HTML allowed (h2, p, ul, a, strong). Sanitized on save.' ),
 			array( 'faq', 'FAQ', sprintf( '<textarea name="%1$s[faq]" rows="5" class="large-text">%2$s</textarea>', esc_attr( self::INPUT ), esc_textarea( $faq_lines ) ), 'One per line: Question | Answer' ),
 			array( 'reviewed_by', 'Editorially reviewed by', sprintf( '<input type="text" name="%1$s[reviewed_by]" value="%2$s" class="regular-text">', esc_attr( self::INPUT ), esc_attr( $c['reviewed_by'] ) ), '' ),

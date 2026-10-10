@@ -77,7 +77,7 @@ export function ClaimForm({ entityType, entityId, entityName }: { entityType: "l
         <div className="field">
           <label htmlFor="claim-bar-state">Bar state{role === "self" ? "" : " (optional)"}</label>
           <select id="claim-bar-state" name="barState" required={role === "self"} defaultValue="" {...described("barState")}>
-            <option value="">—</option>
+            <option value="">-</option>
             {US_STATE_CODES.map((code) => (
               <option key={code} value={code}>
                 {code}

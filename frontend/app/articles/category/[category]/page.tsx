@@ -32,7 +32,7 @@ export async function generateMetadata(props: PageProps<"/articles/category/[cat
   if (!category) return { robots: { index: false } };
   const path = `/articles/category/${category.slug}/`;
   return buildMetadata({
-    title: page > 1 ? `${category.name} Guides – Page ${page}` : `${category.name} Guides`,
+    title: page > 1 ? `${category.name} Guides - Page ${page}` : `${category.name} Guides`,
     description: `Guides on ${inSentence(category.name)}: practical answers on your rights, deadlines, costs and how to choose a lawyer, from LexRanked.`,
     path: page > 1 ? `${path}?page=${page}` : path,
     // A category is worth indexing once it holds enough guides.

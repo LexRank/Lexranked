@@ -1,6 +1,6 @@
 /*
  * LexRanked design system.
- * Direction: modern American legal authority — deep navy, brass accents,
+ * Direction: modern American legal authority - deep navy, brass accents,
  * paper-white surfaces, serif display type and a clean sans for UI.
  * All colours are tokens; components never hard-code values.
  */
@@ -1738,7 +1738,7 @@ main {
 }
 
 .faq__item[open] summary::after {
-  content: "–";
+  content: "-";
 }
 
 .faq__item p {

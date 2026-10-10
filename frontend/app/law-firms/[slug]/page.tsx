@@ -48,7 +48,7 @@ export async function generateMetadata(props: PageProps<"/law-firms/[slug]">): P
   const where = formatLocation(firm.location);
   const practice = firm.practiceAreas[0]?.name;
   return buildMetadata({
-    title: [firm.name, practice ? `${firm.location?.city ?? firm.location?.state ?? ""} ${practice} Law Firm`.trim() : where].filter(Boolean).join(" – "),
+    title: [firm.name, practice ? `${firm.location?.city ?? firm.location?.state ?? ""} ${practice} Law Firm`.trim() : where].filter(Boolean).join(" - "),
     description: firm.summary ? firm.summary : firm.aiSummary?.text ? firm.aiSummary.text : `${firm.name}${where ? `, ${where}` : ""}: ${pluralize(firm.lawyers.length, "lawyer")} profiled${firm.ranking.score !== null ? `, LexRank score ${firm.ranking.score.toFixed(2)}` : ""}. Verification status, sources and related rankings.`,
     path: firm.path,
     type: "profile",

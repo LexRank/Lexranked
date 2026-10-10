@@ -46,9 +46,9 @@ export async function generateMetadata(props: PageProps<"/lawyers/[slug]">): Pro
   if (!lawyer) return { robots: { index: false } };
   const where = formatLocation(lawyer.location);
   const practice = lawyer.practiceAreas[0]?.name;
-  // "Name – Miami Personal Injury Lawyer": the query people type, short enough not to be cut.
+  // "Name - Miami Personal Injury Lawyer": the query people type, short enough not to be cut.
   const place = lawyer.location?.city ?? lawyer.location?.state ?? null;
-  const title = [lawyer.name, practice ? `${place ? `${place} ` : ""}${practice} Lawyer` : where].filter(Boolean).join(" – ");
+  const title = [lawyer.name, practice ? `${place ? `${place} ` : ""}${practice} Lawyer` : where].filter(Boolean).join(" - ");
   const facts = [
     lawyer.firm ? `${lawyer.title ?? "Attorney"} at ${lawyer.firm.name}` : null,
     lawyer.ranking.score !== null ? `LexRank score ${lawyer.ranking.score.toFixed(2)}` : null,

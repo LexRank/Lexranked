@@ -2,7 +2,7 @@
 
 > Status: **implemented in Phase 5** (jobs, candidates, sources, claims,
 > verification, retries, logging, TypeScript worker); AI assistance added in
-> Phase 6 through the same validated intake — see [ai.md](ai.md).
+> Phase 6 through the same validated intake - see [ai.md](ai.md).
 
 ## Principles
 
@@ -69,9 +69,9 @@ Seed dataset (curated CSV) ──► Candidates ──► Deterministic matching
 |---|---|---|---|
 | `candidate_discovery` | worker | seed dataset → candidates → claims (+ website JSON-LD) → verification requests | `dataset` (required), `fetch_websites` (default `true`) |
 | `source_refresh` | worker | re-reads the websites of entities in the job's scope (Location / Practice Area terms on the job) | `entity_type` (`lawyer` \| `law_firm`, optional) |
-| `verification` | WordPress (cron) | marks published verification records past `expires_at` as `expired` | — |
-| `ranking_recalculation` | WordPress (cron) | scores all entities and recalculates published rankings | — |
-| `ai_candidate_review` | worker + AI | advisory AI verdict on candidates in review ([ai.md](ai.md)) | — |
+| `verification` | WordPress (cron) | marks published verification records past `expires_at` as `expired` | - |
+| `ranking_recalculation` | WordPress (cron) | scores all entities and recalculates published rankings | - |
+| `ai_candidate_review` | worker + AI | advisory AI verdict on candidates in review ([ai.md](ai.md)) | - |
 | `content_generation` | worker + AI | drafts with QA for rankings, hubs, profiles and articles ([ai.md](ai.md)) | `kind` (ranking\|hub\|profile\|article), `rankings`, `hubs`, `entities`, `topic`, `ranking`, `ai_qa` |
 
 `source_refresh` and `candidate_discovery` also accept `ai_extraction: true`
@@ -145,7 +145,7 @@ pending ──claim──► running ──complete──► completed
   in `X-LexRanked-Lease`. The lease lasts *Research job lease* minutes
   (default 10) and is extended by each heartbeat. A worker that lost the
   lease (expired, taken over, or cancelled by an admin) gets `409` and must
-  stop — it can never write into a job someone else owns.
+  stop - it can never write into a job someone else owns.
 - **Retry with backoff.** `fail` with `retryable: true` schedules the next
   attempt at `base × 2^(attempt−1)` seconds (default base 300 s, capped at
   6 h) up to *Research job retries* (default 3). `retryable: false`
@@ -159,14 +159,14 @@ pending ──claim──► running ──complete──► completed
 
 ## Candidates and matching
 
-A candidate is a *lead* — "this name appears in that source" — never a fact.
+A candidate is a *lead* - "this name appears in that source" - never a fact.
 It is deduplicated by `sha1(type | normalized name | city | state)` and
 matched against existing lawyers/firms of **any** status:
 
 | Situation | Decision |
 |---|---|
 | Firm with the same website domain in the same state (one firm) | **match** (0.95) |
-| Same normalized name in the same state and the same city or domain | **match** (0.9–1.0) |
+| Same normalized name in the same state and the same city or domain | **match** (0.9-1.0) |
 | Same name, same state, different/unknown city | **review** |
 | Several profiles with that name, or same name in another state | **review** |
 | Lawyer: same last name + first initial in the same city | **review** |
@@ -187,10 +187,10 @@ suggested profile; editors pick *Same as #…*, *Create draft* or *Reject*.
 - Research claims are always stored with `verification_status = pending`;
   only verification records certify facts.
 - `review_status`: `approved` (public evidence), `pending_review` (research
-  evidence about a published profile — hidden from the public API and the
+  evidence about a published profile - hidden from the public API and the
   ranking engine until an editor approves it) or `rejected`.
 - For **draft / pending** entities the `FactResolver` picks the best value
-  per field and writes it — but never over a value an editor typed into a
+  per field and writes it - but never over a value an editor typed into a
   draft that research did not create, and never when the best sources
   disagree (the conflict is logged and the profile flagged for review).
   Locations are created under their state when missing; practice areas are
@@ -228,8 +228,8 @@ node dist/cli.js --loop        # or --once (cron / CI)
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `LEXRANKED_API_URL` | — | REST base (`…/wp-json/lexranked/v1`); https required except localhost |
-| `LEXRANKED_WORKER_USER` / `LEXRANKED_WORKER_APP_PASSWORD` | — | user with the **LexRanked Research Worker** role + application password |
+| `LEXRANKED_API_URL` | - | REST base (`…/wp-json/lexranked/v1`); https required except localhost |
+| `LEXRANKED_WORKER_USER` / `LEXRANKED_WORKER_APP_PASSWORD` | - | user with the **LexRanked Research Worker** role + application password |
 | `LEXRANKED_DATA_DIR` | `data` | directory of seed datasets (`<dataset>.csv`) |
 | `LEXRANKED_WORKER_ID` | `research-<pid>` | shown on the job |
 | `LEXRANKED_WORKER_JOB_TYPES` | both | `candidate_discovery,source_refresh` |
@@ -248,7 +248,7 @@ wp user create research-worker research@example.com --role=lexranked_worker
 wp user application-password create research-worker worker --porcelain
 ```
 
-The role can call the research API and read the public API — nothing in
+The role can call the research API and read the public API - nothing in
 wp-admin.
 
 ### Seed datasets
@@ -264,7 +264,7 @@ CSV, one row per lawyer/firm **as read by a person from a public source**:
 | `retrieved_at` | ✓ | date the source was read |
 | `city`, `state`, `practice_area`, `website`, `phone` | | only what the source states |
 | `bar_state`, `bar_number`, `bar_status` | | lawyers; from the bar source |
-| `confidence` | | 0–1, default 0.9 |
+| `confidence` | | 0-1, default 0.9 |
 
 Invalid rows are skipped and logged; they keep their position so the
 cursor stays stable. Real datasets live outside the repository; the fixtures
@@ -296,5 +296,5 @@ internal services.
 ## AI usage (Phase 6)
 
 See [ai.md](ai.md): quote-checked extraction and practice-area
-classification, advisory match review, ranking content drafts with QA — all
+classification, advisory match review, ranking content drafts with QA - all
 with strict JSON Schemas, validated output and no publication.

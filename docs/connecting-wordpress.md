@@ -16,7 +16,7 @@ the LexRanked frontend.
    (→ `dist/lexranked-core-<version>.zip`).
 2. **Plugins › Add New › Upload Plugin** → choose the ZIP → **Install** →
    **Activate**.
-3. Check: open `https://<your-wp>/wp-json/lexranked/v1/status` — it must
+3. Check: open `https://<your-wp>/wp-json/lexranked/v1/status` - it must
    return `{"status":"ok", …}`.
 
 Updating: upload a newer ZIP (WordPress offers "Replace current with

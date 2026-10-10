@@ -14,9 +14,9 @@ use LexRanked\Core\Fact\FactBuilder;
 use LexRanked\Core\Verification\Freshness;
 
 /**
- * How well a profile is documented — NOT how good the lawyer is.
+ * How well a profile is documented - NOT how good the lawyer is.
  *
- * Five published dimensions, each 0–100, combined with fixed, versioned
+ * Five published dimensions, each 0-100, combined with fixed, versioned
  * weights. Pure: same facts, same checks, same time → same score. It is
  * shown next to the LexRank score and never feeds it (the ranking has its
  * own, separately disclosed "data quality" component).

@@ -23,7 +23,7 @@ anything. Nothing the model produces is published or decides a ranking position.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `OPENAI_API_KEY` | — | API key. Enables AI |
+| `OPENAI_API_KEY` | - | API key. Enables AI |
 | `OPENAI_MODEL` | picked at startup | Optional override. Without it the worker lists the models the key can use and takes the first of `TEXT_MODEL_PREFERENCE` in `src/ai/models.ts`: the current cost-efficient tier (good quality, low price; not the flagship), then older fallbacks. The choice is logged at startup. Update the list when a new generation ships |
 | `OPENAI_BASE_URL` | `https://api.openai.com/v1` | https only (localhost allowed for tests) |
 | `OPENAI_MAX_CALLS_PER_JOB` | 200 | Cost cap per job attempt |
@@ -97,7 +97,7 @@ audit log.
 | `ranking` (default) | published rankings (`rankings` IDs to narrow) | positions, scores, verification, movement, methodology | thin (< 3 entries) | ranking summary, body, FAQ |
 | `hub` | states, cities, practice areas (`hubs`: all/state/city/practice_area) | counts, highest-scoring profiles, practice areas, rankings | < 3 published lawyers (the page does not exist) | term summary, guide, FAQ |
 | `profile` | published lawyers and firms (`entities` IDs to narrow) | published fields, score, verification, positions | < 5 facts beyond name and type | profile `summary` |
-| `article` | one article per job (`topic` brief, optional `ranking` for context) | ranking facts (if given) + methodology facts | — | a new **draft** Post |
+| `article` | one article per job (`topic` brief, optional `ranking` for context) | ranking facts (if given) + methodology facts | - | a new **draft** Post |
 
 Articles may contain *uncited general guidance* ("ask who will handle your
 case"), which is the only exception to citing facts. QA forbids numbers

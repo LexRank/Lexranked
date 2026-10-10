@@ -122,7 +122,7 @@ shows only when the page exists, which needs at least 3 published lawyers.
 
 ## Profile summaries
 
-Lawyers and law firms have a *Profile summary* field: 2–4 plain sentences
+Lawyers and law firms have a *Profile summary* field: 2-4 plain sentences
 shown at the top of the profile and used as its search description.
 
 ## Profile claims (lawyers and firms claiming their profile)

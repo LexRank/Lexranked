@@ -1,7 +1,7 @@
 # LexRanked
 
 Data-driven, source-backed rankings of lawyers and law firms in the United
-States — [lexranked.com](https://lexranked.com).
+States - [lexranked.com](https://lexranked.com).
 
 LexRanked is a **headless** platform: WordPress + the `lexranked-core` plugin
 is the CMS/API; a Next.js app is the only public frontend. See
@@ -62,7 +62,7 @@ cd workers/research && npm ci && npm run build && \
 ## Checks
 
 ```bash
-scripts/check.sh                 # lint, typecheck, tests, build — same as CI
+scripts/check.sh                 # lint, typecheck, tests, build - same as CI
 scripts/wp-integration-test.sh   # real WordPress in Docker + API + research worker (crash/resume) assertions
 scripts/wp-integration-test.sh --frontend   # …plus Next.js built against it (end-to-end)
 scripts/build-plugin-zip.sh      # installable plugin ZIP → dist/
@@ -78,10 +78,10 @@ Adding cities, rankings, lawyers and articles: [`docs/editor-guide.md`](docs/edi
 3. ✅ Frontend: public pages, design system, SEO/GEO content, structured data, sitemap
 4. ✅ **Ranking engine**: ScoreCalculator, RankingEngine, ScoreVersion, snapshots, history, breakdowns
 5. ✅ **Research engine**: leased/resumable jobs with retries, candidates + deterministic matching, source-backed claims, rule-based verification, editorial review, TypeScript worker
-6. ✅ **AI assistance**: quote-checked extraction & classification, advisory match review, ranking content drafts with deterministic + AI QA — strict schemas, never published automatically
-7. ✅ **Content engine**: guides at `/articles/`, editorial text on hub pages and profiles, AI drafts (ranking, hub, profile, article) with QA — drafts only
+6. ✅ **AI assistance**: quote-checked extraction & classification, advisory match review, ranking content drafts with deterministic + AI QA - strict schemas, never published automatically
+7. ✅ **Content engine**: guides at `/articles/`, editorial text on hub pages and profiles, AI drafts (ranking, hub, profile, article) with QA - drafts only
 8. ✅ **Production hardening**: signed instant revalidation, response cache, CSP/HSTS, health monitoring, backups, automated SEO/structured-data audit
-9. ✅ **Commercial features**: profile claims with email confirmation and editor identity checks, premium profiles, featured profiles, sponsored listings — labelled, eligibility-checked, and provably unable to change a score or position
+9. ✅ **Commercial features**: profile claims with email confirmation and editor identity checks, premium profiles, featured profiles, sponsored listings - labelled, eligibility-checked, and provably unable to change a score or position
 
 ### Knowledge base (docs/knowledge-base.md)
 
@@ -89,7 +89,7 @@ A. ✅ **Entity model**: stable entity IDs for lawyers, firms, locations and pra
 B. ✅ **Evidence layers**: attribute registry, entity-keyed claims with raw + normalised values, fact layer with per-fact source and freshness, source objects, identifier-based entity resolution, provenance
 C. ✅ **Data Quality Score**: separate, published documentation score (completeness, freshness, source quality, verification coverage, consistency), shown on profiles, never a ranking input
 D. ✅ **Ranking explanations + methodology v1.1**: scores from evidence-backed facts; "Why #N?" on every entry; position changes explained from snapshot differences
-E. ✅ **Comparison engine**: `/compare/?lawyer=…&lawyer=…` (noindex) compares 2–4 lawyers or firms from stored facts, each cell with its source and check date; differences stated, never a verdict; linked from rankings and profiles
+E. ✅ **Comparison engine**: `/compare/?lawyer=…&lawyer=…` (noindex) compares 2-4 lawyers or firms from stored facts, each cell with its source and check date; differences stated, never a verdict; linked from rankings and profiles
 F. ✅ **Contextual rankings**: "best for" rankings by case type, client type or language, e.g. `/rankings/florida/miami/personal-injury/car-accidents/`. Entities qualify only through sourced facts, and a page exists only above a verified-data threshold. The context never changes a score, and key card attributes follow the context
 G. ✅ **Page eligibility engine**: one explained, published decision per page (exists / indexed) from entities, verified entities, real data, evidence coverage and context; it drives rendering, robots and the sitemap, never keywords
 H. ✅ **AI-readable pages**: answer-first summaries built from facts, a per-fact "Sources & verification" panel, ranking sources and data-generated related questions, a live methodology page and schema.org that mirrors visible data

@@ -53,7 +53,7 @@ export function SiteFooter() {
       <div className="container site-footer__legal">
         <p>
           &copy; {new Date().getUTCFullYear()} {SITE_NAME}. Rankings are calculated with a published, deterministic methodology;
-          payment never changes an organic score. {SITE_NAME} is an information service — it is not a law firm, does not provide
+          payment never changes an organic score. {SITE_NAME} is an information service - it is not a law firm, does not provide
           legal advice and is not a lawyer referral service.
         </p>
       </div>

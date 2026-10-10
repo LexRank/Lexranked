@@ -77,7 +77,7 @@ final class RankingEngineTest extends TestCase {
 		$calc   = new ScoreCalculator();
 		$result = $calc->calculate( self::lawyer( 1 ), $this->miami_pi, $this->v1 );
 
-		// Golden value, verified by hand — changing the formula must be a deliberate new version:
+		// Golden value, verified by hand - changing the formula must be a deliberate new version:
 		// reputation 15.11 (awards 1/5, volume ln151/ln501) + reviews 16.86 (Bayes 4.686)
 		// + experience 9.00 + practice 15.00 + credentials 10.00 + local 5.00 + data quality 4.57.
 		$this->assertSame( 75.54, $result->total );

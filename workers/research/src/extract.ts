@@ -2,7 +2,7 @@
  * Fact extraction from schema.org JSON-LD embedded in a page.
  *
  * Only structured data the publisher states about the entity itself is used,
- * and only when its name matches the entity we are researching — so a firm's
+ * and only when its name matches the entity we are researching - so a firm's
  * page is never mistaken for facts about one of its lawyers. No free-text
  * scraping and no AI: every fact maps to one explicit JSON-LD property.
  */

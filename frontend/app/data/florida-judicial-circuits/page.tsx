@@ -22,7 +22,7 @@ interface Circuit {
   cities: string;
 }
 
-/** s. 26.021 (counties), s. 26.031 (judges), ss. 35.02–35.044 (appellate districts). */
+/** s. 26.021 (counties), s. 26.031 (judges), ss. 35.02-35.044 (appellate districts). */
 const CIRCUITS: Circuit[] = [
   { n: 1, name: "First", counties: ["Escambia", "Okaloosa", "Santa Rosa", "Walton"], judges: 26, dca: 1, cities: "Pensacola, Fort Walton Beach" },
   { n: 2, name: "Second", counties: ["Franklin", "Gadsden", "Jefferson", "Leon", "Liberty", "Wakulla"], judges: 17, dca: 1, cities: "Tallahassee" },
@@ -46,7 +46,7 @@ const CIRCUITS: Circuit[] = [
   { n: 20, name: "Twentieth", counties: ["Charlotte", "Collier", "Glades", "Hendry", "Lee"], judges: 32, dca: 6, cities: "Fort Myers, Naples, Cape Coral" },
 ];
 
-/** ss. 35.02–35.044 and 35.05 (headquarters), 35.06 (judges). */
+/** ss. 35.02-35.044 and 35.05 (headquarters), 35.06 (judges). */
 const DCAS: Array<{ n: number; name: string; seat: string; judges: string; section: string }> = [
   { n: 1, name: "First", seat: "Tallahassee", judges: "13", section: "35.02" },
   { n: 2, name: "Second", seat: "Pinellas County", judges: "15, falling to 13 as seats become vacant", section: "35.03" },

@@ -42,7 +42,7 @@ final class BayesianReviewScorer implements ReviewScorer {
 	}
 
 	/**
-	 * Volume-adjusted rating (0–5), or null when unknown.
+	 * Volume-adjusted rating (0-5), or null when unknown.
 	 *
 	 * @param float|null $rating       Average star rating.
 	 * @param int|null   $review_count Number of reviews.

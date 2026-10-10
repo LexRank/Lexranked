@@ -5,7 +5,7 @@ import { compareHref } from "./compare";
 /**
  * "Related questions" for ranking pages (spec §24). Every question is asked
  * only when the ranking's own data can answer it, and every answer is built
- * from that data — no generic SEO FAQ, no generated prose.
+ * from that data - no generic SEO FAQ, no generated prose.
  */
 
 export interface RelatedQuestion {
@@ -26,8 +26,9 @@ export function relatedQuestions(ranking: RankingDetail, all: RankingSummary[] =
   const version = entries[0]?.scoreVersion ? `LexRank ${entries[0].scoreVersion}` : "LexRank";
   const out: RelatedQuestion[] = [];
 
-  // The one methodology question; the methodology page has the detail.
-  out.push({
+  // The one methodology question, unless the page's own FAQ already asks it; the methodology page has the detail.
+  const asksMethod = ranking.faq.some((f) => /\bhow (is|are|was|were) .* (ranked|ordered)\b/i.test(f.question));
+  if (!asksMethod) out.push({
     question: `How were these ${noun} ranked?`,
     answer: `By their ${version} score, calculated only from facts backed by a cited source. Payment never changes a position.`,
     link: { href: "/methodology/", label: "How we rank" },

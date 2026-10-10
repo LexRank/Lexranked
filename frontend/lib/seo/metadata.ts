@@ -36,7 +36,7 @@ export function clampDescription(text: string, max = MAX_DESCRIPTION): string {
   if (clean.length <= max) return clean;
   const cut = clean.slice(0, max - 1);
   const lastSpace = cut.lastIndexOf(" ");
-  return `${(lastSpace > 60 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:–-]+$/, "")}…`;
+  return `${(lastSpace > 60 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:-]+$/, "")}…`;
 }
 
 export function buildMetadata(seo: PageSeo): Metadata {
@@ -53,7 +53,7 @@ export function buildMetadata(seo: PageSeo): Metadata {
   // page-level openGraph object replaces the inherited file-based image.
   const images = seo.image
     ? [{ url: seo.image.url, width: seo.image.width, height: seo.image.height, alt: seo.image.alt || seo.title }]
-    : [{ url: "/opengraph-image", width: 1200, height: 630, alt: `${SITE_NAME} — Data-driven lawyer rankings` }];
+    : [{ url: "/opengraph-image", width: 1200, height: 630, alt: `${SITE_NAME} - Data-driven lawyer rankings` }];
 
   return {
     title: absolute ? { absolute: seo.title } : seo.title,

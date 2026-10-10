@@ -17,7 +17,7 @@ use LexRanked\Core\Services;
 use LexRanked\Core\Support\Text;
 
 /**
- * GET /search?q=… — name search across lawyers and law firms.
+ * GET /search?q=… - name search across lawyers and law firms.
  * Search results are never indexable pages; stricter rate limit applies.
  */
 final class SearchController extends RestController {

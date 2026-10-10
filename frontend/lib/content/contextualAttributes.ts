@@ -2,7 +2,7 @@ import type { LawyerSummary, RankingContextDto, RankingEntry } from "@/types/api
 
 /**
  * Key attributes for a ranking card, chosen by the ranking's context (spec
- * §22–23). The card already shows rating, reviews and verification; this adds
+ * §22-23). The card already shows rating, reviews and verification; this adds
  * what matters for the question the ranking answers:
  *
  * - ordinary ranking: experience, practice fit, bar status;

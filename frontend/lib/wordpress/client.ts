@@ -7,7 +7,7 @@ import type { ApiErrorBody } from "@/types/api";
  * Low-level client for the LexRanked REST API (server-side only).
  *
  * - Timeouts, bounded retries with exponential backoff (network errors,
- *   429 and 5xx only — never other 4xx).
+ *   429 and 5xx only - never other 4xx).
  * - Optional Basic auth with a WordPress Application Password for the
  *   dedicated `lexranked_api` user, which exempts the frontend from the
  *   public rate limit. Only public (`context=view`) data is ever requested,

@@ -15,7 +15,7 @@ use LexRanked\Core\Security\Capabilities;
 use LexRanked\Core\Services;
 
 /**
- * GET /health — operational checks for monitoring (frontend /api/health,
+ * GET /health - operational checks for monitoring (frontend /api/health,
  * uptime services). Requires the API role or an administrator; returns 503
  * when a check is critical so simple monitors can alert on the status code.
  */

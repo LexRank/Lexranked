@@ -44,7 +44,7 @@ final class EntityInput {
 	 *
 	 * @param string                $entity_type         lawyer|law_firm.
 	 * @param int                   $entity_id           Entity ID.
-	 * @param float|null            $rating              Star rating 0–5.
+	 * @param float|null            $rating              Star rating 0-5.
 	 * @param int|null              $review_count        Review count.
 	 * @param int|null              $years_experience    Years in practice (firms: max of their lawyers).
 	 * @param int                   $awards_count        Recorded awards.

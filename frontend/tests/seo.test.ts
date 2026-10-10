@@ -31,7 +31,7 @@ describe("buildMetadata", () => {
   });
 
   it("supports absolute titles", () => {
-    expect(buildMetadata({ title: "LexRanked — Home", description: "d", path: "/", absoluteTitle: true }).title).toEqual({ absolute: "LexRanked — Home" });
+    expect(buildMetadata({ title: "LexRanked - Home", description: "d", path: "/", absoluteTitle: true }).title).toEqual({ absolute: "LexRanked - Home" });
   });
 });
 

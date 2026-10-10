@@ -6,14 +6,14 @@ Namespace: `/wp-json/lexranked/v1/` · API contract version: `1.18.0`
 Public endpoints are `GET`; the private research API (below) accepts `POST`
 from research workers, and the claim endpoints accept `POST` from the
 frontend server. Responses are stable DTOs built by pure mappers in
-`src/REST/DTO/` — raw WordPress objects are never returned, and the custom
+`src/REST/DTO/` - raw WordPress objects are never returned, and the custom
 post types are **not** exposed through `/wp/v2` (ADR-010).
 
 ## Conventions
 
 | Topic | Rule |
 |-------|------|
-| Pagination | `page` (≥1), `per_page` (1–100, default 20). Headers `X-WP-Total`, `X-WP-TotalPages`. |
+| Pagination | `page` (≥1), `per_page` (1-100, default 20). Headers `X-WP-Total`, `X-WP-TotalPages`. |
 | Sorting | `orderby` from a per-endpoint whitelist, `order=asc\|desc`. Ties always break on `id ASC` (deterministic). |
 | Validation | Every arg has a type/enum/pattern. **Unknown query parameters → 400 `lexranked_invalid_param`.** Out-of-range values → 400 `rest_invalid_param`. |
 | Visibility | Only `publish`ed records. Private fields (lawyer email, internal notes, reviewer identity, research data) are never in `context=view`. |
@@ -51,7 +51,7 @@ Health/version. `Cache-Control: no-store`.
 Entities without a value for the sort field are listed last on `desc`.
 
 ### `GET /lawyers/{id|slug}` · `GET /law-firms/{id|slug}`
-Detail DTO — see below. 404 `lexranked_not_found` if unpublished/missing.
+Detail DTO - see below. 404 `lexranked_not_found` if unpublished/missing.
 
 ### `GET /rankings`
 Ranking definitions without entries. Params: `location` (state or city slug),
@@ -182,7 +182,7 @@ Entries carry:
 Lawyer `professional` and firm detail add `caseTypes[]` and `clientTypes[]`.
 
 ### `GET /compare?type=lawyer|law_firm&entities=12,34` (API 1.12)
-Side-by-side comparison of 2–4 published entities of one type, by stable
+Side-by-side comparison of 2-4 published entities of one type, by stable
 entity ID (merges followed). `{ version: "cmp-1.0", type, entities[{id,
 entityId, type, name, path, location, firm, verification, isDemo}],
 rows[{key, label, group, kind: number|text|list|objects, cells[{id, value,
@@ -223,7 +223,7 @@ an unknown, used or expired token. Responses are `no-store`.
 ### `POST /contact` (API 1.22, frontend server only)
 The contact form, relayed by the frontend server like claims and reviews
 (`lexranked_submit_claims`). Body `{name, email, topic: general|correction|lawyer|privacy|press, page?, message}`
-(20–5,000 characters). `202 {status: "sent"}`: the message is emailed to the
+(20-5,000 characters). `202 {status: "sent"}`: the message is emailed to the
 editors (option `lexranked_contact_email`, default the site admin email) with
 the sender as Reply-To and is **not stored**. `400 lexranked_invalid_contact`
 with `errors{field: message}`; `429 lexranked_contact_limit` after 5 messages
@@ -231,7 +231,7 @@ per sender email per day; `503` if the email cannot be sent.
 
 ### Client reviews (API 1.20)
 `POST /reviews` · `POST /reviews/confirm` (frontend server only, same role as
-claims). Body `{ entityType, entityId, rating: 1–5, title?, body (40–2000
+claims). Body `{ entityType, entityId, rating: 1-5, title?, body (40-2000
 chars, no links), name, email, serviceYear, client: true }` → **202**
 `{ status: "pending_email" }` (also for repeats: one review per email and
 profile). 400 `lexranked_invalid_review` with `data.field`, 404 unknown
@@ -249,7 +249,7 @@ author is first name and last initial). Approved reviews are also recorded as
 review data; review data from a higher-tier platform takes precedence.
 
 ### `GET /search?q=`
-Name search across lawyers and firms (`q` 2–100 chars, `type=all|lawyer|law_firm`,
+Name search across lawyers and firms (`q` 2-100 chars, `type=all|lawyer|law_firm`,
 `per_page` ≤ 20). Sends `X-Robots-Tag: noindex`; stricter rate limit.
 
 ## DTOs
@@ -284,7 +284,7 @@ on profiles; featured and sponsored placements come from `GET /placements`.
 entity's position in the latest run of each ranking).
 
 ### Lawyer (detail) adds
-`summary` (API 1.5, plain text), `dataQuality` (API 1.10: `{ score (0–100),
+`summary` (API 1.5, plain text), `dataQuality` (API 1.10: `{ score (0-100),
 version, dimensions[{key, label, weight, score, detail}], missing[],
 unsourced[], stale[], conflicts[], calculatedAt } | null`. It describes the
 documentation and is **not** a ranking input), `facts[]` (API 1.9: `{ attribute, label,
@@ -337,26 +337,26 @@ Since API 1.3.0. Requires the `lexranked_research` capability (role
 that act on a job's data require the lease token from `claim` in the
 `X-LexRanked-Lease` header; without a valid lease → `409
 lexranked_lease_lost`, cancelled job → `409 lexranked_job_cancelled`.
-Batch endpoints accept 1–100 `items` and answer per item (`{index, error:
-{field, message}}` for rejected items) — one bad item never fails a batch.
+Batch endpoints accept 1-100 `items` and answer per item (`{index, error:
+{field, message}}` for rejected items) - one bad item never fails a batch.
 See [research.md](research.md) for the semantics.
 
 | Method & path | Body / params | Returns |
 |---|---|---|
 | `POST /research/jobs` | `{job_type: candidate_discovery\|source_refresh, params?, title?, locations?[slug], practice_areas?[slug]}` | Job (`pending`); `403` unless **Autonomous research** is on; `candidate_discovery` needs `params.dataset` (API 1.17) |
 | `POST /research/jobs/claim` | `{worker, types[]}` | `{job: Job + token}` or `{job: null}`; `503 lexranked_claim_busy` when another claim holds the lock |
-| `GET /research/jobs/{id}` | — | Job + `logCounts`, `candidateCounts` |
+| `GET /research/jobs/{id}` | - | Job + `logCounts`, `candidateCounts` |
 | `GET /research/jobs/{id}/log` | `after` (log ID) | `[{id, level, stage, message, context, createdAt}]` |
 | `POST /research/jobs/{id}/heartbeat` 🔒 | `{cursor?, processed_count?, stats?, logs?[]}` | Job (lease extended) |
 | `POST /research/jobs/{id}/complete` 🔒 | same as heartbeat | Job (`completed`; ranking recalculation scheduled) |
 | `POST /research/jobs/{id}/fail` 🔒 | `{error, retryable=true, …progress}` | Job (`failed`, `nextRetryAt` or final) |
 | `GET /research/jobs/{id}/targets` 🔒 | `after` (entity ID), `limit` ≤ 100 | `[{id, entityType, status, name, website}]` in the job's scope |
 | `POST /research/jobs/{id}/sources` 🔒 | `items[{url, source_type, title?}]` | `[{index, sourceId, created, tier}]` |
-| `POST /research/jobs/{id}/candidates` 🔒 | `items[{entity_type, name, source_url, source_type, city?, state?, practice_area?, website?, payload?}]` | `[{index, candidateId, created, status, entityId, entityType, reason}]` — `entityId` only for `matched`/`created` |
+| `POST /research/jobs/{id}/candidates` 🔒 | `items[{entity_type, name, source_url, source_type, city?, state?, practice_area?, website?, payload?}]` | `[{index, candidateId, created, status, entityId, entityType, reason}]` - `entityId` only for `matched`/`created` |
 | `POST /research/jobs/{id}/claims` 🔒 | `items[{entity_id, field_name, value, source_url and/or source_id, source_type, retrieved_at, confidence, method?: seed\|structured_data\|ai}]` (`ai` needs AI enabled; confidence capped at 0.6) | `{results[{index, claimId, duplicate}], applied{entityId: fields[]}, review[entityIds]}` |
 | `POST /research/jobs/{id}/verifications` 🔒 | `items[{entity_id, verification_type, status, source_url, source_type, source_id?, notes?}]` | `[{index, verificationId, status, downgraded, duplicate}]` |
 | `GET /research/jobs/{id}/review-candidates` 🔒 | `after`, `limit` | candidates in review + suggested profile (API 1.4) |
-| `POST /research/jobs/{id}/auto-publish` 🔒 | — | finish automatic publication of a completed job (idempotent: published profiles are left alone; missing sources, records and rankings are added) (API 1.19) |
+| `POST /research/jobs/{id}/auto-publish` 🔒 | - | finish automatic publication of a completed job (idempotent: published profiles are left alone; missing sources, records and rankings are added) (API 1.19) |
 | `POST /research/jobs/{id}/candidate-notes` 🔒 | `items[{candidate_id, verdict: same\|different\|unsure, confidence, reason, model}]` | advisory AI notes; `[{index, candidateId, stored}]` (API 1.4, needs AI enabled) |
 | `POST /research/jobs/{id}/content-drafts` 🔒 | `{content_type: "ranking_content", target_id, content{summary, sections[{heading, paragraphs[{text}]}], faq[{question, answer}]}, facts[{id,label,value}], qa{status, issues[]}, model, prompt_version}` | `{draftId, qaStatus, updated}`; stored as a WordPress draft; QA status recomputed (API 1.4, needs AI enabled) |
 | `GET /research/candidates` | `status?`, `page`, `per_page` | Candidate list (+ `X-WP-Total`) |
@@ -378,18 +378,18 @@ every change is written to the audit log.
 
 | Route | Body | Result |
 |---|---|---|
-| `GET /editorial/rankings/{id}` | — | `{id, title, slug, status, summary, body, faq[], reviewedBy, reviewedAt, generated}` (raw body; `generated`: text is generated and follows recalculations, API 1.21) |
+| `GET /editorial/rankings/{id}` | - | `{id, title, slug, status, summary, body, faq[], reviewedBy, reviewedAt, generated}` (raw body; `generated`: text is generated and follows recalculations, API 1.21) |
 | `POST /editorial/rankings/{id}` | any of `title`, `slug`, `summary`, `body` (HTML, sanitized with `wp_kses_post`), `faq[{question, answer}]` (≤ 20), `reviewed_by`, `reviewed_at` (`YYYY-MM-DD`) | the ranking's editorial view; `""` clears a field |
-| `POST /editorial/rankings/{id}/generate` (API 1.21) | — | replaces the text with text generated from the ranked lawyers' facts and the state knowledge pack (see docs/content-plan.md); `422 lexranked_no_content` when complete text cannot be written. Saving text by hand turns generation off again |
-| `GET /editorial/terms/{location\|practice-area}/{id}` | — | `{id, taxonomy, name, slug, summary, body, faq[], reviewedBy, reviewedAt}` |
+| `POST /editorial/rankings/{id}/generate` (API 1.21) | - | replaces the text with text generated from the ranked lawyers' facts and the state knowledge pack (see docs/content-plan.md); `422 lexranked_no_content` when complete text cannot be written. Saving text by hand turns generation off again |
+| `GET /editorial/terms/{location\|practice-area}/{id}` | - | `{id, taxonomy, name, slug, summary, body, faq[], reviewedBy, reviewedAt}` |
 | `POST /editorial/terms/{location\|practice-area}/{id}` | any of `summary`, `body`, `faq`, `reviewed_by`, `reviewed_at` | the hub's editorial view |
-| `POST /editorial/profiles/{id}` | `{summary}` (2–4 plain sentences) | `{id, name, summary}` |
+| `POST /editorial/profiles/{id}` | `{summary}` (2-4 plain sentences) | `{id, name, summary}` |
 | `GET /editorial/drafts` | `qa_status?` | AI content drafts with `contentType`, `qaStatus`, `target`, `summary`, `faq`, `body`, `qaReport`, `canApply` |
 | `POST /editorial/drafts/{id}/apply` | `{acknowledge?}` | `{id, status: applied\|partial\|already, errors, article_id}`; `409 lexranked_needs_review` for a draft that failed QA unless `acknowledge: true` |
-| `GET /editorial/knowledge/{STATE}` (plugin 0.28) | — | `{state, areas[], cities[], added{areas, cities}, checked}`: what generated ranking text can use (shipped pack plus additions) |
+| `GET /editorial/knowledge/{STATE}` (plugin 0.28) | - | `{state, areas[], cities[], added{areas, cities}, checked}`: what generated ranking text can use (shipped pack plus additions) |
 | `POST /editorial/knowledge/{STATE}/areas/{slug}` (plugin 0.28) | `{name?, cert, certName, lead, rows[[rule, meaning]], src[[https URL, label]], faq[[question, answer]], guides[[/path/, title]]}` | adds or replaces a practice area's rules; `name` also creates the practice-area term when it does not exist. `400` with `errors[]` unless the entry is as complete as the shipped pack. Needs `edit_others_posts` |
 | `POST /editorial/knowledge/{STATE}/cities/{slug}` (plugin 0.28) | `{county, circuit}` | adds a city, or adds keys to a shipped one (shipped keys such as crash data are kept) |
-| `DELETE /editorial/knowledge/{STATE}/{areas\|cities}/{slug}` (plugin 0.28) | — | removes an addition; the shipped pack is never changed |
+| `DELETE /editorial/knowledge/{STATE}/{areas\|cities}/{slug}` (plugin 0.28) | - | removes an addition; the shipped pack is never changed |
 
 Saving runs the same hooks as wp-admin, so the public page is revalidated.
 Knowledge additions apply to text generated afterwards: new rankings, or

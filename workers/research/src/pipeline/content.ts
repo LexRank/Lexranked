@@ -11,7 +11,7 @@
  *   entities: number[]  (kind profile; default: every published lawyer and firm)
  *   topic:    string    (kind article, required) · ranking: number (optional context)
  *   ai_qa:    boolean   (default true)
- * Cursor: "after:<target key>" — targets are processed in key order.
+ * Cursor: "after:<target key>" - targets are processed in key order.
  */
 
 import type { ContentDraftInput } from '../api.js';
@@ -204,7 +204,7 @@ async function profileTargets(ctx: JobContext): Promise<Target[]> {
 async function articleTargets(ctx: JobContext): Promise<Target[]> {
   const topic = ctx.job.params.topic;
   if (typeof topic !== 'string' || topic.trim().length < 10 || topic.length > 200) {
-    throw new ProviderError('params.topic must be a 10–200 character brief for the article');
+    throw new ProviderError('params.topic must be a 10-200 character brief for the article');
   }
   const rankingId = ctx.job.params.ranking === undefined ? null : Number(ctx.job.params.ranking);
   if (rankingId !== null && !(Number.isInteger(rankingId) && rankingId > 0)) throw new ProviderError('params.ranking must be a ranking ID');

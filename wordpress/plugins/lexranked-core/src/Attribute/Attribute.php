@@ -32,7 +32,7 @@ final class Attribute {
 	 * @param string             $category     identity|location|organization|contact|practice|credentials|experience|language|reviews|score.
 	 * @param string             $layer        fact|derived.
 	 * @param string             $freshness    Freshness category (Settings → freshness rules).
-	 * @param string|null        $unit         Unit, e.g. "years", "stars (0–5)", "points".
+	 * @param string|null        $unit         Unit, e.g. "years", "stars (0-5)", "points".
 	 * @param string             $description  What it means.
 	 */
 	public function __construct(

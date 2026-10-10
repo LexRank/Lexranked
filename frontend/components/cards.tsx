@@ -118,7 +118,7 @@ export function Movement({ movement, isNew }: { movement: number | null; isNew: 
   if (movement === 0)
     return (
       <span className="move move--same" title="No change since the previous calculation">
-        <span aria-hidden="true">–</span>
+        <span aria-hidden="true">-</span>
         <span className="sr-only">No change</span>
       </span>
     );
@@ -181,7 +181,7 @@ const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 /**
  * "Why #N?": a native disclosure (no JavaScript) built only from the stored
- * score components and snapshot differences — never generated text.
+ * score components and snapshot differences - never generated text.
  */
 export function WhyRankedHere({ entry }: { entry: RankingEntryDto }) {
   const why = entry.why;
@@ -266,7 +266,7 @@ export function CompareLinks({ ranking }: { ranking: RankingDetail }) {
   );
 }
 
-/** Key attributes chosen by the ranking's context (spec §22–23). */
+/** Key attributes chosen by the ranking's context (spec §22-23). */
 export function ContextualAttributes({ entry, context }: { entry: RankingEntryDto; context?: RankingContextDto | null }) {
   const attributes = contextualAttributes(entry, context);
   if (attributes.length === 0) return null;

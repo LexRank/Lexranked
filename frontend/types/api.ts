@@ -241,7 +241,7 @@ export interface RankingEntry {
   change?: RankingChange | null;
   /** Since API 1.13: the inputs this entry was scored on. */
   keyFacts?: KeyFacts;
-  /** Since API 1.13: contextual rankings only — the fact that qualifies this entry. */
+  /** Since API 1.13: contextual rankings only - the fact that qualifies this entry. */
   qualification?: QualificationDto | null;
   entity: LawyerSummary | LawFirmSummary;
 }

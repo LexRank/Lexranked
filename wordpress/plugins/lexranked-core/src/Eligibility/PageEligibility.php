@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace LexRanked\Core\Eligibility;
 
 /**
- * CAN_THIS_PAGE_EXIST? — one place that decides, from data, whether a page
+ * CAN_THIS_PAGE_EXIST? - one place that decides, from data, whether a page
  * exists and whether search engines may index it. Every decision lists its
  * checks (value, requirement, pass/fail), so the answer is explainable and
  * the same everywhere: page rendering, robots meta and the sitemap.
@@ -34,7 +34,7 @@ final class PageEligibility {
 	/**
 	 * Default rules: type => [ [key, label, required, level, description], … ].
 	 * `coverage` is the average share of expected facts backed by a source
-	 * (Data Quality completeness), 0–1.
+	 * (Data Quality completeness), 0-1.
 	 */
 	private const RULES = array(
 		'hub'        => array(
