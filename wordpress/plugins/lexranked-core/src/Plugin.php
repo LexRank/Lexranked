@@ -86,6 +86,7 @@ final class Plugin {
 		$services->commercial->register();
 		$services->reviews->register();
 		$services->ranking_content->register();
+		$services->hub_content->register();
 		( new Hardening( $services->settings ) )->register();
 		( new Headless( $services->settings ) )->register();
 

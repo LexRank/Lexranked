@@ -126,6 +126,7 @@ final class DraftApplier {
 						'faq'     => $faq,
 					)
 				);
+				HubContentService::release( (int) $fields['target_term'] );
 				$this->services->revalidator->on_term();
 				break;
 			case 'profile_summary':

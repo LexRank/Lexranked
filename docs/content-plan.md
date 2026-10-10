@@ -65,6 +65,18 @@ every text on the site, in the code and in the docs (also for ranges:
    every other fact (rule 4); if nothing true and helpful can be added,
    nothing is invented.
 
+### Hubs get generated text (plugin 0.29)
+
+Practice-area, city and state hubs get their text from the plugin
+(`HubContentBuilder`), built from the published rankings and the state
+knowledge pack: a summary that answers the page's question under the H1,
+then sections that each open with a bold answer (what the lawyer does, when
+you need one, the best lawyers and where, cost under Rule 4-1.5, state rules,
+board certification, how to choose, how we rank), guides, sources and a FAQ.
+Each practice area needs a `hub` block in the pack (what, matters, when,
+cost, questions); areas added over the API send it too. Hub text without an
+editor's changes follows every recalculation; text an editor saves is kept.
+
 ### Rankings start with their content
 
 A ranking is published only together with complete page text that meets

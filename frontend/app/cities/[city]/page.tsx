@@ -47,7 +47,8 @@ export async function generateMetadata(props: PageProps<"/cities/[city]">): Prom
   if (!data?.eligibility.exists) return { robots: { index: false } };
   return buildMetadata({
     title: `Top-Rated Lawyers in ${label(data.city)}`,
-    description: `Top-rated lawyers and law firms in ${label(data.city)}: ${data.city.lawyerCount} lawyer profiles with LexRank scores, verification status and sources.`,
+    // The hub's answer-first summary makes the best snippet; the generic line is the fallback.
+    description: data.city.content?.summary ?? `Top-rated lawyers and law firms in ${label(data.city)}: ${data.city.lawyerCount} lawyer profiles with LexRank scores, verification status and sources.`,
     path: data.city.path,
     noindex: !data.eligibility.indexable,
   });

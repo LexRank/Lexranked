@@ -160,6 +160,9 @@ final class KnowledgeStore {
 				break;
 			}
 		}
+		if ( array_key_exists( 'hub', $area ) ) {
+			$errors = array_merge( $errors, self::hub_errors( $area['hub'] ) );
+		}
 		foreach ( (array) ( $area['guides'] ?? array() ) as $guide ) {
 			if ( is_array( $guide ) && ( ! is_string( $guide[0] ?? null ) || 1 !== preg_match( '#^/[a-z0-9/-]+/$#', $guide[0] ) ) ) {
 				$errors[] = 'guides: every link must be a site path such as /articles/slug/';
@@ -194,7 +197,7 @@ final class KnowledgeStore {
 	private static function clean_area( array $area ): array {
 		$text  = static fn( mixed $v ): mixed => is_string( $v ) ? trim( $v ) : $v;
 		$pairs = static fn( mixed $items ): mixed => is_array( $items ) ? array_values( array_map( static fn( mixed $p ): mixed => is_array( $p ) ? array_map( $text, array_values( $p ) ) : $p, $items ) ) : $items;
-		return array(
+		$clean = array(
 			'cert'     => $text( $area['cert'] ?? null ),
 			'lead'     => $text( $area['lead'] ?? null ),
 			'rows'     => $pairs( $area['rows'] ?? null ),
@@ -203,6 +206,66 @@ final class KnowledgeStore {
 			'guides'   => $pairs( $area['guides'] ?? array() ),
 			'certName' => $text( $area['certName'] ?? null ),
 		);
+		if ( isset( $area['hub'] ) ) {
+			$hub          = is_array( $area['hub'] ) ? $area['hub'] : array();
+			$list         = static fn( mixed $items ): mixed => is_array( $items ) ? array_values( array_map( $text, $items ) ) : $items;
+			$clean['hub'] = array(
+				'what'      => $text( $hub['what'] ?? null ),
+				'matters'   => $list( $hub['matters'] ?? null ),
+				'whenLead'  => $text( $hub['whenLead'] ?? null ),
+				'when'      => $list( $hub['when'] ?? null ),
+				'cost'      => $text( $hub['cost'] ?? null ),
+				'questions' => $list( $hub['questions'] ?? null ),
+			);
+			if ( isset( $hub['costSrc'] ) ) {
+				$clean['hub']['costSrc'] = $pairs( $hub['costSrc'] );
+			}
+		}
+		return $clean;
+	}
+
+	/**
+	 * What is missing in the optional hub text of an area (what the lawyer
+	 * does, when you need one, cost and questions to ask).
+	 *
+	 * @param mixed $hub Hub entry.
+	 * @return array<int, string>
+	 */
+	public static function hub_errors( mixed $hub ): array {
+		if ( ! is_array( $hub ) ) {
+			return array( 'hub: an object' );
+		}
+		$errors = array();
+		foreach ( array( 'what', 'whenLead', 'cost' ) as $key ) {
+			if ( ! is_string( $hub[ $key ] ?? null ) || '' === trim( $hub[ $key ] ) || strlen( $hub[ $key ] ) > 1000 ) {
+				$errors[] = 'hub.' . $key . ': required, at most 1000 characters';
+			}
+		}
+		$lists = array(
+			'matters'   => array( 1, 10 ),
+			'when'      => array( 1, 8 ),
+			'questions' => array( 1, 8 ),
+		);
+		foreach ( $lists as $key => [$min, $max] ) {
+			$items = $hub[ $key ] ?? null;
+			$valid = is_array( $items ) && array_is_list( $items ) && count( $items ) >= $min && count( $items ) <= $max;
+			foreach ( $valid ? $items : array() as $item ) {
+				$valid = $valid && is_string( $item ) && '' !== trim( $item ) && strlen( $item ) <= 300;
+			}
+			if ( ! $valid ) {
+				$errors[] = sprintf( 'hub.%s: %d to %d short texts', $key, $min, $max );
+			}
+		}
+		if ( isset( $hub['costSrc'] ) && ! self::pairs( $hub['costSrc'], 1, 3 ) ) {
+			$errors[] = 'hub.costSrc: 1 to 3 [https URL, label] pairs';
+		}
+		foreach ( (array) ( $hub['costSrc'] ?? array() ) as $src ) {
+			if ( is_array( $src ) && ( ! is_string( $src[0] ?? null ) || 1 !== preg_match( '#^https://[^\s<>"]+$#', $src[0] ) ) ) {
+				$errors[] = 'hub.costSrc: every source must be an https:// URL';
+				break;
+			}
+		}
+		return $errors;
 	}
 
 	/**
