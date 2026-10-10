@@ -366,7 +366,7 @@ final class ResearchController extends RestController {
 	}
 
 	/**
-	 * POST /research/jobs — only when Settings → "Autonomous research" is on.
+	 * POST /research/jobs - only when Settings → "Autonomous research" is on.
 	 *
 	 * @param \WP_REST_Request $request Request.
 	 */

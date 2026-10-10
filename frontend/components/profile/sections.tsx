@@ -29,7 +29,7 @@ export function ScoreSection({
         <div style={{ flex: 1, minWidth: "14rem" }}>
           {score === null ? (
             <p className="muted" style={{ margin: 0 }}>
-              This profile has not been scored yet. A score is published only once enough verified data exists — it is never estimated.
+              This profile has not been scored yet. A score is published only once enough verified data exists - it is never estimated.
             </p>
           ) : (
             <p style={{ margin: 0 }}>
@@ -175,7 +175,7 @@ export function VerificationSection({ verification, freshness }: { verification:
 }
 
 function displayValue(value: unknown): string {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return "-";
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
   return JSON.stringify(value);
 }

@@ -25,7 +25,7 @@ use LexRanked\Core\Support\ContentVersion;
  *
  * - Changes during a request are collected and sent once, at shutdown.
  * - The request is signed (HMAC, see Signature) with LEXRANKED_REVALIDATE_SECRET,
- *   defined in wp-config.php or the environment — never stored in the database.
+ *   defined in wp-config.php or the environment - never stored in the database.
  * - A failed call is retried once a minute (up to 5 times) via WP-cron and
  *   recorded for the health check; ISR still refreshes pages meanwhile.
  * - The same events bump the content version that keys the API response cache.

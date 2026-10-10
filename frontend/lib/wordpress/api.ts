@@ -198,7 +198,7 @@ export const getAttributes = (opts?: Opts) =>
 export const getDataQualityModel = (opts?: Opts) =>
   apiRequest<DataQualityModelDto>("data-quality", { revalidate: 3600, ...opts }).then((r) => r.data);
 
-/** Side-by-side comparison of 2–4 entities by stable entity ID; null when any is unknown or unpublished. */
+/** Side-by-side comparison of 2-4 entities by stable entity ID; null when any is unknown or unpublished. */
 export async function getComparison(type: ComparableType, ids: number[], opts?: Opts): Promise<ComparisonDto | null> {
   try {
     return (await apiRequest<ComparisonDto>("compare", { query: { type, entities: ids.join(",") }, ...opts })).data;

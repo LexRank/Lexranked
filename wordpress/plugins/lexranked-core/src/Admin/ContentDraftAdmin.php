@@ -57,20 +57,20 @@ final class ContentDraftAdmin {
 		$issues = is_array( $issues ) ? $issues : array();
 		$target = $this->applier()->target( $fields );
 		$labels = array(
-			ContentDraft::QA_READY        => '✅ Ready for review — automated checks passed',
-			ContentDraft::QA_NEEDS_REVIEW => '⚠️ Needs review — automated checks found problems',
+			ContentDraft::QA_READY        => '✅ Ready for review - automated checks passed',
+			ContentDraft::QA_NEEDS_REVIEW => '⚠️ Needs review - automated checks found problems',
 			ContentDraft::QA_APPLIED      => '✔ Applied',
 		);
 		printf( '<p><strong>%s</strong></p>', esc_html( $labels[ (string) $fields['qa_status'] ] ?? (string) $fields['qa_status'] ) );
 		printf(
 			'<p>Type: <code>%s</code> · Target: %s · Model: <code>%s</code> · Prompt: <code>%s</code> · Job #%d</p>',
 			esc_html( (string) $fields['content_type'] ),
-			null === $target ? '—' : '<a href="' . esc_url( $target['edit'] ) . '">' . esc_html( $target['label'] ) . '</a>',
+			null === $target ? '-' : '<a href="' . esc_url( $target['edit'] ) . '">' . esc_html( $target['label'] ) . '</a>',
 			esc_html( (string) $fields['model'] ),
 			esc_html( (string) $fields['prompt_version'] ),
 			(int) $fields['job_id']
 		);
-		echo '<p class="description">Generated from the numbered facts below only. Automated QA checks every number, name and ranking position against those facts; it cannot judge tone or usefulness — that is your review.</p>';
+		echo '<p class="description">Generated from the numbered facts below only. Automated QA checks every number, name and ranking position against those facts; it cannot judge tone or usefulness - that is your review.</p>';
 
 		if ( array() !== $issues ) {
 			echo '<table class="widefat striped"><thead><tr><th>Severity</th><th>Check</th><th>Problem</th><th>Excerpt</th></tr></thead><tbody>';
@@ -133,7 +133,7 @@ final class ContentDraftAdmin {
 		$fields = $this->services->entities->record( $post, $this->services->content_draft )['fields'];
 		$facts  = json_decode( (string) ( $fields['facts'] ?? '[]' ), true );
 		if ( ! is_array( $facts ) || array() === $facts ) {
-			echo '<p>—</p>';
+			echo '<p>-</p>';
 			return;
 		}
 		echo '<table class="widefat striped"><tbody>';
@@ -192,7 +192,7 @@ final class ContentDraftAdmin {
 		$state    = isset( $_GET['lexranked_draft'] ) ? sanitize_key( wp_unslash( $_GET['lexranked_draft'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$messages = array(
 			'applied' => array( 'success', 'Draft applied to the ranking. The public page updates within a few minutes.' ),
-			'partial' => array( 'warning', 'Draft applied, but some fields were invalid and were skipped — check the ranking.' ),
+			'partial' => array( 'warning', 'Draft applied, but some fields were invalid and were skipped - check the ranking.' ),
 			'ack'     => array( 'error', 'This draft failed automated QA. Confirm that you reviewed every problem before applying it.' ),
 			'already' => array( 'info', 'This draft was already applied.' ),
 		);

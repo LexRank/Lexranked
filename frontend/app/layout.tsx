@@ -30,7 +30,7 @@ const serif = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${SITE_NAME} — Data-driven lawyer rankings`,
+    default: `${SITE_NAME} - Data-driven lawyer rankings`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,

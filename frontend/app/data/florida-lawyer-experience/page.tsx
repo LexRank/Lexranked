@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 function years(n: number | null): string {
-  return n === null ? "—" : `${Number.isInteger(n) ? n : n.toFixed(1)}`;
+  return n === null ? "-" : `${Number.isInteger(n) ? n : n.toFixed(1)}`;
 }
 
 function SpreadCells({ s }: { s: SpreadDto }) {

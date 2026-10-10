@@ -72,7 +72,7 @@ final class MetaBoxes {
 	 */
 	public function render( \WP_Post $post, PostType $type ): void {
 		wp_nonce_field( self::NONCE_ACTION, self::NONCE_NAME );
-		echo '<p>Facts are stored as structured fields. Leave a field empty when no reliable source exists — never guess.</p>';
+		echo '<p>Facts are stored as structured fields. Leave a field empty when no reliable source exists - never guess.</p>';
 		echo '<table class="form-table" role="presentation"><tbody>';
 		foreach ( $type->fields() as $field ) {
 			FieldRenderer::row( $field, MetaCodec::decode( $field, get_post_meta( $post->ID, $field->meta_key(), true ) ) );
@@ -188,7 +188,7 @@ final class MetaBoxes {
 			$entity = isset( $input['entity_id'] ) ? get_post( (int) $input['entity_id'] ) : null;
 			$vtype  = isset( $input['verification_type'] ) ? sanitize_key( (string) $input['verification_type'] ) : 'check';
 			if ( $entity instanceof \WP_Post ) {
-				$data['post_title'] = sprintf( '%s — %s', $entity->post_title, $vtype );
+				$data['post_title'] = sprintf( '%s - %s', $entity->post_title, $vtype );
 			}
 		} elseif ( ResearchJob::SLUG === $data['post_type'] ) {
 			$job                = isset( $input['job_type'] ) ? sanitize_key( (string) $input['job_type'] ) : 'job';

@@ -5,7 +5,7 @@ import { compareHref } from "./compare";
 /**
  * "Related questions" for ranking pages (spec §24). Every question is asked
  * only when the ranking's own data can answer it, and every answer is built
- * from that data — no generic SEO FAQ, no generated prose.
+ * from that data - no generic SEO FAQ, no generated prose.
  */
 
 export interface RelatedQuestion {

@@ -17,7 +17,7 @@ const pages = {
       telephone: '+1 305 555 0142',
       url: `http://${host}/sample-fixture`,
       address: { '@type': 'PostalAddress', streetAddress: '100 Fixture Way', addressLocality: 'Miami', addressRegion: 'FL', postalCode: '33101' },
-    })}</script></head><body><h1>Sample &amp; Fixture — fictional test firm</h1></body></html>`,
+    })}</script></head><body><h1>Sample &amp; Fixture - fictional test firm</h1></body></html>`,
   ],
 };
 

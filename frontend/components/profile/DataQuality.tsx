@@ -36,7 +36,7 @@ export function DataQualityPanel({ quality }: { quality: DataQualityDto | null |
         <p className="muted dq__note">Not yet on record with a source: {quality.missing.map(humanize).join(", ")}.</p>
       )}
       <p className="muted dq__note">
-        Measures how complete, fresh, well-sourced, verified and consistent this profile&apos;s data is — not how good the lawyer is. It is{" "}
+        Measures how complete, fresh, well-sourced, verified and consistent this profile&apos;s data is - not how good the lawyer is. It is{" "}
         <strong>not part of the ranking</strong>. {checked ? `Checked ${checked}. ` : ""}
         <Link href="/methodology/#data-quality">How it works</Link>
       </p>

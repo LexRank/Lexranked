@@ -70,14 +70,14 @@ trzeba zweryfikować danymi.
 | Ranking miasto × obszar | `/rankings/florida/{city}/{area}/` | `/rankings/florida/miami/personal-injury/` | ≥5 prawników, wpis miasta i obszaru w pakiecie wiedzy |
 | Ranking kontekstowy | `/rankings/florida/{city}/{area}/{segment}/` | `/rankings/florida/miami/family-law/divorce/` | ≥5 prawników z potwierdzonym faktem (język, typ sprawy) |
 | Ranking stanowy | `/rankings/florida/{area}/` | `/rankings/florida/immigration/` | **zmiana kodu:** research tworzy dziś tylko rankingi miejskie, a generator treści wymaga miasta |
-| Ranking kancelarii | do ustalenia, np. `/rankings/florida/{city}/{area}/law-firms/` | — | **zmiana kodu:** dziś adres koliduje z rankingiem prawników; potrzebne dane o kancelariach |
+| Ranking kancelarii | do ustalenia, np. `/rankings/florida/{city}/{area}/law-firms/` | - | **zmiana kodu:** dziś adres koliduje z rankingiem prawników; potrzebne dane o kancelariach |
 | Hub stanu | `/states/{state}/` | `/states/florida/` | istnieje |
 | Hub miasta | `/cities/{city}/` | `/cities/tampa/` | ≥1 ranking w mieście |
 | Hub obszaru | `/practice-areas/{area}/` | `/practice-areas/immigration/` | ≥1 ranking w obszarze |
-| Profil prawnika | `/lawyers/{slug}/` | — | weryfikacja licencji |
-| Profil kancelarii | `/law-firms/{slug}/` | — | dane o kancelarii |
+| Profil prawnika | `/lawyers/{slug}/` | - | weryfikacja licencji |
+| Profil kancelarii | `/law-firms/{slug}/` | - | dane o kancelarii |
 | Strona danych | `/data/{slug}/` (nowa sekcja) | `/data/florida-board-certified-lawyers/` | **nowy szablon** |
-| Poradnik | `/articles/{slug}/` | — | standard z `docs/content-plan.md` |
+| Poradnik | `/articles/{slug}/` | - | standard z `docs/content-plan.md` |
 | Strony zaufania i prawne | `/{slug}/` | `/about/`, `/privacy/` | treść redakcyjna |
 
 ## 4. Obszary praktyki (52)
@@ -114,31 +114,31 @@ researchu), C = kontekst w obszarze nadrzędnym.
 | 25 | `antitrust` | Antitrust | Antitrust & Trade Regulation Law | A | P3 | nowy |
 | 26 | `administrative-law` | Government & Administrative | State & Federal Government & Administrative Practice | A | P3 | nowy; głównie Tallahassee |
 | 27 | `local-government` | Local Government | City, County & Local Government Law | A | P3 | nowy |
-| 28 | `dui` | DUI | — (brak certyfikatu) | B/C | P1 | w katalogu, bez danych; kontekst Criminal Defense albo obszar z profilu Bar |
-| 29 | `divorce` | Divorce | — (podzbiór Marital & Family) | C | P1 | w katalogu, bez danych; kontekst Family |
-| 30 | `car-accidents` | Car Accident | — (podzbiór Civil Trial) | C | P1 | kontekst Personal Injury |
-| 31 | `medical-malpractice` | Medical Malpractice | — (podzbiór Civil Trial) | B/C | P1 | w katalogu, bez danych |
-| 32 | `bankruptcy` | Bankruptcy | — (brak certyfikatu Florida Bar) | B | P1 | w katalogu, bez danych; źródło: profil Bar + sąd federalny |
-| 33 | `wrongful-death` | Wrongful Death | — (podzbiór Civil Trial) | C | P2 | w katalogu, bez danych |
-| 34 | `insurance-claims` | Insurance Claim | — | B/C | P1 | nowy: spory z ubezpieczycielem o szkody w nieruchomości (huragany, zalania); ważny temat na Florydzie |
-| 35 | `truck-accidents` | Truck Accident | — | C | P2 | kontekst Personal Injury |
-| 36 | `motorcycle-accidents` | Motorcycle Accident | — | C | P2 | kontekst Personal Injury |
-| 37 | `boat-accidents` | Boating Accident | — | C | P2 | kontekst Personal Injury; Miami, Fort Lauderdale, Tampa, Keys |
-| 38 | `slip-and-fall` | Slip and Fall | — | C | P2 | kontekst Personal Injury |
-| 39 | `nursing-home-abuse` | Nursing Home Abuse | — | C | P2 | kontekst PI / Elder Law |
-| 40 | `child-custody` | Child Custody | — | C | P2 | kontekst Family |
-| 41 | `probate` | Probate | — | C | P2 | kontekst Estate Planning |
-| 42 | `guardianship` | Guardianship | — | C | P3 | kontekst Elder Law / Estate |
-| 43 | `deportation-defense` | Deportation Defense | — | C | P2 | kontekst Immigration |
-| 44 | `drug-crimes` | Drug Crimes | — | C | P2 | kontekst Criminal Defense |
-| 45 | `domestic-violence` | Domestic Violence | — | C | P3 | kontekst Criminal Defense / Family |
-| 46 | `discrimination` | Workplace Discrimination | — | C | P2 | kontekst Employment |
-| 47 | `social-security-disability` | Social Security Disability | — | B | P2 | nowy; dane spoza certyfikatów |
-| 48 | `landlord-tenant` | Landlord-Tenant | — | B/C | P2 | kontekst Real Estate |
-| 49 | `foreclosure` | Foreclosure Defense | — | C | P3 | kontekst Real Estate |
-| 50 | `consumer-protection` | Consumer Protection & Debt | — | B | P3 | nowy |
-| 51 | `civil-rights` | Civil Rights | — | B | P3 | nowy |
-| 52 | `securities` | Securities | — | B | P3 | nowy |
+| 28 | `dui` | DUI | - (brak certyfikatu) | B/C | P1 | w katalogu, bez danych; kontekst Criminal Defense albo obszar z profilu Bar |
+| 29 | `divorce` | Divorce | - (podzbiór Marital & Family) | C | P1 | w katalogu, bez danych; kontekst Family |
+| 30 | `car-accidents` | Car Accident | - (podzbiór Civil Trial) | C | P1 | kontekst Personal Injury |
+| 31 | `medical-malpractice` | Medical Malpractice | - (podzbiór Civil Trial) | B/C | P1 | w katalogu, bez danych |
+| 32 | `bankruptcy` | Bankruptcy | - (brak certyfikatu Florida Bar) | B | P1 | w katalogu, bez danych; źródło: profil Bar + sąd federalny |
+| 33 | `wrongful-death` | Wrongful Death | - (podzbiór Civil Trial) | C | P2 | w katalogu, bez danych |
+| 34 | `insurance-claims` | Insurance Claim | - | B/C | P1 | nowy: spory z ubezpieczycielem o szkody w nieruchomości (huragany, zalania); ważny temat na Florydzie |
+| 35 | `truck-accidents` | Truck Accident | - | C | P2 | kontekst Personal Injury |
+| 36 | `motorcycle-accidents` | Motorcycle Accident | - | C | P2 | kontekst Personal Injury |
+| 37 | `boat-accidents` | Boating Accident | - | C | P2 | kontekst Personal Injury; Miami, Fort Lauderdale, Tampa, Keys |
+| 38 | `slip-and-fall` | Slip and Fall | - | C | P2 | kontekst Personal Injury |
+| 39 | `nursing-home-abuse` | Nursing Home Abuse | - | C | P2 | kontekst PI / Elder Law |
+| 40 | `child-custody` | Child Custody | - | C | P2 | kontekst Family |
+| 41 | `probate` | Probate | - | C | P2 | kontekst Estate Planning |
+| 42 | `guardianship` | Guardianship | - | C | P3 | kontekst Elder Law / Estate |
+| 43 | `deportation-defense` | Deportation Defense | - | C | P2 | kontekst Immigration |
+| 44 | `drug-crimes` | Drug Crimes | - | C | P2 | kontekst Criminal Defense |
+| 45 | `domestic-violence` | Domestic Violence | - | C | P3 | kontekst Criminal Defense / Family |
+| 46 | `discrimination` | Workplace Discrimination | - | C | P2 | kontekst Employment |
+| 47 | `social-security-disability` | Social Security Disability | - | B | P2 | nowy; dane spoza certyfikatów |
+| 48 | `landlord-tenant` | Landlord-Tenant | - | B/C | P2 | kontekst Real Estate |
+| 49 | `foreclosure` | Foreclosure Defense | - | C | P3 | kontekst Real Estate |
+| 50 | `consumer-protection` | Consumer Protection & Debt | - | B | P3 | nowy |
+| 51 | `civil-rights` | Civil Rights | - | B | P3 | nowy |
+| 52 | `securities` | Securities | - | B | P3 | nowy |
 
 ## 5. Miasta (52)
 
@@ -156,51 +156,51 @@ dla 10 największych miast. Miasta poziomu 1 i 2 są już w pakiecie wiedzy
 | 5 | Fort Lauderdale | `fort-lauderdale` | Broward | 17. | 190,641 | 1 |  |
 | 6 | St. Petersburg | `st-petersburg` | Pinellas | 6. | 267,102 | 2 |  |
 | 7 | Tallahassee | `tallahassee` | Leon | 2. | 205,089 | 2 | stolica: prawo administracyjne, apelacje |
-| 8 | West Palm Beach | `west-palm-beach` | Palm Beach | 15. | — | 2 | siedziba hrabstwa, duży rynek prawniczy |
-| 9 | Boca Raton | `boca-raton` | Palm Beach | 15. | — | 2 |  |
-| 10 | Coral Gables | `coral-gables` | Miami-Dade | 11. | — | 2 | zagłębie kancelarii; już 1 prawnik w bazie |
+| 8 | West Palm Beach | `west-palm-beach` | Palm Beach | 15. | - | 2 | siedziba hrabstwa, duży rynek prawniczy |
+| 9 | Boca Raton | `boca-raton` | Palm Beach | 15. | - | 2 |  |
+| 10 | Coral Gables | `coral-gables` | Miami-Dade | 11. | - | 2 | zagłębie kancelarii; już 1 prawnik w bazie |
 | 11 | Hialeah | `hialeah` | Miami-Dade | 11. | 235,388 | 2 | hiszpańskojęzyczne miasto |
 | 12 | Port St. Lucie | `port-st-lucie` | St. Lucie | 19. | 258,575 | 2 |  |
 | 13 | Cape Coral | `cape-coral` | Lee | 20. | 233,025 | 2 |  |
-| 14 | Fort Myers | `fort-myers` | Lee | 20. | — | 2 | siedziba hrabstwa Lee |
-| 15 | Naples | `naples` | Collier | 20. | — | 2 |  |
-| 16 | Sarasota | `sarasota` | Sarasota | 12. | — | 2 |  |
-| 17 | Gainesville | `gainesville` | Alachua | 8. | — | 2 |  |
-| 18 | Clearwater | `clearwater` | Pinellas | 6. | — | 2 | siedziba hrabstwa Pinellas |
-| 19 | Pensacola | `pensacola` | Escambia | 1. | — | 2 |  |
-| 20 | Lakeland | `lakeland` | Polk | 10. | — | 2 |  |
-| 21 | Hollywood | `hollywood` | Broward | 17. | — | 2 |  |
-| 22 | Daytona Beach | `daytona-beach` | Volusia | 7. | — | 2 |  |
-| 23 | Melbourne | `melbourne` | Brevard | 18. | — | 2 |  |
-| 24 | Winter Park | `winter-park` | Orange | 9. | — | 2 | zagłębie kancelarii pod Orlando |
-| 25 | Pembroke Pines | `pembroke-pines` | Broward | 17. | — | 3 |  |
-| 26 | Miramar | `miramar` | Broward | 17. | — | 3 |  |
-| 27 | Coral Springs | `coral-springs` | Broward | 17. | — | 3 |  |
-| 28 | Pompano Beach | `pompano-beach` | Broward | 17. | — | 3 |  |
-| 29 | Plantation | `plantation` | Broward | 17. | — | 3 |  |
-| 30 | Weston | `weston` | Broward | 17. | — | 3 |  |
-| 31 | Miami Beach | `miami-beach` | Miami-Dade | 11. | — | 3 |  |
-| 32 | Doral | `doral` | Miami-Dade | 11. | — | 3 |  |
-| 33 | Aventura | `aventura` | Miami-Dade | 11. | — | 3 |  |
-| 34 | Palm Bay | `palm-bay` | Brevard | 18. | — | 3 |  |
-| 35 | Kissimmee | `kissimmee` | Osceola | 9. | — | 3 | duża społeczność hiszpańskojęzyczna |
-| 36 | Sanford | `sanford` | Seminole | 18. | — | 3 |  |
-| 37 | Ocala | `ocala` | Marion | 5. | — | 3 |  |
-| 38 | Bradenton | `bradenton` | Manatee | 12. | — | 3 |  |
-| 39 | Stuart | `stuart` | Martin | 19. | — | 3 |  |
-| 40 | Delray Beach | `delray-beach` | Palm Beach | 15. | — | 3 |  |
-| 41 | Boynton Beach | `boynton-beach` | Palm Beach | 15. | — | 3 |  |
-| 42 | Jupiter | `jupiter` | Palm Beach | 15. | — | 3 |  |
-| 43 | Palm Beach Gardens | `palm-beach-gardens` | Palm Beach | 15. | — | 3 |  |
-| 44 | St. Augustine | `st-augustine` | St. Johns | 7. | — | 3 |  |
-| 45 | Panama City | `panama-city` | Bay | 14. | — | 3 |  |
-| 46 | Key West | `key-west` | Monroe | 16. | — | 3 |  |
-| 47 | Vero Beach | `vero-beach` | Indian River | 19. | — | 3 |  |
-| 48 | Largo | `largo` | Pinellas | 6. | — | 3 |  |
-| 49 | Deltona | `deltona` | Volusia | 7. | — | 3 |  |
-| 50 | Palm Coast | `palm-coast` | Flagler | 7. | — | 3 |  |
-| 51 | Destin | `destin` | Okaloosa | 1. | — | 3 |  |
-| 52 | Punta Gorda | `punta-gorda` | Charlotte | 20. | — | 3 |  |
+| 14 | Fort Myers | `fort-myers` | Lee | 20. | - | 2 | siedziba hrabstwa Lee |
+| 15 | Naples | `naples` | Collier | 20. | - | 2 |  |
+| 16 | Sarasota | `sarasota` | Sarasota | 12. | - | 2 |  |
+| 17 | Gainesville | `gainesville` | Alachua | 8. | - | 2 |  |
+| 18 | Clearwater | `clearwater` | Pinellas | 6. | - | 2 | siedziba hrabstwa Pinellas |
+| 19 | Pensacola | `pensacola` | Escambia | 1. | - | 2 |  |
+| 20 | Lakeland | `lakeland` | Polk | 10. | - | 2 |  |
+| 21 | Hollywood | `hollywood` | Broward | 17. | - | 2 |  |
+| 22 | Daytona Beach | `daytona-beach` | Volusia | 7. | - | 2 |  |
+| 23 | Melbourne | `melbourne` | Brevard | 18. | - | 2 |  |
+| 24 | Winter Park | `winter-park` | Orange | 9. | - | 2 | zagłębie kancelarii pod Orlando |
+| 25 | Pembroke Pines | `pembroke-pines` | Broward | 17. | - | 3 |  |
+| 26 | Miramar | `miramar` | Broward | 17. | - | 3 |  |
+| 27 | Coral Springs | `coral-springs` | Broward | 17. | - | 3 |  |
+| 28 | Pompano Beach | `pompano-beach` | Broward | 17. | - | 3 |  |
+| 29 | Plantation | `plantation` | Broward | 17. | - | 3 |  |
+| 30 | Weston | `weston` | Broward | 17. | - | 3 |  |
+| 31 | Miami Beach | `miami-beach` | Miami-Dade | 11. | - | 3 |  |
+| 32 | Doral | `doral` | Miami-Dade | 11. | - | 3 |  |
+| 33 | Aventura | `aventura` | Miami-Dade | 11. | - | 3 |  |
+| 34 | Palm Bay | `palm-bay` | Brevard | 18. | - | 3 |  |
+| 35 | Kissimmee | `kissimmee` | Osceola | 9. | - | 3 | duża społeczność hiszpańskojęzyczna |
+| 36 | Sanford | `sanford` | Seminole | 18. | - | 3 |  |
+| 37 | Ocala | `ocala` | Marion | 5. | - | 3 |  |
+| 38 | Bradenton | `bradenton` | Manatee | 12. | - | 3 |  |
+| 39 | Stuart | `stuart` | Martin | 19. | - | 3 |  |
+| 40 | Delray Beach | `delray-beach` | Palm Beach | 15. | - | 3 |  |
+| 41 | Boynton Beach | `boynton-beach` | Palm Beach | 15. | - | 3 |  |
+| 42 | Jupiter | `jupiter` | Palm Beach | 15. | - | 3 |  |
+| 43 | Palm Beach Gardens | `palm-beach-gardens` | Palm Beach | 15. | - | 3 |  |
+| 44 | St. Augustine | `st-augustine` | St. Johns | 7. | - | 3 |  |
+| 45 | Panama City | `panama-city` | Bay | 14. | - | 3 |  |
+| 46 | Key West | `key-west` | Monroe | 16. | - | 3 |  |
+| 47 | Vero Beach | `vero-beach` | Indian River | 19. | - | 3 |  |
+| 48 | Largo | `largo` | Pinellas | 6. | - | 3 |  |
+| 49 | Deltona | `deltona` | Volusia | 7. | - | 3 |  |
+| 50 | Palm Coast | `palm-coast` | Flagler | 7. | - | 3 |  |
+| 51 | Destin | `destin` | Okaloosa | 1. | - | 3 |  |
+| 52 | Punta Gorda | `punta-gorda` | Charlotte | 20. | - | 3 |  |
 
 ## 6. Rankingi miasto × obszar (479)
 
@@ -893,7 +893,7 @@ dla obszaru, gdy co najmniej 2 × `min_ranking_entities` (10) opublikowanych
 prawników działa w co najmniej 2 miastach; strona pokazuje top 25. Generator
 pisze dla niego własną treść: skąd są najlepsi prawnicy (tabela miast), linki
 do rankingów każdego miasta, przepisy stanowe, FAQ. Z obecnych danych próg
-spełnia 10 obszarów (wszystkie poza Workers' Compensation): pozycje 1–10
+spełnia 10 obszarów (wszystkie poza Workers' Compensation): pozycje 1-10
 z tabeli powstaną przy pierwszym uruchomieniu publikacji po instalacji.
 
 | # | Tytuł | Adres | Priorytet |
@@ -970,7 +970,7 @@ przeliczeniu.
 (statyczne, źródła: Florida Statutes 2025 i rozdział 2023-15). Strony 1, 2, 5,
 6 i 7 są gotowe i liczą się z endpointu `GET /stats/florida` (wtyczka 0.26.0,
 API 1.23); bez niego są ukryte (404, poza sitemapą). Do zrobienia: 8 (Rule
-4-1.5 — tekst reguły z floridabar.org), 9 i 10.
+4-1.5 - tekst reguły z floridabar.org), 9 i 10.
 
 ## 13. Poradniki
 
@@ -1017,9 +1017,9 @@ linkują do nich w sekcji „Further reading”. Fakty sprawdzać w ustawach (za
 
 | # | Strona | Adres | Po co | Priorytet | Stan |
 |---|---|---|---|---|---|
-| 1 | How we rank (metodologia) | `/methodology/` | przejrzystość rankingu | — | ✅ |
-| 2 | How we verify | `/verified/` | weryfikacja licencji | — | ✅ |
-| 3 | Advertising policy | `/advertising/` | płatność nie zmienia pozycji | — | ✅ |
+| 1 | How we rank (metodologia) | `/methodology/` | przejrzystość rankingu | - | ✅ |
+| 2 | How we verify | `/verified/` | weryfikacja licencji | - | ✅ |
+| 3 | Advertising policy | `/advertising/` | płatność nie zmienia pozycji | - | ✅ |
 | 4 | About LexRanked | `/about/` | kto stoi za serwisem (E-E-A-T) | P1 | ✅ |
 | 5 | Editorial policy | `/editorial-policy/` | standard treści z `docs/content-plan.md`, źródła, aktualizacje | P1 | ✅ |
 | 6 | Contact | `/contact/` | kontakt i zgłaszanie błędów | P1 | ✅ |
@@ -1040,7 +1040,7 @@ kierujących klientów do prawników.
 
 | Faza | Zakres | Zmiany w kodzie | Wynik |
 |---|---|---|---|
-| 1 | Strony zaufania P1 (6 stron) · uzupełnienie brakujących obszarów w miastach poziomu 1 (research kolejnych certyfikatów) · przełączenie 40 rankingów na treść generowaną | brak | wiarygodność, ~10–15 nowych rankingów |
+| 1 | Strony zaufania P1 (6 stron) · uzupełnienie brakujących obszarów w miastach poziomu 1 (research kolejnych certyfikatów) · przełączenie 40 rankingów na treść generowaną | brak | wiarygodność, ~10-15 nowych rankingów |
 | 2 | Miasta poziomu 2 × 5 podstawowych obszarów (pakiet wiedzy: 19 miast) | brak | do ~95 rankingów |
 | 3 | Rankingi językowe (Spanish P1) · strony danych P1 | automatyczne rankingi językowe, generator dla kontekstów, szablon `/data/` | ~80 rankingów językowych |
 | 4 | Rankingi stanowe · nowe obszary z certyfikatem (Appellate, Condominium & HOA i inne) | ranking stanowy w researchu i generatorze; wpisy w pakiecie wiedzy | ~25 rankingów stanowych + nowe obszary |

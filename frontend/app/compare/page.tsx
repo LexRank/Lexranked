@@ -10,7 +10,7 @@ import type { ComparisonCell, ComparisonDto, ComparisonRow, VerificationState } 
 
 /**
  * Comparison pages (Etap E). Built on request from structured data for any
- * 2–4 entities, so they are never indexed and never listed in the sitemap.
+ * 2-4 entities, so they are never indexed and never listed in the sitemap.
  */
 export const metadata: Metadata = {
   title: "Compare",

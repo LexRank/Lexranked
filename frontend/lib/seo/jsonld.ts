@@ -4,7 +4,7 @@ import { authorBySlug, authorPath, type AuthorProfile } from "@/lib/content/auth
 import { absoluteUrl } from "./urls";
 
 /**
- * schema.org builders. Only facts present in API data are emitted — no
+ * schema.org builders. Only facts present in API data are emitted - no
  * invented values. Ratings are deliberately NOT emitted as AggregateRating:
  * they come from third-party platforms, and search-engine guidelines only
  * allow review markup for reviews collected by the site itself.

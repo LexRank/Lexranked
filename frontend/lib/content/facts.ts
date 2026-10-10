@@ -2,7 +2,7 @@ import type { FactDto } from "@/types/api";
 
 /**
  * Presentation of normalised facts for the "Sources & Verification" panel
- * (spec §16–18): grouped by category, each with its own source and date.
+ * (spec §16-18): grouped by category, each with its own source and date.
  * Pure: the values come from the fact layer as stored.
  */
 
@@ -25,7 +25,7 @@ const humanizeSlug = (s: string) => s.replace(/-/g, " ").replace(/\b\w/g, (c) =>
 
 export function factValue(fact: Pick<FactDto, "attribute" | "value" | "unit">, practiceNames: Record<string, string> = {}): string {
   const v = fact.value;
-  if (v === null || v === undefined || v === "") return "—";
+  if (v === null || v === undefined || v === "") return "-";
   if (Array.isArray(v)) {
     return v
       .map((item) => {

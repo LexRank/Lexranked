@@ -1,5 +1,5 @@
 /**
- * Rules for which pages exist and which are indexable (spec §14–15, §18, §20, §32).
+ * Rules for which pages exist and which are indexable (spec §14-15, §18, §20, §32).
  *
  * Since Etap G the CMS decides with its page eligibility engine and sends the
  * decision with each DTO (`eligibility`); these functions use it when present

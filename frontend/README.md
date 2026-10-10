@@ -25,20 +25,20 @@ exist and when they are indexed are in `docs/content.md`.
 
 ## Layout
 
-- `app/` — routes (`layout.tsx`, `page.tsx`, `robots.ts`, `status/` connection diagnostics, noindex)
-- `components/` — shared UI
-- `lib/config/site.ts` — public config (safe for the browser)
-- `lib/config/server-env.ts` — server-only config (guarded by `server-only`)
-- `lib/seo/` — `buildMetadata` (canonical, robots, OpenGraph, Twitter), JSON-LD builders, URLs
-- `lib/content/` — page eligibility, ranking URL resolution, sitemap assembly (pure, tested)
-- `lib/data/loaders.ts` — graceful API loading + pagination helpers
-- `lib/format.ts`, `lib/methodology.ts` — presentation helpers and public methodology text
-- `components/` — design-system components (see docs/design.md)
-- `lib/slug.ts` — slug generation/validation
-- `lib/wordpress/` — server-only LexRanked API client (timeouts, retries with
+- `app/` - routes (`layout.tsx`, `page.tsx`, `robots.ts`, `status/` connection diagnostics, noindex)
+- `components/` - shared UI
+- `lib/config/site.ts` - public config (safe for the browser)
+- `lib/config/server-env.ts` - server-only config (guarded by `server-only`)
+- `lib/seo/` - `buildMetadata` (canonical, robots, OpenGraph, Twitter), JSON-LD builders, URLs
+- `lib/content/` - page eligibility, ranking URL resolution, sitemap assembly (pure, tested)
+- `lib/data/loaders.ts` - graceful API loading + pagination helpers
+- `lib/format.ts`, `lib/methodology.ts` - presentation helpers and public methodology text
+- `components/` - design-system components (see docs/design.md)
+- `lib/slug.ts` - slug generation/validation
+- `lib/wordpress/` - server-only LexRanked API client (timeouts, retries with
   backoff, typed errors, optional Application Password auth) and typed endpoint functions
-- `types/api.ts` — API DTO types (mirror `docs/api.md`)
-- `tests/` — unit tests
+- `types/api.ts` - API DTO types (mirror `docs/api.md`)
+- `tests/` - unit tests
 
 Environment variables: see the root `.env.example`. Put local values in
 `frontend/.env.local`.

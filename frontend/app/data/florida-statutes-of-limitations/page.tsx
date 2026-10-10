@@ -69,7 +69,7 @@ const PROPERTY: Row[] = [
   ["Oral contract, store account, sale of goods", "4 years", "the breach", "95.11", "s. 95.11(3)(j)"],
   ["Breach of a property insurance contract", "5 years", "the date of loss", "95.11", "s. 95.11(2)(e)"],
   ["Mortgage foreclosure", "5 years", "the default", "95.11", "s. 95.11(2)(c)"],
-  ["Deficiency after foreclosure of a 1–4 family home", "1 year", "the day after the clerk's certificate or a deed in lieu", "95.11", "s. 95.11(6)(g)"],
+  ["Deficiency after foreclosure of a 1-4 family home", "1 year", "the day after the clerk's certificate or a deed in lieu", "95.11", "s. 95.11(6)(g)"],
   ["Construction defects", "4 years; never more than 7", "the certificate of occupancy or completion (latent defects: discovery)", "95.11", "s. 95.11(3)(b)"],
   ["Fraud", "4 years; never more than 12", "when the fraud was or should have been discovered", "95.031", "s. 95.11(3)(i); s. 95.031(2)(a)"],
   ["Trespass on real property; damage to personal property", "4 years", "the act", "95.11", "s. 95.11(3)(f), (g)"],
@@ -88,7 +88,7 @@ const WORK: Row[] = [
 ];
 
 const CRIMINAL: Row[] = [
-  ["Capital or life felony, or a felony that caused a death", "no limit", "—", "775.15", "s. 775.15(1)"],
+  ["Capital or life felony, or a felony that caused a death", "no limit", "-", "775.15", "s. 775.15(1)"],
   ["First-degree felony", "4 years", "the day after the offense", "775.15", "s. 775.15(2)(a)"],
   ["Any other felony", "3 years", "the day after the offense", "775.15", "s. 775.15(2)(b)"],
   ["First-degree misdemeanor", "2 years", "the day after the offense", "775.15", "s. 775.15(2)(c)"],

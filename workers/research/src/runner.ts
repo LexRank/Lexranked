@@ -4,7 +4,7 @@
  *
  * - LeaseLostError (cancelled / taken over): stop, write nothing more;
  * - ProviderError (bad params, missing dataset): fail, not retryable;
- * - anything else (network, API outage): fail, retryable — the server
+ * - anything else (network, API outage): fail, retryable - the server
  *   schedules the retry with exponential backoff and the next attempt
  *   resumes from the last checkpoint;
  * - process crash: the lease expires and the next claim resumes.

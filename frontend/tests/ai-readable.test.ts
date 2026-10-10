@@ -28,7 +28,7 @@ describe("Sources & Verification (Etap H)", () => {
     expect(factValue(fact("case_types", "practice", ["car-accidents"]))).toBe("Car Accidents");
     expect(factValue(fact("practice_areas", "practice", ["personal-injury"]), { "personal-injury": "Personal Injury" })).toBe("Personal Injury");
     expect(factValue(fact("education", "credentials", [{ institution: "Law School", degree: "J.D.", year: "2003" }]))).toBe("J.D., Law School, 2003");
-    expect(factValue(fact("website", "contact", null))).toBe("—");
+    expect(factValue(fact("website", "contact", null))).toBe("-");
   });
 
   it("groups facts by category, credentials first, and hides redundant ones", () => {

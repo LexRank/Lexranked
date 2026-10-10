@@ -1,6 +1,6 @@
 # Content
 
-> Status: **implemented** — editorial fields on rankings, hubs and profiles, articles at `/articles/`, and AI drafts with QA for all of them ([ai.md](ai.md)). Editors: see [editor-guide.md](editor-guide.md).
+> Status: **implemented** - editorial fields on rankings, hubs and profiles, articles at `/articles/`, and AI drafts with QA for all of them ([ai.md](ai.md)). Editors: see [editor-guide.md](editor-guide.md).
 
 ## Pipeline
 
@@ -44,7 +44,7 @@ progress" without linking to them.
 
 ## MVP scope
 
-United States → Florida → Miami → Personal Injury, 20–50 profiles.
+United States → Florida → Miami → Personal Injury, 20-50 profiles.
 
 ## Ranking page layout (SEO + GEO)
 
@@ -54,9 +54,9 @@ below it:
 | Position | Block | Source |
 |----------|-------|--------|
 | Above | **Answer-first summary**: top 3, count, methodology, verified count, average rating | Generated deterministically from ranking data (`lib/content/rankingFacts.ts`); it cannot state unsupported facts |
-| Above | Editorial summary, 1–3 sentences | Ranking field `summary` (plain text) |
+| Above | Editorial summary, 1-3 sentences | Ranking field `summary` (plain text) |
 | Above | "At a glance" facts: ranked, verified, average rating, reviews | Data |
-| — | **The ranking** | Engine / API |
+| - | **The ranking** | Engine / API |
 | Below | Guide (H2 sections) | Ranking post content (WordPress editor) |
 | Below | FAQ (`FAQPage` JSON-LD): editorial questions about the practice area and place first, then questions the ranking's data answers, with one short "How were these ranked?" linking to `/methodology/` | Ranking field `faq` (`Question \| Answer` per line) + `lib/content/relatedQuestions.ts` |
 | Below | About this ranking: updated date, methodology, editorial review, independence | Data + `reviewed_by` / `reviewed_at` |

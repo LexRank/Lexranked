@@ -31,7 +31,7 @@ export default async function VerifiedPage() {
         ]}
         eyebrow="Trust"
         title="What “verified” means"
-        lead="We only call a profile verified when every required check has passed against an authoritative source — and the result has not expired."
+        lead="We only call a profile verified when every required check has passed against an authoritative source - and the result has not expired."
       />
       <div className="container section stack">
         <div className="grid grid--3">

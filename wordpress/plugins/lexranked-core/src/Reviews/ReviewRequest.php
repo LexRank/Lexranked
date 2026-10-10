@@ -122,7 +122,7 @@ final class ReviewRequest {
 	/**
 	 * Rating summary of approved reviews: average to one decimal and count.
 	 *
-	 * @param array<int, int> $ratings Ratings 1–5.
+	 * @param array<int, int> $ratings Ratings 1-5.
 	 * @return array{count: int, average: float|null}
 	 */
 	public static function aggregate( array $ratings ): array {

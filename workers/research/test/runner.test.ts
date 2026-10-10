@@ -57,7 +57,7 @@ describe('ResearchApi', () => {
   });
 });
 
-describe('runOnce — candidate discovery', () => {
+describe('runOnce - candidate discovery', () => {
   it('processes the dataset, checkpoints each batch and completes', async () => {
     const { wp, deps } = setup();
     const job = wp.addJob('candidate_discovery', { dataset: 'fictional-demo', fetch_websites: false });

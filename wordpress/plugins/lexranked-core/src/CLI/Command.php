@@ -166,7 +166,7 @@ final class Command {
 				$status = 'failed' === $lawyer['verified'] && 'bar_status' === $vtype ? 'failed' : ( 'verified' === $lawyer['verified'] ? 'verified' : 'pending' );
 				$this->create(
 					$s->verification,
-					sprintf( '%s — %s', $lawyer['title'], $vtype ),
+					sprintf( '%s - %s', $lawyer['title'], $vtype ),
 					'',
 					array(
 						'entity_id'         => $id,
@@ -569,7 +569,7 @@ final class Command {
 					'profile' => get_the_title( (int) $r['entity_id'] ) . ' (#' . $r['entity_id'] . ')',
 					'ranking' => $r['ranking_id'],
 					'term'    => max( (int) $r['location_term_id'], (int) $r['practice_area_term_id'] ),
-					'period'  => substr( (string) $r['starts_at'], 0, 10 ) . ' – ' . substr( (string) $r['ends_at'], 0, 10 ),
+					'period'  => substr( (string) $r['starts_at'], 0, 10 ) . ' - ' . substr( (string) $r['ends_at'], 0, 10 ),
 					'status'  => \LexRanked\Core\Commercial\PlacementPolicy::is_live( $r, $now ) ? 'live' : $r['status'],
 				),
 				$this->services->commercial->placements->list( true )
@@ -917,7 +917,7 @@ final class Command {
 			\WP_CLI::error( 'Lawyer or firm entity not found.' );
 		}
 		$result = $s->quality->compute( (string) $row['entity_type'], (int) $row['wp_id'] );
-		\WP_CLI::log( sprintf( '%s — Data Quality %s%% (%s)', $row['canonical_name'], $result['score'], $result['version'] ) );
+		\WP_CLI::log( sprintf( '%s - Data Quality %s%% (%s)', $row['canonical_name'], $result['score'], $result['version'] ) );
 		\WP_CLI\Utils\format_items( 'table', $result['dimensions'], array( 'label', 'weight', 'score', 'detail' ) );
 		foreach ( array( 'missing', 'unsourced', 'stale', 'conflicts' ) as $key ) {
 			if ( array() !== $result[ $key ] ) {
@@ -997,10 +997,10 @@ final class Command {
 				'attribute'     => $attribute,
 				'fact'          => wp_json_encode( $fact['value'] ),
 				'status'        => $fact['status'],
-				'claim'         => null === $claim ? '—' : sprintf( '#%d raw=%s via %s (%s, conf %.2f, %s)', $claim['claim_id'], wp_json_encode( $claim['value'] ), $claim['method'], $claim['verification_status'], $claim['confidence'], substr( $claim['retrieved_at'], 0, 10 ) ),
-				'source'        => null === $source ? ( $claim['source_url'] ?? '—' ) : sprintf( '#%d %s (%s, tier %d)', $source->ID, get_the_title( $source ), $claim['source_type'] ?? '', (int) $fact['source_tier'] ),
+				'claim'         => null === $claim ? '-' : sprintf( '#%d raw=%s via %s (%s, conf %.2f, %s)', $claim['claim_id'], wp_json_encode( $claim['value'] ), $claim['method'], $claim['verification_status'], $claim['confidence'], substr( $claim['retrieved_at'], 0, 10 ) ),
+				'source'        => null === $source ? ( $claim['source_url'] ?? '-' ) : sprintf( '#%d %s (%s, tier %d)', $source->ID, get_the_title( $source ), $claim['source_type'] ?? '', (int) $fact['source_tier'] ),
 				'research_job'  => null === $job ? 'editor / seed' : sprintf( '#%d %s', $job->ID, get_the_title( $job ) ),
-				'ranking_input' => null === $snapshot || ! array_key_exists( $attribute, (array) $snapshot['inputs'] ) ? '—' : sprintf( '%s in run %s (%s)', wp_json_encode( $snapshot['inputs'][ $attribute ] ), substr( (string) $snapshot['run_id'], 0, 8 ), $snapshot['calculated_at'] ),
+				'ranking_input' => null === $snapshot || ! array_key_exists( $attribute, (array) $snapshot['inputs'] ) ? '-' : sprintf( '%s in run %s (%s)', wp_json_encode( $snapshot['inputs'][ $attribute ] ), substr( (string) $snapshot['run_id'], 0, 8 ), $snapshot['calculated_at'] ),
 			);
 		}
 		if ( 'json' === ( $assoc_args['format'] ?? 'table' ) ) {
@@ -1175,7 +1175,7 @@ final class Command {
 			return;
 		}
 		foreach ( array( 'jobType', 'status', 'processedCount', 'cursor', 'retryCount', 'nextRetryAt', 'lockedUntil', 'worker', 'error' ) as $key ) {
-			\WP_CLI::line( sprintf( '%-15s %s', $key, is_scalar( $job[ $key ] ) ? (string) $job[ $key ] : '—' ) );
+			\WP_CLI::line( sprintf( '%-15s %s', $key, is_scalar( $job[ $key ] ) ? (string) $job[ $key ] : '-' ) );
 		}
 		\WP_CLI::line( sprintf( '%-15s %s', 'stats', (string) wp_json_encode( $job['stats'] ) ) );
 		\WP_CLI::line( sprintf( '%-15s %s', 'candidates', (string) wp_json_encode( array_filter( $job['candidateCounts'] ) ) ) );

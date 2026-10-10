@@ -16,7 +16,7 @@ const PRODUCTS = [
   {
     name: "Claimed profile",
     price: "Free",
-    body: "The lawyer or firm confirms their identity with an editor. The profile shows “Claimed by the lawyer / firm”, and the owner can request corrections — each backed by a public source.",
+    body: "The lawyer or firm confirms their identity with an editor. The profile shows “Claimed by the lawyer / firm”, and the owner can request corrections - each backed by a public source.",
   },
   {
     name: "Premium profile",

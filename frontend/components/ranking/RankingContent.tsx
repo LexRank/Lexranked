@@ -11,7 +11,7 @@ import { JsonLd } from "../JsonLd";
 /**
  * Editorial blocks around a ranking (SEO + GEO):
  * - above the list: an answer-first summary built from data, the optional
- *   editorial summary and "at a glance" facts — kept short so the ranking
+ *   editorial summary and "at a glance" facts - kept short so the ranking
  *   stays near the top;
  * - below the list: long-form editorial body, FAQ and "about this ranking".
  */
@@ -100,7 +100,7 @@ export function AboutRanking({ ranking, facts }: { ranking: RankingDetail; facts
         )}
         <dt>Methodology</dt>
         <dd>
-          <Link href="/methodology/">{METHODOLOGY_VERSION}</Link> — deterministic, reproducible scoring
+          <Link href="/methodology/">{METHODOLOGY_VERSION}</Link> - deterministic, reproducible scoring
         </dd>
         <dt>Entries</dt>
         <dd>

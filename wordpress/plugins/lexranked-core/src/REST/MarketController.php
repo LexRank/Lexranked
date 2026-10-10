@@ -19,7 +19,7 @@ use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
 
 /**
- * GET /market?location=miami&practice_area=personal-injury — statistics for a
+ * GET /market?location=miami&practice_area=personal-injury - statistics for a
  * market, computed from stored data (counts, verified counts, average rating,
  * median review count, most common practice area, data verification date),
  * each with its sample size, plus a template summary. Unknown slugs are 404.

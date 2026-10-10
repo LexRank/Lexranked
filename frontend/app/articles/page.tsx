@@ -20,7 +20,7 @@ export async function generateMetadata(props: PageProps<"/articles">): Promise<M
   const result = await fetchPage(page);
   const items = result.ok ? result.data.data : [];
   return buildMetadata({
-    title: page > 1 ? `Guides – Page ${page}` : "Guides to choosing a lawyer",
+    title: page > 1 ? `Guides - Page ${page}` : "Guides to choosing a lawyer",
     description: "Editorial guides from LexRanked: how rankings work, how to check a lawyer's credentials and what to ask before hiring.",
     path: page > 1 ? `/articles/?page=${page}` : "/articles/",
     // A listing of only demo or thin guides is not worth indexing.

@@ -34,7 +34,7 @@ final class CommercialAdmin {
 	private const SIGNAL_TEXT = array(
 		'match'     => '✅ matches the profile',
 		'mismatch'  => '❌ does not match the profile',
-		'unknown'   => '— cannot compare',
+		'unknown'   => '- cannot compare',
 		'no_match'  => '⚠️ different domain from the website',
 		'free_mail' => '⚠️ free email provider',
 	);
@@ -136,10 +136,10 @@ final class CommercialAdmin {
 		$line = static function ( string $label, string $value ): void {
 			printf( '<tr><th scope="row">%s</th><td>%s</td></tr>', esc_html( $label ), $value ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Callers escape.
 		};
-		$line( 'Status', esc_html( str_replace( '_', ' ', $status->value ) ) . ( $signals['already_claimed'] ? ' <strong style="color:#b32d2e">— this profile already has an approved claim</strong>' : '' ) );
+		$line( 'Status', esc_html( str_replace( '_', ' ', $status->value ) ) . ( $signals['already_claimed'] ? ' <strong style="color:#b32d2e">- this profile already has an approved claim</strong>' : '' ) );
 		$line( 'Profile', sprintf( '<a href="%s">Edit profile</a>', esc_url( (string) get_edit_post_link( (int) $row['entity_id'] ) ) ) );
 		$line( 'Claimant', esc_html( (string) $row['claimant_name'] ) . ' · ' . esc_html( str_replace( '_', ' ', (string) $row['claimant_role'] ) ) );
-		$line( 'Email', esc_html( (string) $row['claimant_email'] ) . ( null !== $row['email_verified_at'] ? ' (confirmed ' . esc_html( (string) $row['email_verified_at'] ) . ' UTC) ' : ' (not confirmed) ' ) . esc_html( self::SIGNAL_TEXT[ $signals['email_domain'] ] ?? '' ) . ( '' !== $signals['website'] ? ' — website ' . esc_html( $signals['website'] ) : '' ) );
+		$line( 'Email', esc_html( (string) $row['claimant_email'] ) . ( null !== $row['email_verified_at'] ? ' (confirmed ' . esc_html( (string) $row['email_verified_at'] ) . ' UTC) ' : ' (not confirmed) ' ) . esc_html( self::SIGNAL_TEXT[ $signals['email_domain'] ] ?? '' ) . ( '' !== $signals['website'] ? ' - website ' . esc_html( $signals['website'] ) : '' ) );
 		$line( 'Phone', esc_html( (string) $row['claimant_phone'] ) );
 		if ( 'lawyer' === $row['entity_type'] ) {
 			$line( 'Bar number', esc_html( trim( $row['bar_state'] . ' ' . $row['bar_number'] ) ) . ' ' . esc_html( self::SIGNAL_TEXT[ $signals['bar'] ] ?? '' ) . ( '' !== $signals['profile_bar'] ? ' (profile: ' . esc_html( $signals['profile_bar'] ) . ')' : '' ) );
@@ -160,7 +160,7 @@ final class CommercialAdmin {
 		wp_nonce_field( self::CLAIM_ACT . '_' . (int) $row['claim_id'] );
 		printf( '<input type="hidden" name="action" value="%s"><input type="hidden" name="claim" value="%d">', esc_attr( self::CLAIM_ACT ), (int) $row['claim_id'] );
 		if ( $status->can_become( ClaimStatus::Approved ) ) {
-			echo '<h3>Approve</h3><p><label for="lr-identity">How did you check the claimant\'s identity?</label><br><select id="lr-identity" name="identity_method"><option value="">— choose —</option>';
+			echo '<h3>Approve</h3><p><label for="lr-identity">How did you check the claimant\'s identity?</label><br><select id="lr-identity" name="identity_method"><option value="">- choose -</option>';
 			foreach ( ClaimSignals::IDENTITY_METHODS as $key => $label ) {
 				printf( '<option value="%s">%s</option>', esc_attr( $key ), esc_html( $label ) );
 			}
@@ -225,7 +225,7 @@ final class CommercialAdmin {
 		foreach ( $rows as $row ) {
 			$live = PlacementPolicy::is_live( $row, $now );
 			printf(
-				'<tr><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s – %s</td><td>%s</td><td>%s</td><td><a href="%s">Edit</a></td></tr>',
+				'<tr><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s - %s</td><td>%s</td><td>%s</td><td><a href="%s">Edit</a></td></tr>',
 				(int) $row['placement_id'],
 				esc_html( Product::from( (string) $row['product'] )->label() ),
 				esc_html( get_the_title( (int) $row['entity_id'] ) . ' (#' . (int) $row['entity_id'] . ')' ),

@@ -115,7 +115,7 @@ export async function runDiscovery(ctx: JobContext): Promise<PipelineResult> {
       });
     }
 
-    // 2. Candidates (matched / drafted / needs review — decided server-side).
+    // 2. Candidates (matched / drafted / needs review - decided server-side).
     const claims: ClaimInput[] = [];
     const verifications: VerificationInput[] = [];
     if (rows.length > 0) {

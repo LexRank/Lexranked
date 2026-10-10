@@ -55,7 +55,7 @@ final class FieldRenderer {
 				printf( '<input type="hidden" name="%2$s" value="0"><input type="checkbox" id="%1$s" name="%2$s" value="1"%3$s>', esc_attr( $id ), esc_attr( $name ), checked( (bool) $value, true, false ) );
 				break;
 			case Field::TYPE_ENUM:
-				printf( '<select id="%s" name="%s"><option value="">—</option>', esc_attr( $id ), esc_attr( $name ) );
+				printf( '<select id="%s" name="%s"><option value="">-</option>', esc_attr( $id ), esc_attr( $name ) );
 				foreach ( $field->options as $option ) {
 					printf( '<option value="%1$s"%2$s>%1$s</option>', esc_attr( $option ), selected( (string) $value, $option, false ) );
 				}
@@ -138,7 +138,7 @@ final class FieldRenderer {
 				'no_found_rows'  => true,
 			)
 		);
-		printf( '<select id="%s" name="%s"><option value="">—</option>', esc_attr( $id ), esc_attr( $name ) );
+		printf( '<select id="%s" name="%s"><option value="">-</option>', esc_attr( $id ), esc_attr( $name ) );
 		foreach ( $posts as $post ) {
 			$type_object = get_post_type_object( $post->post_type );
 			$label       = get_the_title( $post ) . ( count( $field->ref_types ) > 1 && null !== $type_object ? ' (' . $type_object->labels->singular_name . ')' : '' );
@@ -155,7 +155,7 @@ final class FieldRenderer {
 	 */
 	public static function display( Field $field, mixed $value ): string {
 		if ( null === $value || array() === $value ) {
-			return '—';
+			return '-';
 		}
 		if ( is_bool( $value ) ) {
 			return $value ? 'yes' : 'no';

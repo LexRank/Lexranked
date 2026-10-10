@@ -1,5 +1,5 @@
 /**
- * Presentation formatting (en-US). Pure functions; no data is invented —
+ * Presentation formatting (en-US). Pure functions; no data is invented -
  * null/undefined inputs render as null so callers can omit the element.
  */
 

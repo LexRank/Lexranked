@@ -18,7 +18,7 @@ export async function generateMetadata(props: PageProps<"/law-firms">): Promise<
   const result = await fetchPage(page);
   const items = result.ok ? result.data.data : [];
   return buildMetadata({
-    title: page > 1 ? `Law Firms – Page ${page}` : "Law firms ranked by LexRank score",
+    title: page > 1 ? `Law Firms - Page ${page}` : "Law firms ranked by LexRank score",
     description: "Browse law firm profiles with LexRank scores, verification status, lawyers and sourced facts.",
     path: page > 1 ? `/law-firms/?page=${page}` : "/law-firms/",
     noindex: !result.ok || !listingEligibility(items).indexable,

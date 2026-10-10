@@ -616,7 +616,7 @@ final class ResearchIngest {
 				array(
 					'post_type'   => VerificationRecord::SLUG,
 					'post_status' => 'pending',
-					'post_title'  => sprintf( '%s — %s (research job #%d)', get_the_title( $post ), $vtype, $job_id ),
+					'post_title'  => sprintf( '%s - %s (research job #%d)', get_the_title( $post ), $vtype, $job_id ),
 				),
 				true
 			);
@@ -822,7 +822,7 @@ final class ResearchIngest {
 				continue;
 			}
 			if ( ! is_numeric( $confidence ) || (float) $confidence < 0 || (float) $confidence > 1 || '' === $reason ) {
-				$out[] = self::error( $i, 'confidence', 'must be 0–1 and come with a reason' );
+				$out[] = self::error( $i, 'confidence', 'must be 0-1 and come with a reason' );
 				continue;
 			}
 			$this->candidates->set_ai_note(

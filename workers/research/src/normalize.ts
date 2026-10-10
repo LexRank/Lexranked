@@ -1,5 +1,5 @@
 /**
- * Name normalization — mirrors LexRanked\Core\Research\CandidateNormalizer
+ * Name normalization - mirrors LexRanked\Core\Research\CandidateNormalizer
  * (PHP) so the worker can tell whether structured data on a web page is
  * about the entity it is researching. Keep both in sync (parity-tested).
  */

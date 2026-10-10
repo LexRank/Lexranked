@@ -3,7 +3,7 @@ import { apiRequest } from "@/lib/wordpress/client";
 
 /**
  * Health endpoint for uptime monitoring: checks that the CMS answers and
- * relays the status of its operational checks (names and levels only —
+ * relays the status of its operational checks (names and levels only -
  * details stay in wp-admin / `wp lexranked health`). 503 when the CMS is
  * unreachable or a check is critical.
  */

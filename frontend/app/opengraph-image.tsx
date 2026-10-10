@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "LexRanked — Data-driven lawyer rankings";
+export const alt = "LexRanked - Data-driven lawyer rankings";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -42,7 +42,7 @@ export default function OpenGraphImage() {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div style={{ fontSize: "68px", lineHeight: 1.1, maxWidth: "980px" }}>Top-rated lawyers, ranked by data — not by ads.</div>
+          <div style={{ fontSize: "68px", lineHeight: 1.1, maxWidth: "980px" }}>Top-rated lawyers, ranked by data - not by ads.</div>
           <div style={{ fontSize: "28px", color: "#d9c29a", fontFamily: "sans-serif" }}>
             Transparent methodology · Every fact sourced · Payment never changes a ranking
           </div>

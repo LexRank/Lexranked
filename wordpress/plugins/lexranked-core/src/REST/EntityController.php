@@ -18,13 +18,13 @@ use LexRanked\Core\Quality\DataQuality;
 use LexRanked\Core\Services;
 
 /**
- * GET /entities/{entity_id}       — a public entity by its stable ID.
- * GET /entities/resolve?type&slug — the current entity for a current or
+ * GET /entities/{entity_id}       - a public entity by its stable ID.
+ * GET /entities/resolve?type&slug - the current entity for a current or
  *   former slug (renames, merges). Used by the frontend to redirect old URLs.
  *
- * GET /page-eligibility          — the page eligibility rules (Etap G).
- * GET /data-quality              — the Data Quality model (dimensions, weights) and site-wide summary.
- * GET /attributes                — the data dictionary: every fact and derived
+ * GET /page-eligibility          - the page eligibility rules (Etap G).
+ * GET /data-quality              - the Data Quality model (dimensions, weights) and site-wide summary.
+ * GET /attributes                - the data dictionary: every fact and derived
  *   metric an entity can have, its type, unit, layer and freshness rule.
  *
  * Only active (published) entities are returned; drafts and archived

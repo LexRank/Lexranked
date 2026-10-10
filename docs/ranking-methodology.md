@@ -1,4 +1,4 @@
-# Ranking methodology — LexRank
+# Ranking methodology - LexRank
 
 > Status: **implemented (Phase 4)**. Engine: `wordpress/plugins/lexranked-core/src/Ranking/`.
 
@@ -93,7 +93,7 @@ The frontend shows both in a "Why #N?" disclosure on every entry.
 
 ## v1.0
 
-| Component | Weight | Factor (0–1) |
+| Component | Weight | Factor (0-1) |
 |-----------|--------|--------------|
 | Reputation | 30 | 0.5 × min(awards, 5)/5 + 0.5 × ln(1 + reviews)/ln(1 + 500) |
 | Review strength | 20 | Bayesian rating (below), mapped linearly from 3.0 → 0 to 5.0 → 1 |
@@ -161,7 +161,7 @@ A contextual ranking (car accidents, Spanish-speaking, for businesses)
   `wp lexranked recalculate`.
 
 Each run writes rows to `{prefix}lr_ranking_snapshots` (`run_id`,
-`ranking_id` — 0 for entity-level scores — `entity_id`, `position`, `score`,
+`ranking_id` - 0 for entity-level scores - `entity_id`, `position`, `score`,
 `score_version`, `context`, `components`, `inputs`, `calculated_at`). Runs
 are inserted in a transaction. Public rankings are served from the latest
 run, with **movement** measured against the previous run. The history is

@@ -4,7 +4,7 @@
  * LexRanked's data flows one way: data → evidence → ranking → page → AI text.
  * The model sits at the very end and only INTERPRETS what the backend has
  * already established: it may summarize, explain, compare, classify and
- * write — from the numbered facts it is given. It may not invent facts,
+ * write - from the numbered facts it is given. It may not invent facts,
  * research from memory, compute new numbers or decide, change or judge a
  * position. Everything it writes is a draft that deterministic QA checks and
  * an editor approves.

@@ -14,7 +14,7 @@ namespace LexRanked\Core\Ranking;
  *
  * No clock, randomness, database or LLM is involved, so the same inputs and
  * version always produce the same score. A missing input scores 0 for its
- * component and is listed under `missing` — it is never estimated.
+ * component and is listed under `missing` - it is never estimated.
  */
 final class ScoreCalculator {
 

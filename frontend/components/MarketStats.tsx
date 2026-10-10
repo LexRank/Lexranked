@@ -3,7 +3,7 @@ import type { MarketDto } from "@/types/api";
 import { formatCount, formatDate, isoDate } from "@/lib/format";
 
 /**
- * Market statistics (spec §33–35): computed by the CMS from stored data. The
+ * Market statistics (spec §33-35): computed by the CMS from stored data. The
  * page only formats them; figures below the minimum sample arrive as null and
  * are shown as withheld, never estimated.
  */

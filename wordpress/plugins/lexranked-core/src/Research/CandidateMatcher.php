@@ -11,7 +11,7 @@ namespace LexRanked\Core\Research;
 
 /**
  * Decides whether a candidate is an existing lawyer/firm, a new one, or
- * needs a human. Rules only — no LLM, no scores learned from data — so the
+ * needs a human. Rules only - no LLM, no scores learned from data - so the
  * same inputs always give the same decision and the reason is explainable.
  *
  * When in doubt the matcher says "review": a wrong merge corrupts a real
@@ -86,7 +86,7 @@ final class CandidateMatcher {
 	}
 
 	/**
-	 * Name, domain and city rules (steps 1–3).
+	 * Name, domain and city rules (steps 1-3).
 	 *
 	 * @param array<string, mixed>             $candidate Candidate.
 	 * @param array<int, array<string, mixed>> $entities  Entities.

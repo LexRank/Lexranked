@@ -73,7 +73,7 @@ export const METHODOLOGY_PRINCIPLES = [
   },
   {
     title: "Every fact has a source",
-    body: "Important facts are traceable to official registries, firm websites or other documented sources. Unknown stays unknown — we never guess.",
+    body: "Important facts are traceable to official registries, firm websites or other documented sources. Unknown stays unknown - we never guess.",
   },
   {
     title: "Reproducible, not subjective",
