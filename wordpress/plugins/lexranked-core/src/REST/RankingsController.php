@@ -182,7 +182,7 @@ final class RankingsController extends RestController {
 		$items = array();
 		foreach ( $posts as $post ) {
 			$record                    = $this->services->entities->record( $post, $this->services->ranking );
-			$run                       = $this->services->presenter->ranking_entries( $record );
+			$run                       = $this->services->presenter->ranking_entry_refs( $record );
 			[ $context, $eligibility ] = $this->decide( $record, $run['entries'] );
 			$dto                       = RankingMapper::ranking( $record, $run['entries'], (int) $this->services->settings->get( 'min_ranking_entities' ), '', false, $run['calculated_at'], $context, $eligibility );
 			if ( null !== $request['indexable'] && (bool) $request['indexable'] !== $dto['indexable'] ) {

@@ -66,7 +66,31 @@
         ]
       ],
       "guides": [],
-      "certName": "Board Certified in Intellectual Property Law"
+      "certName": "Board Certified in Intellectual Property Law",
+      "hub": {
+        "what": "An intellectual property lawyer protects and enforces patents, trademarks, copyrights and trade secrets, and handles licensing and infringement disputes.",
+        "matters": [
+          "Trademark searches and registration",
+          "Patent applications (by registered patent attorneys)",
+          "Copyright registration and infringement",
+          "Trade secret protection and theft",
+          "Licensing agreements",
+          "Infringement lawsuits"
+        ],
+        "whenLead": "Talk to an intellectual property lawyer before you launch a brand or product, share an invention, or when someone copies your work.",
+        "when": [
+          "You are choosing a business or product name",
+          "You have an invention to protect",
+          "Someone is using your brand, content or code",
+          "You received a cease-and-desist letter"
+        ],
+        "cost": "Intellectual property lawyers often charge flat fees for searches and filings and hourly rates for disputes; government filing fees are extra. Ask for the fee in writing.",
+        "questions": [
+          "Are you a registered patent attorney if my matter needs one?",
+          "What searches do you recommend before filing?",
+          "How do you handle infringement cases?"
+        ]
+      }
     },
     "admiralty-maritime": {
       "cert": "Admiralty and Maritime",
@@ -126,7 +150,31 @@
         ]
       ],
       "guides": [],
-      "certName": "Board Certified in Admiralty and Maritime Law"
+      "certName": "Board Certified in Admiralty and Maritime Law",
+      "hub": {
+        "what": "A maritime lawyer handles legal matters on navigable waters: injuries to seamen and passengers, boating accidents, cargo and vessel disputes, and claims against ship owners.",
+        "matters": [
+          "Jones Act claims for injured seamen",
+          "Cruise ship passenger injuries",
+          "Boating accidents",
+          "Cargo damage and charter disputes",
+          "Vessel liens and arrests",
+          "Limitation of liability cases"
+        ],
+        "whenLead": "Contact a maritime lawyer soon after an injury at sea or a vessel accident, because federal deadlines apply and cruise tickets often set shorter ones.",
+        "when": [
+          "You were injured working on a vessel",
+          "You were hurt on a cruise ship",
+          "A boating accident caused injury or damage",
+          "A vessel owner filed to limit liability"
+        ],
+        "cost": "Maritime injury lawyers often work on contingency; commercial maritime disputes are usually billed by the hour. A contingent fee agreement must be in writing and state the percentage the lawyer receives (Rule 4-1.5(f)).",
+        "questions": [
+          "How many Jones Act or cruise cases have you handled?",
+          "Which deadlines apply to my claim?",
+          "Do you take cases to trial in federal court?"
+        ]
+      }
     },
     "health-law": {
       "cert": "Health",
@@ -194,7 +242,31 @@
         ]
       ],
       "guides": [],
-      "certName": "Board Certified in Health Law"
+      "certName": "Board Certified in Health Law",
+      "hub": {
+        "what": "A health care lawyer advises doctors, clinics, hospitals and other providers on licensing, regulatory compliance, billing, contracts and disciplinary matters.",
+        "matters": [
+          "Clinic and facility licensing",
+          "Referral and kickback compliance",
+          "Medicare and Medicaid billing audits",
+          "Professional license discipline",
+          "Physician employment and practice sales",
+          "Patient records and privacy"
+        ],
+        "whenLead": "Use a health care lawyer before opening or buying a practice, before entering a referral or marketing arrangement, and as soon as you receive an audit or licensing complaint.",
+        "when": [
+          "You are opening, buying or selling a practice",
+          "A payer or agency opened an audit",
+          "You received a complaint against your license",
+          "You plan a marketing or referral arrangement"
+        ],
+        "cost": "Health care lawyers usually bill by the hour, and some offer flat fees for licensing or compliance projects. Ask for an estimate in writing.",
+        "questions": [
+          "Do you represent providers like my practice?",
+          "Have you handled audits or license cases with this agency?",
+          "What will a compliance review cost?"
+        ]
+      }
     }
   },
   "cities": {
