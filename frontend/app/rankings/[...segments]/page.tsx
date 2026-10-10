@@ -13,13 +13,13 @@ import { rankingAnswer, rankingFacts } from "@/lib/content/rankingFacts";
 import { AboutRanking, EditorialBody, FaqSection, OnThisPage, RankingOverview, RankingSources } from "@/components/ranking/RankingContent";
 import { relatedQuestions } from "@/lib/content/relatedQuestions";
 import { allRankings } from "@/lib/data/loaders";
-import { formatDate, isoDate, pluralize } from "@/lib/format";
+import { formatDate, inSentence, isoDate, pluralize } from "@/lib/format";
 import { methodologyLabel } from "@/lib/methodology";
 import { placeJsonLd, practiceAreaJsonLd, rankingJsonLd, rankingPageJsonLd, type Crumb } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getMarket, getPlacements, getRanking } from "@/lib/wordpress/api";
 import { MarketStats } from "@/components/MarketStats";
-import type { RankingContextDto } from "@/types/api";
+import type { RankingContextDto, RankingSummary } from "@/types/api";
 import { PlacementBlock } from "@/components/commercial/Commercial";
 
 export const revalidate = 300;
@@ -89,9 +89,19 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
   const narrower = rankings.filter((r) => r.context?.parent?.id === ranking.id && !r.isThin && r.path);
   const others = rankings.filter((r) => r.id !== ranking.id && !r.isThin && !r.context && r.path && !narrower.includes(r));
   // Internal links both ways: the same practice area in other cities, other practice areas here.
-  const samePractice = others.filter((r) => r.practiceArea?.slug === ranking.practiceArea?.slug && r.location?.citySlug !== ranking.location?.citySlug).slice(0, 12);
-  const sameCity = others.filter((r) => r.location?.citySlug && r.location.citySlug === ranking.location?.citySlug && r.practiceArea?.slug !== ranking.practiceArea?.slug).slice(0, 12);
-  const related = others.filter((r) => !samePractice.includes(r) && !sameCity.includes(r) && r.location?.stateSlug === ranking.location?.stateSlug).slice(0, 4);
+  const sameState = (r: RankingSummary) => r.location?.stateSlug === ranking.location?.stateSlug;
+  // A city ranking links up to the statewide ranking of its practice area; a statewide one to the other areas statewide.
+  const statewide = ranking.location?.citySlug
+    ? others.find((r) => !r.location?.citySlug && sameState(r) && r.practiceArea?.slug === ranking.practiceArea?.slug) ?? null
+    : null;
+  const samePractice = others.filter((r) => r.location?.citySlug && r.practiceArea?.slug === ranking.practiceArea?.slug && r.location.citySlug !== ranking.location?.citySlug).slice(0, 12);
+  const sameCity = others.filter((r) =>
+    ranking.location?.citySlug
+      ? r.location?.citySlug === ranking.location.citySlug && r.practiceArea?.slug !== ranking.practiceArea?.slug
+      : !r.location?.citySlug && sameState(r) && r.practiceArea?.slug !== ranking.practiceArea?.slug,
+  ).slice(0, 12);
+  const placeName = ranking.location?.city ?? ranking.location?.state ?? null;
+  const related = others.filter((r) => r !== statewide && !samePractice.includes(r) && !sameCity.includes(r) && sameState(r)).slice(0, 4);
   const noun = ranking.entityType === "law_firm" ? "firm" : "lawyer";
   const facts = rankingFacts(ranking);
   const answer = rankingAnswer(ranking, facts);
@@ -104,7 +114,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
     ...(market && market.stats.lawyers > 0 ? [{ href: "#market", label: "Market statistics" }] : []),
     ...(faq.length > 0 ? [{ href: "#faq", label: "FAQ" }] : []),
     { href: "#about", label: "About this ranking" },
-    ...(related.length + samePractice.length + sameCity.length > 0 ? [{ href: "#related", label: "Related rankings" }] : []),
+    ...(related.length + samePractice.length + sameCity.length > 0 || statewide ? [{ href: "#related", label: "Related rankings" }] : []),
   ];
 
   return (
@@ -232,12 +242,18 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
           </div>
 
 
-          {related.length + samePractice.length + sameCity.length > 0 && (
+          {(related.length + samePractice.length + sameCity.length > 0 || statewide) && (
             <section id="related" className="stack">
               <h2>Related rankings</h2>
+              {statewide && ranking.practiceArea && (
+                <p>
+                  <Link href={statewide.path as string}>{statewide.title}</Link>: the top {inSentence(ranking.practiceArea.name)} lawyers across{" "}
+                  {statewide.location?.state ?? "the state"}, with every city compared.
+                </p>
+              )}
               {samePractice.length > 0 && ranking.practiceArea && (
                 <nav aria-label={`${ranking.practiceArea.name} rankings in other cities`}>
-                  <h3 style={{ fontSize: "1.05rem" }}>{ranking.practiceArea.name} lawyers in other cities</h3>
+                  <h3 style={{ fontSize: "1.05rem" }}>{ranking.practiceArea.name} lawyers {ranking.location?.citySlug ? "in other cities" : "by city"}</h3>
                   <ul className="chips">
                     {samePractice.map((r) => (
                       <li key={r.id}>
@@ -250,9 +266,9 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
                   </ul>
                 </nav>
               )}
-              {sameCity.length > 0 && ranking.location?.city && (
-                <nav aria-label={`Other rankings in ${ranking.location.city}`}>
-                  <h3 style={{ fontSize: "1.05rem" }}>Other practice areas in {ranking.location.city}</h3>
+              {sameCity.length > 0 && placeName && (
+                <nav aria-label={`Other rankings in ${placeName}`}>
+                  <h3 style={{ fontSize: "1.05rem" }}>Other practice areas in {placeName}</h3>
                   <ul className="chips">
                     {sameCity.map((r) => (
                       <li key={r.id}>

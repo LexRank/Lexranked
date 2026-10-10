@@ -52,6 +52,11 @@ describe("related questions from data (Etap H)", () => {
     expect(relatedQuestions({ ...ranking, entries: [] })).toEqual([]);
   });
 
+  it("does not repeat a methodology question the page's FAQ already asks", () => {
+    const ranking = { ...rankingDetail(), faq: [{ question: "How is this ranking ordered?", answer: "By the LexRank score." }] };
+    expect(relatedQuestions(ranking).map((q) => q.question).some((q) => /ranked\?$/.test(q))).toBe(false);
+  });
+
   it("links narrower rankings that passed their threshold", () => {
     const ranking = rankingDetail();
     const child = rankingSummary(99, {
