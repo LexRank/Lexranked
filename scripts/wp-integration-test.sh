@@ -400,7 +400,7 @@ expect "the language ranking is public with its context and language-specific te
 check "re-running does not create it twice" '(.rankings | length) == 0' "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
 check "a statewide ranking waits for enough lawyers in more than one city" '[.log[].message] | any(test("No new ranking \"Best Personal Injury Lawyers in Florida\": 3 published profiles statewide \\(needs 4\\)"))' "$(wp lexranked research-status "$AUTO_JOB" --format=json)"
 wp option update lexranked_settings '{"search_rate_per_minute":5,"research_autonomy":true,"min_ranking_entities":3}' --format=json >/dev/null
-expect "an automatically created ranking is published with complete generated page text" '(.summary | test("personal injury lawyers? in Hialeah, Florida")) and (.body | test("<h2>Florida rules to know</h2>")) and (.body | test("Eleventh Judicial Circuit")) and (.body | test("<h2>Sources</h2>")) and (.faq | length) >= 6 and .generated == true' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW"
+expect "an automatically created ranking is published with complete generated page text" '(.summary | test("personal injury lawyers? in Hialeah, Florida")) and (.body | test("<h2>Florida rules to know</h2>")) and (.body | test("Eleventh Judicial Circuit")) and (.body | test("<h2>Sources for the rules above</h2>")) and (.body | test("About this ranking") | not) and (.faq | length) >= 6 and .generated == true' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW"
 expect "an editor's text replaces the generated text and is kept" '.summary == "Edited by hand." and .generated == false' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"summary":"Edited by hand."}'
 expect "generated text can be restored on request" '.generated == true and (.summary | test("Hialeah"))' "$API/editorial/rankings/$HIALEAH_RANKING/generate" -u "itEditor:$ED_PW" -X POST
 # Remove the autonomous-research records so later sections see the same data as before.
@@ -655,6 +655,9 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "profile has the answer-first summary" "/lawyers/avery-example-demo/" "At a glance"
   page_has "schema.org mirrors the visible bar admission" "/lawyers/avery-example-demo/" '"hasCredential"'
   page_has "ranking lists its sources" "/rankings/florida/miami/personal-injury/" 'id="sources"'
+  page_has "methodology answers whether reviews affect the score" "/methodology/" "Do client reviews affect the LexRank score?"
+  page_has "profiles state the same rule on reviews" "/lawyers/avery-example-demo/" "Client reviews do not affect the LexRank score: neither star ratings nor the number of reviews is scored."
+  page_has "ranking FAQ asks the reviews question" "/rankings/florida/miami/personal-injury/" "Do client reviews affect the LexRank score?"
   page_has "ranking answers related questions from its data" "/rankings/florida/miami/personal-injury/" "Which lawyers are verified?"
   page_has "related questions link narrower rankings" "/rankings/florida/miami/personal-injury/" "list car accidents among their case types"
   page_has "methodology lists data sources" "/methodology/" 'id="data-sources"'

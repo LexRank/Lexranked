@@ -81,7 +81,7 @@ export default async function HomePage() {
               Find the right lawyer, <em>ranked by data</em> - not by ads.
             </h1>
             <p className="lead">
-              LexRanked compares lawyers and law firms on verified facts: licenses, experience, practice focus and client reviews.
+              LexRanked compares lawyers and law firms on verified facts: licenses, experience, practice focus and credentials.
               Every fact is traceable to a source, the scoring formula is public, and payment never changes a ranking.
             </p>
             <RankingFinder options={finderOptions(published)} variant="bar" />

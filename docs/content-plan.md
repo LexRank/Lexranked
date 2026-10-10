@@ -17,6 +17,19 @@ guides, trust pages) and their order is in `docs/page-plan.md`.
 These rules apply to guides and to every other text on the site: ranking,
 state, city and practice-area pages, FAQs and profile summaries.
 
+**Client reviews and the score:** every page says it the same way (methodology v1.2):
+"Client reviews do not affect the LexRank score: neither star ratings nor the
+number of reviews is scored." The score is experience, practice-area
+relevance, awards on record such as board certification, professional
+credentials, data quality and location. The wording lives in
+`frontend/lib/methodology.ts` (`reviewsStatement`) and in
+`RankingContentBuilder::SCORE_PARTS` / `REVIEWS_NOTE`; change both together.
+
+**One of each on a ranking page:** one methodology and date section
+("About this ranking", from the page template), one FAQ, one list of data
+sources and one list of sources for the rules; the generated text never
+repeats them.
+
 **Dashes:** always a plain hyphen "-", never an en dash or em dash, in
 every text on the site, in the code and in the docs (also for ranges:
 "2-4", "1-3 sentences"). CI fails on an en or em dash in any tracked file.

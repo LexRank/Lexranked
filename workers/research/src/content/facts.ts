@@ -133,7 +133,7 @@ export function buildRankingFacts(r: RankingData, market: MarketData | null = nu
   add('What is ranked', noun);
   add('Number of ranked ' + noun, String(r.entries.length));
   if (r.scoreVersion) add('Scoring methodology version', `LexRank methodology ${r.scoreVersion} (published at ${r.methodologyUrl})`);
-  add('How positions are decided', 'Positions follow the LexRank score, a deterministic 0-100 score from verified data, sources, experience and reviews; payment never affects positions.');
+  add('How positions are decided', 'Positions follow the LexRank score, a deterministic 0-100 score from sourced facts: experience, practice-area relevance, awards on record such as board certification, professional credentials, data quality and location; client reviews do not affect the LexRank score, and payment never affects positions.');
   if (r.calculatedAt) add('Last calculated', r.calculatedAt.slice(0, 10));
   // The backend's page decision already counts verified entries (Etap G); count here only for older APIs.
   const decided = r.eligibility?.checks?.find((c) => c.key === 'verified')?.value;
@@ -210,7 +210,7 @@ export function buildHubFacts(h: HubData, lawyers: EntitySummary[], rankings: { 
   add(h.kind === 'practice_area' ? 'Practice area' : 'Location', hubPlace(h));
   add('Published lawyer profiles', String(h.lawyerCount));
   add('Published law firm profiles', String(h.lawFirmCount));
-  add('How profiles are ordered', 'Profiles are ordered by the LexRank score, a deterministic 0-100 score from verified data, sources, experience and reviews; payment never affects positions.');
+  add('How profiles are ordered', 'Profiles are ordered by the LexRank score, a deterministic 0-100 score from sourced facts: experience, practice-area relevance, awards on record such as board certification, professional credentials, data quality and location; client reviews do not affect the LexRank score, and payment never affects positions.');
   if (market) {
     // Market-wide figures come from the backend (Etap I), not from the handful of profiles shown.
     marketFacts(market, add, h.kind !== 'practice_area');

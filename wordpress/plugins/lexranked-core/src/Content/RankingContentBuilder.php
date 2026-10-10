@@ -18,10 +18,16 @@ namespace LexRanked\Core\Content;
 final class RankingContentBuilder {
 
 	/** Content contract version, stored with generated text. */
-	public const VERSION = 'rc-1';
+	public const VERSION = 'rc-2';
 
 	/** Byline on generated text. */
 	public const REVIEWED_BY = 'LexRanked editorial team';
+
+	/** What the LexRank score is made of (methodology v1.2), stated the same way on every page. */
+	public const SCORE_PARTS = 'experience, practice-area relevance, awards on record such as board certification, professional credentials, data quality and location';
+
+	/** The one statement on client reviews, matching the methodology page and profiles. */
+	public const REVIEWS_NOTE = 'Client reviews do not affect the LexRank score: neither star ratings nor the number of reviews is scored.';
 
 	/**
 	 * Build summary, body (HTML) and FAQ.
@@ -98,19 +104,15 @@ final class RankingContentBuilder {
 		$body         = array();
 		$body[]       = '<h2>What sets these ' . $e( null === $language ? $city_name : $city_name . ' ' . $language . '-speaking' ) . ' lawyers apart</h2>';
 		$requirements = $stats['cert'] > 0 && isset( $pack['certification']['requirements'] ) ? ' ' . $e( (string) $pack['certification']['requirements'] ) : '';
-		$body[]       = '<p><strong>' . $e( $lead ) . '</strong>' . $requirements . ' The figures below come from each lawyer\'s ' . $e( $short ) . ' profile, checked in ' . $e( $checked ) . '.</p>';
+		$body[]       = '<p><strong>' . $e( $lead ) . '</strong>' . $requirements . ' The figures below come from each lawyer\'s ' . $e( $short ) . ' profile.</p>';
 		$body[]       = self::table( array( 'Fact about the ' . $n . ' ranked lawyers', 'Figure' ), $rows, $e );
 
-		$body[] = '<h2>About this ranking</h2>';
-		$body[] = '<p><strong>' . $e( sprintf( 'It compares %d %s lawyers whose office is in %s, using only facts with a cited source.', $n, $who, $city_name ) ) . '</strong></p>';
-		$body[] = '<ul>';
-		$body[] = '<li><strong>Who is included:</strong> ' . $e( sprintf( 'lawyers eligible to practice in %s, with a %s office address and %s as a practice area on record', $state, $city_name, $noun ) . ( null === $language ? '.' : sprintf( ', whose %s profile lists %s among the languages they speak.', $short, $language ) ) ) . '</li>';
-		$body[] = '<li><strong>Data checked:</strong> ' . $e( $checked ) . ', against each lawyer\'s ' . $e( $short ) . ' profile.</li>';
-		$body[] = '<li><strong>Order:</strong> the LexRank score (experience, credentials, practice relevance, location and data quality); payment never changes a position. See <a href="/methodology/">how we rank</a>.</li>';
+		$body[] = '<h2>Who is included in this ranking?</h2>';
+		$body[] = '<p><strong>' . $e( sprintf( 'Lawyers eligible to practice in %s, with a %s office address and %s as a practice area on record', $state, $city_name, $noun ) . ( null === $language ? '.' : sprintf( ', whose %s profile lists %s among the languages they speak.', $short, $language ) ) ) . '</strong> '
+			. $e( sprintf( 'It compares %d %s lawyers, using only facts with a cited source.', $n, $who ) ) . ' <a href="/methodology/">How we rank</a>.</p>';
 		if ( null !== $parent ) {
-			$body[] = '<li><strong>All ' . $e( $noun ) . ' lawyers:</strong> <a href="' . $e( $parent ) . '">' . $e( sprintf( 'the full ranking of %s lawyers in %s', $noun, $city_name ) ) . '</a>, whatever language they speak.</li>';
+			$body[] = '<p>' . $e( 'Whatever language they speak: ' ) . '<a href="' . $e( $parent ) . '">' . $e( sprintf( 'the full ranking of %s lawyers in %s', $noun, $city_name ) ) . '</a>.</p>';
 		}
-		$body[] = '</ul>';
 
 		if ( null !== $language ) {
 			$body[] = '<h2>' . $e( sprintf( 'Working with a %s-speaking lawyer', $language ) ) . '</h2>';
@@ -159,7 +161,7 @@ final class RankingContentBuilder {
 		if ( null !== $language ) {
 			$sources[] = array( 'https://www.flsenate.gov/Laws/Statutes/2025/90.606', $state . ' Statutes, section 90.606: interpreters and translators' );
 		}
-		$body[] = '<h2>Sources</h2>';
+		$body[] = '<h2>Sources for the rules above</h2>';
 		$body[] = '<ul>' . implode( '', array_map( static fn( array $s ): string => '<li><a href="' . $e( (string) $s[0] ) . '">' . $e( (string) $s[1] ) . '</a></li>', $sources ) ) . '</ul>';
 
 		// FAQ: the area's verified questions, then questions answered by this ranking's own data.
@@ -197,7 +199,7 @@ final class RankingContentBuilder {
 		}
 		$faq[] = array(
 			'question' => 'How is this ranking ordered?',
-			'answer'   => 'By the LexRank score, calculated from facts with a cited source: experience, credentials, practice relevance, location and data quality. Client reviews are shown on profiles but not scored, and payment never changes a position.',
+			'answer'   => 'By the LexRank score, calculated only from facts with a cited source: ' . self::SCORE_PARTS . '. ' . self::REVIEWS_NOTE . ' Payment never changes a position.',
 		);
 
 		return array(
@@ -290,13 +292,9 @@ final class RankingContentBuilder {
 			$body[] = self::table( array( 'City', 'Lawyers in this ranking' ), $city_rows, $e );
 		}
 
-		$body[] = '<h2>About this ranking</h2>';
-		$body[] = '<p><strong>' . $e( sprintf( 'It ranks every %s lawyer LexRanked tracks in %s by the same score and shows the top %d.', $noun, $state, $n ) ) . '</strong></p>';
-		$body[] = '<ul>';
-		$body[] = '<li><strong>Who is included:</strong> ' . $e( sprintf( 'lawyers eligible to practice in %s, with an office in a %s city we cover and %s as a practice area on record.', $state, $state, $noun ) ) . '</li>';
-		$body[] = '<li><strong>Data checked:</strong> ' . $e( $checked ) . ', against each lawyer\'s ' . $e( $short ) . ' profile.</li>';
-		$body[] = '<li><strong>Order:</strong> the LexRank score (experience, credentials, practice relevance, location and data quality); payment never changes a position. See <a href="/methodology/">how we rank</a>.</li>';
-		$body[] = '</ul>';
+		$body[] = '<h2>Who is included in this ranking?</h2>';
+		$body[] = '<p><strong>' . $e( sprintf( 'Lawyers eligible to practice in %s, with an office in a %s city we cover and %s as a practice area on record.', $state, $state, $noun ) ) . '</strong> '
+			. $e( sprintf( 'It ranks every %s lawyer LexRanked tracks in %s by the same score and shows the top %d.', $noun, $state, $n ) ) . ' <a href="/methodology/">How we rank</a>.</p>';
 
 		$city_links = array_values( array_filter( (array) ( $context['city_rankings'] ?? array() ), static fn( $c ): bool => is_array( $c ) && str_starts_with( (string) ( $c[0] ?? '' ), '/' ) ) );
 		if ( array() !== $city_links ) {
@@ -326,7 +324,7 @@ final class RankingContentBuilder {
 		foreach ( (array) $area['src'] as $src ) {
 			$sources[] = (array) $src;
 		}
-		$body[] = '<h2>Sources</h2>';
+		$body[] = '<h2>Sources for the rules above</h2>';
 		$body[] = '<ul>' . implode( '', array_map( static fn( array $s ): string => '<li><a href="' . $e( (string) $s[0] ) . '">' . $e( (string) $s[1] ) . '</a></li>', $sources ) ) . '</ul>';
 
 		$faq = array();
@@ -354,7 +352,7 @@ final class RankingContentBuilder {
 		);
 		$faq[] = array(
 			'question' => 'How is this ranking ordered?',
-			'answer'   => 'By the LexRank score, calculated from facts with a cited source: experience, credentials, practice relevance, location and data quality. Client reviews are shown on profiles but not scored, and payment never changes a position.',
+			'answer'   => 'By the LexRank score, calculated only from facts with a cited source: ' . self::SCORE_PARTS . '. ' . self::REVIEWS_NOTE . ' Payment never changes a position.',
 		);
 
 		return array(
