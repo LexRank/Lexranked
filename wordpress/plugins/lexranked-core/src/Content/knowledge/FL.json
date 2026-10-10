@@ -96,7 +96,31 @@
      "Florida medical malpractice: pre-suit rules and deadlines"
     ]
    ],
-   "certName": "Board Certified in Civil Trial Law"
+   "certName": "Board Certified in Civil Trial Law",
+   "hub": {
+    "what": "A personal injury lawyer represents people hurt by someone else's carelessness and claims compensation for medical bills, lost income and pain and suffering from the person at fault or their insurer.",
+    "matters": [
+     "Car, truck and motorcycle crashes",
+     "Slip and fall and other unsafe property injuries",
+     "Medical malpractice",
+     "Wrongful death claims for the family",
+     "Dog bites",
+     "Defective products"
+    ],
+    "whenLead": "Call a personal injury lawyer soon after a serious injury, before you give a recorded statement or accept a settlement offer.",
+    "when": [
+     "You were hurt and someone else may be at fault",
+     "The insurer disputes fault or offers less than your bills",
+     "Your injury is permanent or keeps you from working",
+     "A family member died because of someone's negligence"
+    ],
+    "cost": "Most personal injury lawyers work on a contingency fee: a percentage of what you recover and nothing if you recover nothing. Florida caps these percentages, for example 33 1/3% of the first $1 million when the case settles before the defendant answers.",
+    "questions": [
+     "How many cases like mine have you taken to trial?",
+     "What percentage do you charge, and are costs deducted before or after your fee?",
+     "Who will handle my case day to day?"
+    ]
+   }
   },
   "criminal-defense": {
    "cert": "Criminal Trial",
@@ -149,7 +173,31 @@
      "What happens after an arrest in Florida"
     ]
    ],
-   "certName": "Board Certified in Criminal Trial Law"
+   "certName": "Board Certified in Criminal Trial Law",
+   "hub": {
+    "what": "A criminal defense lawyer represents people investigated for or charged with a crime, from first appearance and bail through plea negotiations, trial and sentencing.",
+    "matters": [
+     "DUI",
+     "Drug charges",
+     "Theft and burglary",
+     "Assault, battery and domestic violence",
+     "White-collar and fraud charges",
+     "Sealing or expunging a record"
+    ],
+    "whenLead": "Ask for a lawyer as soon as you are arrested or learn you are under investigation, and do not answer questions about the case without one.",
+    "when": [
+     "You were arrested or received a notice to appear",
+     "Police want to interview you",
+     "You face a license suspension after a DUI arrest",
+     "You want to seal or expunge an old arrest"
+    ],
+    "cost": "Criminal defense lawyers charge a flat fee or by the hour; Florida's rules bar contingency fees for defending a criminal case. If you cannot afford a lawyer, the court can appoint the public defender.",
+    "questions": [
+     "How often do you handle this charge in this county?",
+     "What outcomes are realistic, including diversion or a reduced charge?",
+     "What does your fee cover if the case goes to trial?"
+    ]
+   }
   },
   "family-law": {
    "cert": "Marital and Family",
@@ -206,7 +254,37 @@
      "Florida child custody and time-sharing explained"
     ]
    ],
-   "certName": "Board Certified in Marital and Family Law"
+   "certName": "Board Certified in Marital and Family Law",
+   "hub": {
+    "what": "A family lawyer handles legal matters between spouses, parents and children: divorce, time-sharing and parenting plans, child support, alimony and property division.",
+    "matters": [
+     "Divorce, contested and uncontested",
+     "Parenting plans and time-sharing",
+     "Child support and alimony",
+     "Division of property and debts",
+     "Prenuptial and postnuptial agreements",
+     "Paternity and relocation with a child"
+    ],
+    "whenLead": "See a family lawyer before you file or sign anything, especially when there are children, a business or significant assets.",
+    "when": [
+     "You are considering divorce or were served with a petition",
+     "You and the other parent disagree on time-sharing",
+     "Support needs to be set, changed or enforced",
+     "You plan to move away with a child"
+    ],
+    "cost": "Family lawyers usually bill by the hour against a retainer, and some offer flat fees for uncontested cases. Florida's rules bar fees that depend on securing a divorce or on the amount of alimony or support, and a court can order one spouse to contribute to the other's fees (section 61.16).",
+    "questions": [
+     "Do you recommend mediation for my case?",
+     "How do you bill, and what retainer do you need?",
+     "How often do you appear before the judges in this circuit?"
+    ],
+    "costSrc": [
+     [
+      "https://www.flsenate.gov/Laws/Statutes/2025/61.16",
+      "Florida Statutes, section 61.16 (attorney fees in family cases)"
+     ]
+    ]
+   }
   },
   "immigration": {
    "cert": "Immigration and Nationality",
@@ -250,7 +328,31 @@
     ]
    ],
    "guides": [],
-   "certName": "Board Certified in Immigration and Nationality Law"
+   "certName": "Board Certified in Immigration and Nationality Law",
+   "hub": {
+    "what": "An immigration lawyer helps people and employers with visas, green cards, citizenship and deportation defense before USCIS, the immigration courts and the State Department.",
+    "matters": [
+     "Family-based green cards",
+     "Employment visas and green cards",
+     "Naturalization and citizenship",
+     "Asylum and humanitarian protection",
+     "Removal (deportation) defense",
+     "Waivers of inadmissibility"
+    ],
+    "whenLead": "Talk to an immigration lawyer before you file a form, travel abroad or attend an interview or court hearing, because one mistake can delay or end a case.",
+    "when": [
+     "You received a notice to appear in immigration court",
+     "A petition was denied or you got a request for evidence",
+     "You have a past arrest or immigration violation",
+     "You want to sponsor a relative or employee"
+    ],
+    "cost": "Immigration lawyers often charge a flat fee per application and bill court cases separately; government filing fees are extra. Ask for the fee and what it covers in writing before work starts.",
+    "questions": [
+     "Have you handled cases with facts like mine?",
+     "Which forms and government fees will my case need?",
+     "Will you attend the interview or hearing with me?"
+    ]
+   }
   },
   "estate-planning": {
    "cert": "Wills, Trusts and Estates",
@@ -299,7 +401,31 @@
      "Florida probate: how it works and how long it takes"
     ]
    ],
-   "certName": "Board Certified in Wills, Trusts and Estates Law"
+   "certName": "Board Certified in Wills, Trusts and Estates Law",
+   "hub": {
+    "what": "An estate planning lawyer prepares wills, trusts, powers of attorney and health care directives so your property passes as you choose and someone you trust can act if you cannot.",
+    "matters": [
+     "Wills",
+     "Revocable and irrevocable trusts",
+     "Durable powers of attorney",
+     "Health care surrogates and living wills",
+     "Probate and trust administration",
+     "Planning for a family business"
+    ],
+    "whenLead": "Make an estate plan when you buy a home, marry, have children or own a business, and review it after any major life change.",
+    "when": [
+     "You have no will or it is out of date",
+     "You want to avoid probate for your family",
+     "You own property in more than one state",
+     "A loved one died and you are named personal representative"
+    ],
+    "cost": "Estate planning lawyers often charge flat fees for wills and trust packages and hourly rates for probate. Ask what documents the fee includes and whether funding the trust is extra.",
+    "questions": [
+     "Do I need a trust, or is a will enough?",
+     "What does the flat fee include?",
+     "How do you handle probate if my family needs it?"
+    ]
+   }
   },
   "real-estate": {
    "cert": "Real Estate",
@@ -348,7 +474,31 @@
      "Hurricane insurance claims in Florida: deadlines and disputes"
     ]
    ],
-   "certName": "Board Certified in Real Estate Law"
+   "certName": "Board Certified in Real Estate Law",
+   "hub": {
+    "what": "A real estate lawyer handles the legal side of buying, selling, leasing and developing property, from contracts and title to closings and disputes.",
+    "matters": [
+     "Residential and commercial closings",
+     "Purchase and sale contracts",
+     "Title problems and quiet title",
+     "Leases and landlord-tenant disputes",
+     "Foreclosure",
+     "Zoning and development"
+    ],
+    "whenLead": "Bring in a real estate lawyer before you sign a contract, when title is unclear, or as soon as a deal or lease turns into a dispute.",
+    "when": [
+     "You are buying or selling commercial property",
+     "The title search found a lien or defect",
+     "A tenant or landlord breached the lease",
+     "You face foreclosure"
+    ],
+    "cost": "Real estate lawyers often charge flat fees for closings and hourly rates for disputes. Ask for the fee in writing and what it covers before the deal starts.",
+    "questions": [
+     "Will you review the contract before I sign?",
+     "What does your closing fee include?",
+     "How do you handle title problems?"
+    ]
+   }
   },
   "business-law": {
    "cert": "Business Litigation",
@@ -388,7 +538,31 @@
     ]
    ],
    "guides": [],
-   "certName": "Board Certified in Business Litigation"
+   "certName": "Board Certified in Business Litigation",
+   "hub": {
+    "what": "A business lawyer advises companies and owners on forming, running, buying and selling a business, and represents them in commercial disputes in court or arbitration.",
+    "matters": [
+     "Forming corporations and LLCs",
+     "Contracts with customers, suppliers and partners",
+     "Shareholder and partner disputes",
+     "Buying or selling a business",
+     "Commercial litigation and arbitration",
+     "Non-compete and trade secret disputes"
+    ],
+    "whenLead": "Use a business lawyer before you sign a major contract, take on partners or investors, or when a dispute could reach court.",
+    "when": [
+     "You are starting a company with partners",
+     "A customer or supplier breached a contract",
+     "You are buying or selling a business",
+     "You were sued or need to sue over a commercial deal"
+    ],
+    "cost": "Business lawyers usually bill by the hour; some offer flat fees for formation and contract work. Ask for a written estimate and how disputes will be billed.",
+    "questions": [
+     "Have you handled disputes in my industry?",
+     "Do you try cases yourself or refer them out?",
+     "How will you keep costs predictable?"
+    ]
+   }
   },
   "tax-law": {
    "cert": "Tax",
@@ -432,7 +606,31 @@
     ]
    ],
    "guides": [],
-   "certName": "Board Certified in Tax Law"
+   "certName": "Board Certified in Tax Law",
+   "hub": {
+    "what": "A tax lawyer advises on federal and Florida taxes and represents individuals and businesses in audits, appeals and disputes with the IRS and the Florida Department of Revenue.",
+    "matters": [
+     "IRS and state audits",
+     "Tax debt, liens and levies",
+     "Offers in compromise and payment plans",
+     "Tax planning for businesses and estates",
+     "Appeals and Tax Court cases",
+     "Criminal tax investigations"
+    ],
+    "whenLead": "Contact a tax lawyer when you receive an audit notice, owe tax you cannot pay, or before a transaction with large tax consequences.",
+    "when": [
+     "You received an IRS or state audit notice",
+     "The IRS filed a lien or levy",
+     "You face a large tax bill you cannot pay",
+     "You are planning a sale, merger or estate transfer"
+    ],
+    "cost": "Tax lawyers usually bill by the hour, and some offer flat fees for defined work such as an offer in compromise. Ask for an estimate in writing.",
+    "questions": [
+     "How often do you deal with this kind of IRS matter?",
+     "Can you represent me in Tax Court if needed?",
+     "What will the first stage of work cost?"
+    ]
+   }
   },
   "employment-law": {
    "cert": "Labor and Employment",
@@ -476,7 +674,31 @@
     ]
    ],
    "guides": [],
-   "certName": "Board Certified in Labor and Employment Law"
+   "certName": "Board Certified in Labor and Employment Law",
+   "hub": {
+    "what": "An employment lawyer handles disputes between employers and employees: discrimination, harassment, unpaid wages, wrongful termination, contracts and workplace policies.",
+    "matters": [
+     "Discrimination and harassment",
+     "Unpaid wages and overtime",
+     "Retaliation and whistleblower claims",
+     "Wrongful termination",
+     "Employment contracts and severance",
+     "Non-compete agreements"
+    ],
+    "whenLead": "Talk to an employment lawyer before you sign a severance agreement and as soon as you suspect discrimination, retaliation or unpaid wages, because filing deadlines can be short.",
+    "when": [
+     "You were fired after complaining or taking leave",
+     "You were not paid overtime you earned",
+     "You are asked to sign a severance or non-compete",
+     "Your company needs policies or faces a claim"
+    ],
+    "cost": "Lawyers for employees often take discrimination and wage cases on contingency or a hybrid fee; employers are usually billed by the hour. A contingent fee agreement must be in writing and state the percentage the lawyer receives (Rule 4-1.5(f)).",
+    "questions": [
+     "What deadlines apply to my claim?",
+     "Do you represent employees, employers or both?",
+     "How do you charge for a case like mine?"
+    ]
+   }
   },
   "elder-law": {
    "cert": "Elder",
@@ -521,7 +743,31 @@
      "Florida probate: how it works and how long it takes"
     ]
    ],
-   "certName": "Board Certified in Elder Law"
+   "certName": "Board Certified in Elder Law",
+   "hub": {
+    "what": "An elder law lawyer helps older adults and their families with long-term care planning, Medicaid eligibility, guardianship, powers of attorney and protection from abuse or exploitation.",
+    "matters": [
+     "Medicaid planning for long-term care",
+     "Guardianship and alternatives",
+     "Powers of attorney and health care surrogates",
+     "Nursing home rights",
+     "Elder abuse and financial exploitation",
+     "Wills and trusts for older adults"
+    ],
+    "whenLead": "See an elder law lawyer before a parent needs long-term care, while they can still sign documents, or as soon as you suspect abuse or exploitation.",
+    "when": [
+     "A parent may need nursing home care soon",
+     "A relative can no longer manage money or health decisions",
+     "You suspect financial exploitation",
+     "You need to plan for Medicaid eligibility"
+    ],
+    "cost": "Elder law lawyers often charge flat fees for planning documents and hourly rates for guardianship and litigation. Ask for the fee and what it covers in writing.",
+    "questions": [
+     "Do you handle Medicaid applications yourself?",
+     "Is guardianship needed, or is there an alternative?",
+     "What does your flat fee include?"
+    ]
+   }
   },
   "workers-compensation": {
    "cert": "Workers' Compensation",
@@ -574,7 +820,37 @@
      "Florida workers' compensation benefits: what you can get"
     ]
    ],
-   "certName": "Board Certified in Workers' Compensation Law"
+   "certName": "Board Certified in Workers' Compensation Law",
+   "hub": {
+    "what": "A workers' compensation lawyer helps employees injured on the job get medical care and wage benefits from the employer's insurer, and handles disputes before a judge of compensation claims.",
+    "matters": [
+     "Denied or delayed claims",
+     "Medical treatment disputes",
+     "Wage replacement benefits",
+     "Permanent impairment benefits",
+     "Settlements",
+     "Death benefits for the family"
+    ],
+    "whenLead": "Contact a workers' compensation lawyer when the insurer denies your claim, cuts benefits or pushes a settlement, or when your injury is serious.",
+    "when": [
+     "Your claim or a treatment was denied",
+     "Wage benefits stopped",
+     "The insurer offers a lump-sum settlement",
+     "You cannot return to your old job"
+    ],
+    "cost": "Florida law sets the fee: a judge of compensation claims must approve it, and it equals 20% of the first $5,000 of benefits secured, 15% of the next $5,000, 10% of the rest for the first 10 years and 5% after that (section 440.34).",
+    "questions": [
+     "How many workers' compensation cases do you handle?",
+     "Will you handle my hearing before the judge?",
+     "How will a settlement affect my medical care?"
+    ],
+    "costSrc": [
+     [
+      "https://www.flsenate.gov/Laws/Statutes/2025/440.34",
+      "Florida Statutes, section 440.34 (attorney fees in workers' compensation)"
+     ]
+    ]
+   }
   },
   "appellate": {
    "cert": "Appellate Practice",
@@ -634,7 +910,31 @@
     ]
    ],
    "guides": [],
-   "certName": "Board Certified in Appellate Practice"
+   "certName": "Board Certified in Appellate Practice",
+   "hub": {
+    "what": "An appellate lawyer asks a higher court to review and reverse or change a trial court's decision, or defends a win on appeal, through written briefs and oral argument.",
+    "matters": [
+     "Civil appeals after a judgment",
+     "Appeals of certain orders before final judgment",
+     "Criminal appeals",
+     "Family law appeals",
+     "Petitions to the Florida Supreme Court",
+     "Help preserving issues during trial"
+    ],
+    "whenLead": "Contact an appellate lawyer right after an adverse judgment, because the notice of appeal is usually due within 30 days, or during trial to preserve issues for appeal.",
+    "when": [
+     "You lost at trial or on summary judgment",
+     "The other side appealed your win",
+     "A trial court order needs immediate review",
+     "You want to preserve issues for a possible appeal"
+    ],
+    "cost": "Appellate lawyers usually bill by the hour or charge a flat fee for the appeal; the cost depends on the size of the record and the number of briefs. Ask for an estimate in writing.",
+    "questions": [
+     "How many appeals have you argued in this district court?",
+     "What issues are strong enough to appeal?",
+     "What is the timeline and cost for briefs and argument?"
+    ]
+   }
   },
   "condominium-hoa": {
    "cert": "Condominium and Planned Development",
@@ -719,7 +1019,31 @@
      "Florida condo and HOA disputes: your rights as an owner"
     ]
    ],
-   "certName": "Board Certified in Condominium and Planned Development Law"
+   "certName": "Board Certified in Condominium and Planned Development Law",
+   "hub": {
+    "what": "A condo and HOA lawyer represents unit owners, homeowners or associations in disputes over fines, assessments, records, elections, repairs and the association's governing documents.",
+    "matters": [
+     "Fines and violation hearings",
+     "Assessments, liens and foreclosure",
+     "Access to official records",
+     "Board elections and recalls",
+     "Repairs, inspections and reserves",
+     "Amending the declaration or bylaws"
+    ],
+    "whenLead": "Talk to a condo or HOA lawyer when you receive a fine or lien notice, when the board refuses records, or before you sue, because many disputes must go to arbitration or mediation first.",
+    "when": [
+     "You received a fine, violation notice or claim of lien",
+     "The association will not provide records",
+     "You dispute a special assessment",
+     "The board faces a structural or reserve problem"
+    ],
+    "cost": "Condo and HOA lawyers usually bill by the hour; associations often pay a monthly retainer. In many association disputes the prevailing party can recover attorney fees, so ask about that risk early.",
+    "questions": [
+     "Do you represent owners, associations or both?",
+     "Does my dispute need arbitration or mediation first?",
+     "Could I owe the other side's attorney fees?"
+    ]
+   }
   },
   "construction-law": {
    "cert": "Construction",
@@ -787,7 +1111,31 @@
     ]
    ],
    "guides": [],
-   "certName": "Board Certified in Construction Law"
+   "certName": "Board Certified in Construction Law",
+   "hub": {
+    "what": "A construction lawyer represents owners, contractors, subcontractors and suppliers in contracts, payment disputes, construction liens, defect claims and delays.",
+    "matters": [
+     "Construction contracts",
+     "Construction liens and payment bonds",
+     "Payment disputes",
+     "Construction defect claims",
+     "Delay and change order claims",
+     "Licensing and permitting issues"
+    ],
+    "whenLead": "Bring in a construction lawyer before you sign the contract and as soon as payment stops or defects appear, because lien and notice deadlines are short.",
+    "when": [
+     "You have not been paid for work or materials",
+     "A lien was filed against your property",
+     "You found defects after completion",
+     "The project is delayed or the contract was terminated"
+    ],
+    "cost": "Construction lawyers usually bill by the hour, and some disputes can be handled on a hybrid or contingency basis. A contingent fee agreement must be in writing and state the percentage the lawyer receives (Rule 4-1.5(f)).",
+    "questions": [
+     "What notices and deadlines apply to my claim now?",
+     "Do you represent owners, contractors or both?",
+     "How do you handle cases that go to arbitration?"
+    ]
+   }
   }
  },
  "cities": {
@@ -927,5 +1275,23 @@
  "circuitSource": [
   "https://www.flsenate.gov/Laws/Statutes/2025/26.021",
   "Florida Statutes, section 26.021 (judicial circuits)"
+ ],
+ "courts": {
+  "circuits": 20,
+  "appellateDistricts": 6,
+  "src": [
+   [
+    "https://www.flsenate.gov/Laws/Statutes/2025/26.021",
+    "Florida Statutes, section 26.021 (judicial circuits)"
+   ],
+   [
+    "https://www.flsenate.gov/Laws/Statutes/2025/35.01",
+    "Florida Statutes, section 35.01 (district courts of appeal)"
+   ]
+  ]
+ },
+ "feeRule": [
+  "https://www-media.floridabar.org/uploads/2026/10/2027_04-OCT-Chapter-4-RRTFB.pdf",
+  "Rules Regulating The Florida Bar, Rule 4-1.5 (fees and costs for legal services)"
  ]
 }

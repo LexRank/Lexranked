@@ -381,8 +381,9 @@ every change is written to the audit log.
 | `GET /editorial/rankings/{id}` | - | `{id, title, slug, status, summary, body, faq[], reviewedBy, reviewedAt, generated}` (raw body; `generated`: text is generated and follows recalculations, API 1.21) |
 | `POST /editorial/rankings/{id}` | any of `title`, `slug`, `summary`, `body` (HTML, sanitized with `wp_kses_post`), `faq[{question, answer}]` (≤ 20), `reviewed_by`, `reviewed_at` (`YYYY-MM-DD`) | the ranking's editorial view; `""` clears a field |
 | `POST /editorial/rankings/{id}/generate` (API 1.21) | - | replaces the text with text generated from the ranked lawyers' facts and the state knowledge pack (see docs/content-plan.md); `422 lexranked_no_content` when complete text cannot be written. Saving text by hand turns generation off again |
-| `GET /editorial/terms/{location\|practice-area}/{id}` | - | `{id, taxonomy, name, slug, summary, body, faq[], reviewedBy, reviewedAt}` |
+| `GET /editorial/terms/{location\|practice-area}/{id}` | - | `{id, taxonomy, name, slug, summary, body, faq[], reviewedBy, reviewedAt, generated}` (`generated` since plugin 0.29) |
 | `POST /editorial/terms/{location\|practice-area}/{id}` | any of `summary`, `body`, `faq`, `reviewed_by`, `reviewed_at` | the hub's editorial view |
+| `POST /editorial/terms/{location\|practice-area}/{id}/generate` (plugin 0.29) | - | replaces the hub text with text generated from its published rankings and the state knowledge pack (answer-first sections, FAQ, sources); the term view then has `generated: true`, and the text follows every recalculation until an editor saves text by hand. `422 lexranked_no_content` when the hub has no published ranking or no knowledge |
 | `POST /editorial/profiles/{id}` | `{summary}` (2-4 plain sentences) | `{id, name, summary}` |
 | `GET /editorial/drafts` | `qa_status?` | AI content drafts with `contentType`, `qaStatus`, `target`, `summary`, `faq`, `body`, `qaReport`, `canApply` |
 | `POST /editorial/drafts/{id}/apply` | `{acknowledge?}` | `{id, status: applied\|partial\|already, errors, article_id}`; `409 lexranked_needs_review` for a draft that failed QA unless `acknowledge: true` |

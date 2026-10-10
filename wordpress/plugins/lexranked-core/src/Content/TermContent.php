@@ -34,7 +34,7 @@ final class TermContent {
 	private const NONCE_ACTION = 'lexranked_term_content';
 	private const NONCE_FIELD  = 'lexranked_term_content_nonce';
 	private const INPUT        = 'lexranked_term_content';
-	private const MAX_BODY     = 20000;
+	private const MAX_BODY     = 40000;
 
 	/**
 	 * Hooks.
@@ -93,8 +93,13 @@ final class TermContent {
 			return;
 		}
 		// Raw values are sanitized field by field in store().
-		$input = isset( $_POST[ self::INPUT ] ) && is_array( $_POST[ self::INPUT ] ) ? wp_unslash( $_POST[ self::INPUT ] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$input  = isset( $_POST[ self::INPUT ] ) && is_array( $_POST[ self::INPUT ] ) ? wp_unslash( $_POST[ self::INPUT ] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$before = self::raw( $term_id );
 		self::store( $term_id, $input );
+		if ( self::raw( $term_id ) !== $before ) {
+			// The editor changed the text: it is no longer regenerated.
+			HubContentService::release( $term_id );
+		}
 	}
 
 	/**

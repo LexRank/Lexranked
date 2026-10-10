@@ -44,7 +44,8 @@ export async function generateMetadata(props: PageProps<"/practice-areas/[practi
   if (!data?.eligibility.exists) return { robots: { index: false } };
   return buildMetadata({
     title: `Top-Rated ${data.area.name} Lawyers`,
-    description: `${data.area.name} lawyers and law firms ranked with the LexRank methodology: ${data.area.lawyerCount} profiles with scores, verification status and sources.`,
+    // The hub's answer-first summary makes the best snippet; the generic line is the fallback.
+    description: data.area.content?.summary ?? `${data.area.name} lawyers and law firms ranked with the LexRank methodology: ${data.area.lawyerCount} profiles with scores, verification status and sources.`,
     path: data.area.path,
     noindex: !data.eligibility.indexable,
   });

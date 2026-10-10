@@ -106,6 +106,12 @@ export function HubPage({
           {rankings.length > 0 && (
             <section>
               <h2>Rankings</h2>
+              <p>
+                <strong>
+                  {pluralize(rankings.length, "ranking")}, each ordering lawyers by the LexRank score
+                  {rankings.some((r) => !r.location?.citySlug) ? "; the statewide ranking, which compares every city, comes first" : ""}.
+                </strong>
+              </p>
               <div className="grid grid--2">
                 {/* Statewide rankings ("Best … Lawyers in Florida") lead: they cover every city. */}
                 {[...rankings]
@@ -120,6 +126,11 @@ export function HubPage({
           {groups.length > 1 && (
             <section aria-labelledby="hub-tree-heading">
               <h2 id="hub-tree-heading">{groupBy === "city" ? "By city" : "By practice area"}</h2>
+              <p>
+                <strong>
+                  The highest-scoring lawyers on this page, grouped by {groupBy === "city" ? "city" : "practice area"}; each ranking above lists every lawyer.
+                </strong>
+              </p>
               <ul className="hub-tree">
                 {groups.map((g) => (
                   <li key={g.key}>
@@ -144,6 +155,9 @@ export function HubPage({
               <div className="section__head" style={{ marginBottom: "1rem" }}>
                 <h2>{lawyersHeading}</h2>
               </div>
+              <p>
+                <strong>The {lawyers.length} highest LexRank scores on this page; each profile shows the sources behind its facts.</strong>
+              </p>
               <div className="grid grid--2">
                 {lawyers.map((l) => (
                   <LawyerCard key={l.id} lawyer={l} />

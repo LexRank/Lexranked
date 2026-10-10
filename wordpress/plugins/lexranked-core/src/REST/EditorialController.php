@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace LexRanked\Core\REST;
 
 use LexRanked\Core\Content\DraftApplier;
+use LexRanked\Core\Content\HubContentBuilder;
+use LexRanked\Core\Content\HubContentService;
 use LexRanked\Core\Content\KnowledgeStore;
 use LexRanked\Core\Content\RankingContentService;
 use LexRanked\Core\Content\TermContent;
@@ -64,7 +66,7 @@ final class EditorialController extends RestController {
 			),
 			'body'        => array(
 				'type'      => 'string',
-				'maxLength' => 20000,
+				'maxLength' => 40000,
 			),
 			'faq'         => array(
 				'type'     => 'array',
@@ -148,6 +150,15 @@ final class EditorialController extends RestController {
 					'permission_callback' => $perm,
 					'args'                => $text,
 				),
+			)
+		);
+		register_rest_route(
+			$ns,
+			'/editorial/terms/(?P<taxonomy>location|practice-area)/(?P<id>\d+)/generate',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'generate_term' ),
+				'permission_callback' => $perm,
 			)
 		);
 		register_rest_route(
@@ -459,8 +470,31 @@ final class EditorialController extends RestController {
 				)
 			);
 		}
+		HubContentService::release( $term->term_id );
 		$this->services->revalidator->on_term();
 		AuditLog::log( 'editorial.term_updated', $term->taxonomy, $term->term_id, array( 'fields' => array_keys( $input ) ) );
+		return $this->item_response( $this->term_view( $term ), true );
+	}
+
+	/**
+	 * POST /editorial/terms/{taxonomy}/{id}/generate: replace the hub text with
+	 * text generated from its published rankings and the state knowledge pack,
+	 * kept in step after every recalculation.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function generate_term( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$term = $this->term( (string) $request['taxonomy'], (int) $request['id'] );
+		if ( $term instanceof \WP_Error ) {
+			return $term;
+		}
+		$content = $this->services->hub_content->generate( $term );
+		if ( null === $content ) {
+			return new \WP_Error( 'lexranked_no_content', 'Complete text cannot be generated for this hub (no published ranking, or no verified knowledge for its state, practice area or city).', array( 'status' => 422 ) );
+		}
+		$this->services->hub_content->apply( $term->term_id, $content );
+		$this->services->revalidator->on_term();
+		AuditLog::log( 'editorial.term_generated', $term->taxonomy, $term->term_id, array( 'version' => HubContentBuilder::VERSION ) );
 		return $this->item_response( $this->term_view( $term ), true );
 	}
 
@@ -635,6 +669,7 @@ final class EditorialController extends RestController {
 			'faq'        => $raw['faq'],
 			'reviewedBy' => $raw['reviewed_by'],
 			'reviewedAt' => $raw['reviewed_at'],
+			'generated'  => HubContentService::is_generated( $term->term_id ),
 		);
 	}
 

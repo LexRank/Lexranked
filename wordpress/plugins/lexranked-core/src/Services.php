@@ -16,6 +16,7 @@ use LexRanked\Core\Commercial\PlacementRepository;
 use LexRanked\Core\Commercial\ProfileClaimRepository;
 use LexRanked\Core\Reviews\ReviewRepository;
 use LexRanked\Core\Reviews\ReviewService;
+use LexRanked\Core\Content\HubContentService;
 use LexRanked\Core\Content\RankingContentService;
 use LexRanked\Core\Entity\EntityRegistry;
 use LexRanked\Core\Fact\FactService;
@@ -269,6 +270,13 @@ final class Services {
 	public readonly RankingContentService $ranking_content;
 
 	/**
+	 * Generated hub text (rankings + state knowledge pack).
+	 *
+	 * @var HubContentService
+	 */
+	public readonly HubContentService $hub_content;
+
+	/**
 	 * Build the graph.
 	 *
 	 * @param Settings|null $settings Settings (injectable for tests).
@@ -313,6 +321,7 @@ final class Services {
 		$this->commercial      = new CommercialService( $this, new ProfileClaimRepository(), new PlacementRepository() );
 		$this->reviews         = new ReviewService( $this, new ReviewRepository() );
 		$this->ranking_content = new RankingContentService( $this );
+		$this->hub_content     = new HubContentService( $this );
 		$this->health          = new HealthService( $this, $this->revalidator );
 	}
 
