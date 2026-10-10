@@ -62,7 +62,8 @@ export default async function HomePage() {
   const guides = articles.ok ? articles.data.filter((a) => !a.isThin).slice(0, 3) : [];
 
   const published = rankings.ok ? rankings.data.filter((r) => !r.isThin) : [];
-  const lawyersCovered = published.reduce((sum, r) => sum + r.entryCount, 0);
+  // Distinct published lawyers: summing ranking entries would count a lawyer once per ranking (city, statewide, language).
+  const lawyersCovered = states.ok ? states.data.reduce((sum, s) => sum + s.lawyerCount, 0) : null;
   const hasDemo = published.some((r) => r.isDemo);
   const areas = practiceAreas.ok ? practiceAreas.data.filter((p) => p.eligibility?.exists !== false) : [];
   const active = versions.ok ? versions.data.versions.find((v) => v.id === versions.data.active) : undefined;

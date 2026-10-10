@@ -54,8 +54,13 @@ export function finderOptions(rankings: RankingSummary[]): FinderOption[] {
       locationKey: `${r.location?.stateSlug ?? ""}/${r.location?.citySlug ?? ""}`,
       locationLabel: r.location?.city
         ? `${r.location.city}, ${r.location.stateCode ?? r.location.state ?? ""}`.replace(/, $/, "")
-        : (r.location?.state ?? "United States"),
+        : r.location?.state
+          ? `All of ${r.location.state}`
+          : "United States",
+      statewide: !r.location?.citySlug,
       practiceLabel: r.practiceArea?.name ?? "All practice areas",
     }))
-    .sort((a, b) => a.locationLabel.localeCompare(b.locationLabel) || a.practiceLabel.localeCompare(b.practiceLabel));
+    // Statewide rankings first (they compare every city), then cities A-Z.
+    .sort((a, b) => Number(b.statewide) - Number(a.statewide) || a.locationLabel.localeCompare(b.locationLabel) || a.practiceLabel.localeCompare(b.practiceLabel))
+    .map(({ statewide: _statewide, ...o }) => o);
 }

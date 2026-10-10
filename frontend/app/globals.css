@@ -3659,3 +3659,169 @@ h2 {
   border-radius: 50%;
   flex: none;
 }
+
+/* Finder dropdowns (FinderSelect): styled to match the site instead of the OS menu. */
+.fselect {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.fselect__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.fselect__button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  height: 3rem;
+  padding: 0 0.9rem 0 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--paper);
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), background-color 0.2s var(--ease);
+}
+
+.fselect__button:focus-visible {
+  outline: none;
+  border-color: var(--brass-500);
+  box-shadow: var(--focus);
+  background: #fff;
+}
+
+.fselect__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fselect__chevron {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--brass-600);
+  transition: transform 0.2s var(--ease);
+}
+
+.fselect--open .fselect__chevron {
+  transform: rotate(180deg);
+}
+
+.fselect__list {
+  position: fixed;
+  z-index: 1000;
+  max-height: min(20rem, 60vh);
+  margin: 0;
+  padding: 0.4rem;
+  overflow-y: auto;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 24px 48px -16px rgb(6 20 38 / 35%), 0 2px 6px rgb(6 20 38 / 8%);
+  animation: fselect-in 0.14s var(--ease);
+}
+
+.fselect__list:focus {
+  outline: none;
+}
+
+@keyframes fselect-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.fselect__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fselect__option.is-active {
+  background: var(--brass-100);
+}
+
+.fselect__option.is-selected {
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.fselect__check {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--brass-600);
+}
+
+/* In the hero search bar the field itself is the frame. */
+.finder--bar .fselect {
+  gap: 0.1rem;
+}
+
+.finder--bar .fselect__label {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.finder--bar .fselect__button {
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  font-size: 1.02rem;
+}
+
+.finder--bar .fselect__button:focus-visible {
+  box-shadow: none;
+  background: transparent;
+  text-decoration: underline;
+  text-decoration-color: var(--brass-500);
+  text-underline-offset: 4px;
+}
+
+/* The hero's primary button: a solid brass call to action with depth. */
+.finder--bar .btn--primary {
+  gap: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 10px 24px -10px rgb(154 118 64 / 70%), inset 0 1px 0 rgb(255 255 255 / 35%);
+  transition: transform 0.15s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s var(--ease);
+}
+
+.finder--bar .btn--primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 14px 28px -10px rgb(154 118 64 / 80%), inset 0 1px 0 rgb(255 255 255 / 35%);
+}
+
+.finder--bar .btn--primary::after {
+  content: "\2192";
+  font-weight: 600;
+  transition: transform 0.15s var(--ease);
+}
+
+.finder--bar .btn--primary:hover::after {
+  transform: translateX(3px);
+}

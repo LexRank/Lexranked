@@ -53,7 +53,7 @@ describe("ranking resolution", () => {
   it("builds finder options only from rankings that exist", () => {
     const opts = finderOptions([...rankings, rankingSummary(3, { isThin: true, path: "/rankings/texas/" })]);
     expect(opts.map((o) => o.path)).toEqual(["/rankings/florida/personal-injury/", "/rankings/florida/miami/personal-injury/"]);
-    expect(opts[0]).toMatchObject({ locationLabel: "Florida" });
+    expect(opts[0]).toMatchObject({ locationLabel: "All of Florida" });
     expect(opts[1]).toMatchObject({ locationLabel: "Miami, FL", practiceLabel: "Personal Injury" });
     expect(rankingScopeLabel(rankings[0]!)).toBe("Personal Injury · Miami, FL");
   });
