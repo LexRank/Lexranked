@@ -15,7 +15,7 @@ use LexRanked\Core\Sources\SourceTiers;
  * Picks the value of each field from its evidence claims (data-model rule):
  * best source tier, then verification status, then most recent, then
  * highest confidence. Failed claims are ignored. When the best claims of the
- * best tier disagree, the field is flagged as a conflict and NOT applied —
+ * best tier disagree, the field is flagged as a conflict and NOT applied -
  * conflicts go to human review instead of being guessed.
  */
 final class FactResolver {

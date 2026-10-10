@@ -81,7 +81,8 @@ final class RankingExplainer {
 			$by_share  = $items;
 			usort( $by_share, static fn( array $a, array $b ): int => array( $a['share'], $a['key'] ) <=> array( $b['share'], $b['key'] ) );
 			$strong_keys = array_column( $strengths, 'key' );
-			$gaps        = array_slice( array_values( array_filter( $by_share, static fn( array $i ): bool => $i['share'] < 0.75 && ! in_array( $i['key'], $strong_keys, true ) ) ), 0, 2 );
+			// A component nobody in the ranking scores on (no data yet) does not hold anyone back.
+			$gaps = array_slice( array_values( array_filter( $by_share, static fn( array $i ): bool => $i['share'] < 0.75 && $i['average'] > 0.0 && ! in_array( $i['key'], $strong_keys, true ) ) ), 0, 2 );
 
 			$behind = null;
 			if ( null !== $above ) {

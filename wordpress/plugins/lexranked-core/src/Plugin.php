@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace LexRanked\Core;
 
 use LexRanked\Core\Admin\CommercialAdmin;
+use LexRanked\Core\Admin\ReviewsAdmin;
 use LexRanked\Core\Admin\ContentDraftAdmin;
 use LexRanked\Core\Admin\ListColumns;
 use LexRanked\Core\Admin\MetaBoxes;
@@ -22,9 +23,12 @@ use LexRanked\Core\Database\Installer;
 use LexRanked\Core\REST\ArticlesController;
 use LexRanked\Core\REST\HealthController;
 use LexRanked\Core\REST\CommercialController;
+use LexRanked\Core\REST\ReviewsController;
+use LexRanked\Core\REST\ContactController;
 use LexRanked\Core\REST\EntitiesController;
 use LexRanked\Core\REST\CompareController;
 use LexRanked\Core\REST\MarketController;
+use LexRanked\Core\REST\EditorialController;
 use LexRanked\Core\REST\EntityController;
 use LexRanked\Core\REST\RankingsController;
 use LexRanked\Core\REST\ResearchController;
@@ -47,7 +51,7 @@ final class Plugin {
 	public const REST_NAMESPACE = 'lexranked/v1';
 
 	/** Version of the public API contract (DTO shapes), independent of plugin version. */
-	public const API_VERSION = '1.16.0';
+	public const API_VERSION = '1.23.0';
 
 	/**
 	 * Services, available after boot().
@@ -69,6 +73,7 @@ final class Plugin {
 		Installer::maybe_upgrade();
 
 		add_action( 'init', array( self::class, 'register_content_model' ) );
+		add_action( 'init', array( PracticeArea::class, 'seed_catalog' ), 20 );
 
 		( new ApiGuard( $services->settings ) )->register();
 		$services->runner->register();
@@ -79,6 +84,9 @@ final class Plugin {
 		$services->entity_index->register();
 		$services->revalidator->register();
 		$services->commercial->register();
+		$services->reviews->register();
+		$services->ranking_content->register();
+		$services->hub_content->register();
 		( new Hardening( $services->settings ) )->register();
 		( new Headless( $services->settings ) )->register();
 
@@ -93,9 +101,12 @@ final class Plugin {
 			new ArticlesController( $services ),
 			new HealthController( $services ),
 			new CommercialController( $services ),
+			new ReviewsController( $services ),
+			new ContactController(),
 			new EntityController( $services ),
 			new CompareController( $services ),
 			new MarketController( $services ),
+			new EditorialController( $services ),
 		);
 		foreach ( $controllers as $controller ) {
 			add_action( 'rest_api_init', array( $controller, 'register_routes' ) );
@@ -109,6 +120,7 @@ final class Plugin {
 			( new ResearchAdmin( $services ) )->register();
 			( new ContentDraftAdmin( $services ) )->register();
 			( new CommercialAdmin( $services ) )->register();
+			( new ReviewsAdmin( $services ) )->register();
 			( new TermContent() )->register();
 		}
 

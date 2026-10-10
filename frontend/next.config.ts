@@ -5,7 +5,7 @@ const isDev = process.env.NODE_ENV !== "production";
 /**
  * Content-Security-Policy. Pages are statically generated (ISR), so per-request
  * nonces are not available: inline scripts Next.js needs for hydration are
- * allowed with 'unsafe-inline', while everything else is locked down —
+ * allowed with 'unsafe-inline', while everything else is locked down -
  * same-origin scripts, no plugins, no framing, no form posts elsewhere.
  * JSON-LD blocks are data (type application/ld+json) and are not executed.
  */

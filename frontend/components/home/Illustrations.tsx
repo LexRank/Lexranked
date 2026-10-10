@@ -35,7 +35,7 @@ export function HeroArt({ className }: { className?: string }) {
         </filter>
       </defs>
 
-      <circle cx="290" cy="215" r="240" fill="url(#ha-glow)" />
+      <circle cx="290" cy="235" r="228" fill="url(#ha-glow)" />
 
       {/* Scales of justice, drawn large behind the cards. */}
       <g stroke={BRASS_300} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.28">

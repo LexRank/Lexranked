@@ -6,6 +6,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
+import { EmailLine, PhoneLine, profileActive } from "@/components/profile/Contact";
+import { cityPageExists } from "@/lib/content/hubs";
 import { FirmCard, LawyerCard } from "@/components/cards";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { JsonLd } from "@/components/JsonLd";
@@ -18,6 +20,7 @@ import { formatDate, formatLocation, isoDate, pluralize } from "@/lib/format";
 import { lawFirmJsonLd, type Crumb } from "@/lib/seo/jsonld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getLawFirm, getLawFirms } from "@/lib/wordpress/api";
+import { ClientReviews } from "@/components/profile/Reviews";
 import type { LawFirmDetail } from "@/types/api";
 
 export const revalidate = 300;
@@ -28,12 +31,12 @@ export function generateStaticParams() {
 
 const loadFirm = cache((slug: string) => getLawFirm(slug));
 
-function crumbs(firm: LawFirmDetail): Crumb[] {
+function crumbs(firm: LawFirmDetail, cityPage: boolean): Crumb[] {
   const list: Crumb[] = [
     { name: "Home", path: "/" },
     { name: "Law firms", path: "/law-firms/" },
   ];
-  if (firm.location?.citySlug && firm.location.city) list.push({ name: firm.location.city, path: `/cities/${firm.location.citySlug}/` });
+  if (cityPage && firm.location?.citySlug && firm.location.city) list.push({ name: firm.location.city, path: `/cities/${firm.location.citySlug}/` });
   list.push({ name: firm.name, path: firm.path });
   return list;
 }
@@ -45,7 +48,7 @@ export async function generateMetadata(props: PageProps<"/law-firms/[slug]">): P
   const where = formatLocation(firm.location);
   const practice = firm.practiceAreas[0]?.name;
   return buildMetadata({
-    title: [firm.name, practice && where ? `${practice} Law Firm in ${where}` : where].filter(Boolean).join(" – "),
+    title: [firm.name, practice ? `${firm.location?.city ?? firm.location?.state ?? ""} ${practice} Law Firm`.trim() : where].filter(Boolean).join(" - "),
     description: firm.summary ? firm.summary : firm.aiSummary?.text ? firm.aiSummary.text : `${firm.name}${where ? `, ${where}` : ""}: ${pluralize(firm.lawyers.length, "lawyer")} profiled${firm.ranking.score !== null ? `, LexRank score ${firm.ranking.score.toFixed(2)}` : ""}. Verification status, sources and related rankings.`,
     path: firm.path,
     type: "profile",
@@ -63,6 +66,7 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
   if (firm.slug !== slug) permanentRedirect(firm.path);
 
   const city = firm.location?.citySlug ?? undefined;
+  const cityPage = await cityPageExists(city);
   const others = await load(async () => (city ? (await getLawFirms({ city, per_page: 5 })).data.filter((f) => f.id !== firm.id).slice(0, 4) : []));
   const where = formatLocation(firm.location);
 
@@ -71,7 +75,7 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
       <JsonLd data={lawFirmJsonLd(firm)} />
       <header className="page-header">
         <div className="container">
-          <Breadcrumbs crumbs={crumbs(firm)} />
+          <Breadcrumbs crumbs={crumbs(firm, cityPage)} />
           <div className="profile-head" style={{ marginTop: "1.5rem" }}>
             <div className="profile-head__id">
               <Monogram name={firm.name} size="lg" square />
@@ -148,6 +152,8 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
               </div>
             </section>
           )}
+          <ClientReviews reviews={firm.clientReviews} entityType="law_firm" entityId={firm.id} name={firm.name} city={firm.location?.city} state={firm.location?.state} />
+
           <VerificationSection verification={firm.verification} freshness={firm.freshness} />
           {(firm.facts ?? []).length > 0 ? (
             <>
@@ -188,11 +194,8 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
                   </a>
                 </dd>
               )}
-              {firm.contact.phone && (
-                <dd>
-                  <a href={`tel:${firm.contact.phone.replace(/[^\d+]/g, "")}`}>{firm.contact.phone}</a>
-                </dd>
-              )}
+              {firm.contact.phone && <PhoneLine phone={firm.contact.phone} active={profileActive(firm.commercial)} />}
+              {firm.contact.email && <EmailLine email={firm.contact.email} active={profileActive(firm.commercial)} />}
             </dl>
           </div>
           <div className="card">
@@ -210,7 +213,7 @@ export default async function LawFirmPage(props: PageProps<"/law-firms/[slug]">)
               )}
             </p>
           </div>
-          {firm.location?.citySlug && (
+          {cityPage && firm.location?.citySlug && (
             <div className="card">
               <p className="panel-title">Explore</p>
               <ul className="chips">

@@ -4,7 +4,7 @@ Claimed profiles, identity checks, premium profiles, featured profiles and
 sponsored listings (spec §54). The one rule everything below serves:
 
 > **Payment never changes a score, a position, a verification status or which
-> profiles are ranked — and every paid element is labelled.**
+> profiles are ranked - and every paid element is labelled.**
 
 ## How the separation is enforced
 
@@ -28,9 +28,9 @@ editor ── LexRanked → Profile claims: signals + identity check ──▶ A
 WordPress: status "claimed" on the profile, email to the claimant, audit log
 ```
 
-- **Identity is checked by a person.** The review screen shows signals —
+- **Identity is checked by a person.** The review screen shows signals -
   bar number matches the profile (✅/❌), email domain vs the firm website,
-  free-mail providers, "already claimed" — but approval requires the editor
+  free-mail providers, "already claimed" - but approval requires the editor
   to record *how* identity was checked: state bar record, phone call-back to a
   listed number, firm email, or a document.
 - One approved claim per profile; a second one must wait until the first is
@@ -58,8 +58,8 @@ WordPress: status "claimed" on the profile, email to the claimant, audit log
 
 Eligibility (checked when a placement is saved **and** every time a page is
 served): the profile is published, has an approved claim, its bar status is
-not inactive / suspended / disbarred / retired, and — for featured and
-sponsored — it belongs to the page's location and practice area (a city
+not inactive / suspended / disbarred / retired, and - for featured and
+sponsored - it belongs to the page's location and practice area (a city
 profile belongs on its state's pages). Placements run from their start date
 to their end date (exclusive, UTC, at most a year), can be paused or
 cancelled, and are shown oldest booking first. There is no bidding and no
@@ -76,7 +76,7 @@ data or payment credentials ever touch LexRanked.
 - **LexRanked → Placements** (administrators only): list, add, edit, pause,
   cancel.
 - **Settings:** *Profile claims* on/off, maximum sponsored listings per
-  ranking (0–5), maximum featured profiles per page (0–6).
+  ranking (0-5), maximum featured profiles per page (0-6).
 - WP-CLI:
 
 ```bash
@@ -106,3 +106,12 @@ Settings so links point at the public site.
 
 The `claims` health check warns when a confirmed claim has waited more than
 7 days for review.
+
+## Contact details on profiles
+
+The website link is shown on every profile. The phone number and email are
+shown as plain text until the profile is **active** (claimed by its owner
+with confirmed identity, or premium); only then are they click-to-call
+(`tel:`) and click-to-email (`mailto:`) links
+(`frontend/components/profile/Contact.tsx`). This never affects a score or
+a position.

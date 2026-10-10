@@ -13,6 +13,7 @@ import { ConfigError, loadConfig } from './config.js';
 import { SafeFetcher } from './fetcher.js';
 import { JsonLogger } from './logger.js';
 import { OpenAIClient } from './ai/openai.js';
+import { resolveModel } from './ai/models.js';
 import { runOnce, type Outcome } from './runner.js';
 
 async function main(argv: string[]): Promise<number> {
@@ -36,9 +37,18 @@ async function main(argv: string[]): Promise<number> {
     perHostIntervalMs: config.perHostIntervalMs,
     allowPrivateNetwork: config.allowPrivateNetwork,
   });
-  const ai = config.ai
-    ? new OpenAIClient({ apiKey: config.ai.apiKey, model: config.ai.model, baseUrl: config.ai.baseUrl, maxCalls: config.ai.maxCallsPerJob, timeoutMs: config.ai.timeoutMs })
-    : null;
+  let ai: OpenAIClient | null = null;
+  if (config.ai) {
+    let model: string;
+    try {
+      model = await resolveModel('text', { apiKey: config.ai.apiKey, baseUrl: config.ai.baseUrl, override: config.ai.model });
+    } catch (err) {
+      logger.log('error', (err as Error).message);
+      return 1;
+    }
+    config.ai = { ...config.ai, model };
+    ai = new OpenAIClient({ apiKey: config.ai.apiKey, model, baseUrl: config.ai.baseUrl, maxCalls: config.ai.maxCallsPerJob, timeoutMs: config.ai.timeoutMs });
+  }
   const shutdown = new AbortController();
   for (const sig of ['SIGINT', 'SIGTERM'] as const) {
     process.once(sig, () => {

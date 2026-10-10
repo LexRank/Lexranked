@@ -15,6 +15,7 @@ export function ListingPage({
   basePath,
   page,
   totalPages,
+  nav,
   children,
 }: {
   crumbs: Crumb[];
@@ -27,6 +28,8 @@ export function ListingPage({
   basePath: string;
   page: number;
   totalPages: number;
+  /** Optional navigation above the list (e.g. guide categories). */
+  nav?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -35,6 +38,7 @@ export function ListingPage({
       <div className="container section stack">
         {!ok && <UnavailableNotice />}
         {hasDemo && <DemoNotice />}
+        {nav}
         {ok && empty ? (
           <EmptyState title="Nothing published yet">
             <p>Profiles appear here once they have been researched and verified.</p>
@@ -48,7 +52,7 @@ export function ListingPage({
   );
 }
 
-/** Parse ?page= safely (1–1000). */
+/** Parse ?page= safely (1-1000). */
 export function parsePage(value: string | string[] | undefined): number {
   const n = Number.parseInt(Array.isArray(value) ? (value[0] ?? "1") : (value ?? "1"), 10);
   return Number.isFinite(n) && n >= 1 && n <= 1000 ? n : 1;

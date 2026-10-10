@@ -171,12 +171,25 @@ final class RankingQualifier {
 					'status'     => (string) $fact['status'],
 					'sourceId'   => isset( $fact['source_id'] ) ? (int) $fact['source_id'] : null,
 					'claimId'    => isset( $fact['claim_id'] ) ? (int) $fact['claim_id'] : null,
+					'sourceTier' => isset( $fact['source_tier'] ) ? (int) $fact['source_tier'] : null,
 					'observedAt' => isset( $fact['observed_at'] ) ? self::iso( (string) $fact['observed_at'] ) : null,
 					'verifiedAt' => isset( $fact['verified_at'] ) ? self::iso( (string) $fact['verified_at'] ) : null,
 				);
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Whether evidence confirms the context strongly enough for the page threshold:
+	 * a verified fact, or a fact whose best source is an official record (tier 1,
+	 * e.g. the state bar's member profile).
+	 *
+	 * @param array<string, mixed> $evidence Output of qualify(), or a fact row (status, source_tier).
+	 */
+	public static function confirms( array $evidence ): bool {
+		$tier = $evidence['sourceTier'] ?? $evidence['source_tier'] ?? null;
+		return 'verified' === ( $evidence['status'] ?? null ) || ( 'unverified' === ( $evidence['status'] ?? null ) && 1 === ( null === $tier ? null : (int) $tier ) );
 	}
 
 	/**

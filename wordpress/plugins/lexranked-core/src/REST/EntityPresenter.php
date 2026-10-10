@@ -25,6 +25,7 @@ use LexRanked\Core\Ranking\ContextEligibility;
 use LexRanked\Core\Ranking\RankingQualifier;
 use LexRanked\Core\Ranking\RankingRunner;
 use LexRanked\Core\Services;
+use LexRanked\Core\Support\Text;
 use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
 
@@ -100,6 +101,7 @@ final class EntityPresenter {
 			$include_private
 		);
 		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
+		$dto['clientReviews']  = $s->reviews->public_block( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['dataQuality']    = $s->quality->stored( (int) $post->ID );
 		$dto['eligibility']    = $s->eligibility->profiles( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', array( (int) $post->ID ) )[ (int) $post->ID ];
@@ -152,12 +154,57 @@ final class EntityPresenter {
 			(string) wp_kses_post( wpautop( $post->post_content ) )
 		);
 		$dto['premiumContent'] = $s->commercial->premium_content( (int) $post->ID );
+		$dto['clientReviews']  = $s->reviews->public_block( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['facts']          = $this->facts( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', (int) $post->ID );
 		$dto['dataQuality']    = $s->quality->stored( (int) $post->ID );
 		$dto['eligibility']    = $s->eligibility->profiles( Lawyer::SLUG === $post->post_type ? 'lawyer' : 'law_firm', array( (int) $post->ID ) )[ (int) $post->ID ];
 		$dto                   = $this->with_scoring( $dto, (int) $post->ID );
 		$dto['aiSummary']      = StructuredSummary::for_detail( $dto );
 		return $dto;
+	}
+
+	/**
+	 * The published entries of a ranking's latest run, as references only
+	 * (`entity.id`, in ranking order): what the ranking list needs for its
+	 * counts and page decisions, without building every profile summary.
+	 * Counts match ranking_entries(), which drops unpublished profiles too.
+	 *
+	 * @param array<string, mixed> $record Ranking record.
+	 * @return array{entries: array<int, array{entity: array{id: int}}>, calculated_at: string|null}
+	 */
+	public function ranking_entry_refs( array $record ): array {
+		$snapshots = $this->services->snapshots;
+		$runs      = $snapshots->run_ids( (int) $record['id'], 1 );
+		if ( array() === $runs ) {
+			return array(
+				'entries'       => array(),
+				'calculated_at' => null,
+			);
+		}
+		$rows      = $snapshots->run_rows( $runs[0] );
+		$ids       = array_map( 'intval', array_column( $rows, 'entity_id' ) );
+		$published = array() === $ids ? array() : get_posts(
+			array(
+				'post_type'        => 'law_firm' === ( $rows[0]['entity_type'] ?? 'lawyer' ) ? LawFirm::SLUG : Lawyer::SLUG,
+				'post_status'      => 'publish',
+				'post__in'         => $ids,
+				'posts_per_page'   => count( $ids ),
+				'fields'           => 'ids',
+				'no_found_rows'    => true,
+				'suppress_filters' => false,
+			)
+		);
+		$visible   = array_flip( array_map( 'intval', $published ) );
+		$entries   = array();
+		foreach ( $ids as $id ) {
+			if ( isset( $visible[ $id ] ) ) {
+				$entries[] = array( 'entity' => array( 'id' => $id ) );
+			}
+		}
+		return array(
+			'entries'       => $entries,
+			'calculated_at' => $rows[0]['calculated_at'] ?? null,
+		);
 	}
 
 	/**
@@ -423,7 +470,7 @@ final class EntityPresenter {
 			$out[] = array(
 				'id'       => (int) $post->ID,
 				'entityId' => $entity_id,
-				'name'     => get_the_title( $post ),
+				'name'     => Text::title( $post ),
 				'position' => $other['position'],
 			);
 		}
@@ -446,7 +493,7 @@ final class EntityPresenter {
 			foreach ( $rows as $row ) {
 				if ( ! array_key_exists( $row['entity_id'], $titles ) ) {
 					$post                        = get_post( $row['entity_id'] );
-					$titles[ $row['entity_id'] ] = ( $post instanceof \WP_Post && 'publish' === $post->post_status ) ? get_the_title( $post ) : null;
+					$titles[ $row['entity_id'] ] = ( $post instanceof \WP_Post && 'publish' === $post->post_status ) ? Text::title( $post ) : null;
 				}
 				if ( null === $titles[ $row['entity_id'] ] ) {
 					continue;

@@ -8,7 +8,7 @@ export default function NotFound() {
       </p>
       <h1>We couldn&apos;t find that page</h1>
       <p className="lead" style={{ margin: "0 auto 2rem" }}>
-        It may have moved, or we haven&apos;t published it yet — we only publish rankings and location pages once enough verified data
+        It may have moved, or we haven&apos;t published it yet - we only publish rankings and location pages once enough verified data
         exists.
       </p>
       <p style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>

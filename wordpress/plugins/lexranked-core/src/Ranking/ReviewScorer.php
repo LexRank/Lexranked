@@ -16,7 +16,7 @@ namespace LexRanked\Core\Ranking;
 interface ReviewScorer {
 
 	/**
-	 * Volume-adjusted rating (same 0–5 scale), or null when unknown.
+	 * Volume-adjusted rating (same 0-5 scale), or null when unknown.
 	 *
 	 * @param float|null $rating       Average star rating.
 	 * @param int|null   $review_count Number of reviews.

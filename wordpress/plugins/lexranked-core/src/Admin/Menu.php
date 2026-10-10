@@ -107,7 +107,7 @@ final class Menu {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lexranked-core' ) );
 		}
-		echo '<div class="wrap"><h1>LexRanked — Overview</h1>';
+		echo '<div class="wrap"><h1>LexRanked - Overview</h1>';
 
 		echo '<h2>Content</h2><table class="widefat striped" style="max-width:720px"><thead><tr><th>Entity</th><th>Published</th><th>Draft / pending</th><th></th></tr></thead><tbody>';
 		foreach ( $this->services->post_types() as $type ) {
@@ -147,7 +147,7 @@ final class Menu {
 					esc_html( (string) $row->occurred_at ),
 					esc_html( $user ? $user->user_login : 'system' ),
 					esc_html( (string) $row->action ),
-					(int) $row->object_id > 0 ? '<a href="' . esc_url( (string) get_edit_post_link( (int) $row->object_id ) ) . '">#' . (int) $row->object_id . '</a>' : '—'
+					(int) $row->object_id > 0 ? '<a href="' . esc_url( (string) get_edit_post_link( (int) $row->object_id ) ) . '">#' . (int) $row->object_id . '</a>' : '-'
 				);
 			}
 			echo '</tbody></table>';
@@ -209,8 +209,8 @@ final class Menu {
 			'research_max_retries'      => 'Research job retries (after the first attempt)',
 			'research_backoff_base'     => 'Research retry backoff base (seconds, doubles per retry)',
 			'research_lease_minutes'    => 'Research job lease (minutes without heartbeat before a job is resumed)',
-			'max_sponsored_per_ranking' => 'Sponsored listings per ranking page (0–5; paid, labelled, outside the ranked list)',
-			'max_featured_per_page'     => 'Featured profiles per state, city or practice-area page (0–6)',
+			'max_sponsored_per_ranking' => 'Sponsored listings per ranking page (0-5; paid, labelled, outside the ranked list)',
+			'max_featured_per_page'     => 'Featured profiles per state, city or practice-area page (0-6)',
 		) as $key => $label ) {
 			printf(
 				'<tr><th scope="row"><label for="lr-%1$s">%2$s</label></th><td><input type="number" id="lr-%1$s" class="small-text" name="%3$s[%1$s]" value="%4$d"></td></tr>',
@@ -233,13 +233,18 @@ final class Menu {
 		$rev = \LexRanked\Core\Integration\Revalidator::last_status();
 		printf(
 			'<tr><th scope="row">Instant page refresh</th><td>%s<p class="description">Needs the frontend URL above and <code>define( \'LEXRANKED_REVALIDATE_SECRET\', \'…\' );</code> in wp-config.php (the same value as REVALIDATE_SECRET on the frontend). Last result: %s</p></td></tr>',
-			\LexRanked\Core\Integration\Signature::usable( \LexRanked\Core\Integration\Revalidator::secret() ) ? 'Secret configured.' : '<strong>Secret not configured</strong> — pages refresh within 5 minutes instead of seconds.',
-			esc_html( null === $rev ? '—' : $rev['state'] . ' · ' . $rev['message'] . ' · ' . $rev['at'] )
+			\LexRanked\Core\Integration\Signature::usable( \LexRanked\Core\Integration\Revalidator::secret() ) ? 'Secret configured.' : '<strong>Secret not configured</strong> - pages refresh within 5 minutes instead of seconds.',
+			esc_html( null === $rev ? '-' : $rev['state'] . ' · ' . $rev['message'] . ' · ' . $rev['at'] )
 		);
 		printf(
 			'<tr><th scope="row">AI assistance</th><td><input type="hidden" name="%1$s[ai_enabled]" value="0"><label><input type="checkbox" name="%1$s[ai_enabled]" value="1"%2$s> Accept AI-assisted research and content drafts from workers</label><p class="description">Off by default. AI output never publishes: extracted facts are low-confidence, quote-checked evidence; match suggestions are advisory; generated content arrives as drafts with a QA report.</p></td></tr>',
 			esc_attr( $name ),
 			checked( (bool) $s['ai_enabled'], true, false )
+		);
+		printf(
+			'<tr><th scope="row">Autonomous research</th><td><input type="hidden" name="%1$s[research_autonomy]" value="0"><label><input type="checkbox" name="%1$s[research_autonomy]" value="1"%2$s> Let research workers create research jobs and publish results that pass every check</label><p class="description">Off by default. When a job completes, a lawyer is published only with a name, city, practice area, bar number and an active bar status, with licence and bar status verified by an official source and no conflicting facts; a law firm needs a website and a verified business record. Everything else stays a draft with the reason in the job log. Verification records and sources behind published profiles are published with them, and a ranking is created for a city and practice area once it has enough published profiles. AI content drafts are never published automatically. A job can opt out with <code>"auto_publish": false</code>.</p></td></tr>',
+			esc_attr( $name ),
+			checked( (bool) $s['research_autonomy'], true, false )
 		);
 		printf(
 			'<tr><th scope="row">Profile claims</th><td><input type="hidden" name="%1$s[claims_enabled]" value="0"><label><input type="checkbox" name="%1$s[claims_enabled]" value="1"%2$s> Accept profile claims from the public site</label><p class="description">Claims are reviewed under LexRanked → Profile claims. Confirmation emails use wp_mail(): configure a transactional mail service in production.</p></td></tr>',

@@ -1,5 +1,5 @@
 /**
- * Rules for which pages exist and which are indexable (spec §14–15, §18, §20, §32).
+ * Rules for which pages exist and which are indexable (spec §14-15, §18, §20, §32).
  *
  * Since Etap G the CMS decides with its page eligibility engine and sends the
  * decision with each DTO (`eligibility`); these functions use it when present
@@ -65,4 +65,11 @@ export function articleEligibility(article: { isDemo: boolean; wordCount: number
   const decided = fromApi(article);
   if (decided) return decided;
   return { exists: true, indexable: !article.isDemo && article.wordCount >= MIN_ARTICLE_WORDS };
+}
+
+/** Index pages (/states/, /cities/, /practice-areas/, /rankings/) are thin until they link to this many pages. */
+export const MIN_INDEX_PAGE_ENTRIES = 3;
+
+export function indexPageIndexable(existingPages: number): boolean {
+  return existingPages >= MIN_INDEX_PAGE_ENTRIES;
 }

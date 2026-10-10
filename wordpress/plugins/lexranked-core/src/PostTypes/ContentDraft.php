@@ -15,7 +15,7 @@ use LexRanked\Core\Schema\Field;
  * Machine-drafted editorial content waiting for a human. A draft is never
  * public: it carries the generated text, the numbered facts it was allowed
  * to use and the QA report. An editor applies it to its target (e.g. a
- * ranking's summary, body and FAQ) explicitly — nothing is published by the
+ * ranking's summary, body and FAQ) explicitly - nothing is published by the
  * generator.
  */
 final class ContentDraft extends PostType {

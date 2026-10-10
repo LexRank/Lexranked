@@ -1,4 +1,5 @@
 import { redirectIfMoved } from "@/lib/content/moved";
+import { placeJsonLd } from "@/lib/seo/jsonld";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -46,7 +47,8 @@ export async function generateMetadata(props: PageProps<"/cities/[city]">): Prom
   if (!data?.eligibility.exists) return { robots: { index: false } };
   return buildMetadata({
     title: `Top-Rated Lawyers in ${label(data.city)}`,
-    description: `Top-rated lawyers and law firms in ${label(data.city)}: ${data.city.lawyerCount} lawyer profiles with LexRank scores, verification status and sources.`,
+    // The hub's answer-first summary makes the best snippet; the generic line is the fallback.
+    description: data.city.content?.summary ?? `Top-rated lawyers and law firms in ${label(data.city)}: ${data.city.lawyerCount} lawyer profiles with LexRank scores, verification status and sources.`,
     path: data.city.path,
     noindex: !data.eligibility.indexable,
   });
@@ -66,6 +68,7 @@ export default async function CityPage(props: PageProps<"/cities/[city]">) {
     <HubPage
       groupBy="practice"
       crumbs={crumbs}
+      about={[placeJsonLd({ city: c.name, state: c.state.name })]}
       path={c.path}
       eyebrow={c.state.name ? `City · ${c.state.name}` : "City"}
       title={`Top-rated lawyers in ${label(c)}`}

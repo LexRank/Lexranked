@@ -117,9 +117,9 @@ final class Location {
 	 * @param string $current Current code.
 	 */
 	private static function render_select( string $current ): void {
-		echo '<select name="' . esc_attr( self::STATE_FIELD ) . '" id="' . esc_attr( self::STATE_FIELD ) . '"><option value="">—</option>';
+		echo '<select name="' . esc_attr( self::STATE_FIELD ) . '" id="' . esc_attr( self::STATE_FIELD ) . '"><option value="">-</option>';
 		foreach ( UsStates::ALL as $code => $name ) {
-			printf( '<option value="%1$s"%2$s>%1$s — %3$s</option>', esc_attr( $code ), selected( $current, $code, false ), esc_html( $name ) );
+			printf( '<option value="%1$s"%2$s>%1$s - %3$s</option>', esc_attr( $code ), selected( $current, $code, false ), esc_html( $name ) );
 		}
 		echo '</select>';
 	}

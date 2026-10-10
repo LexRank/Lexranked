@@ -96,6 +96,8 @@ expect "lawyers list sorted by score" '(length == 8) and (.[0].ranking.score >= 
 expect "list DTO has no private fields" 'all(.[]; has("private") | not) and (tostring | contains("@") | not)' "$API/lawyers?per_page=100"
 expect "filter by state code + practice area" 'length == 8' "$API/lawyers?state=FL&practice_area=personal-injury&per_page=100"
 expect "unknown state yields empty list" 'length == 0' "$API/lawyers?state=texas"
+check "the practice-area catalog is seeded" '. >= 16' "$(wp term list lr_practice_area --format=count)"
+expect "empty catalog areas stay out of the public API" 'map(.slug) | (index("criminal-defense") == null) and (index("personal-injury") != null)' "$API/practice-areas"
 expect "lawyer detail with evidence and freshness" '.verification.status == "verified" and (.sources | length) > 0 and .freshness.isStale == false and .firm != null' "$API/lawyers/avery-example-demo"
 expect "detail by numeric id" '.slug == "avery-example-demo"' "$API/lawyers/$(curl -s "$API/lawyers/avery-example-demo" | jq .id)"
 expect "failed verification surfaces" '.verification.status == "failed"' "$API/lawyers/harper-exemplar-demo"
@@ -118,11 +120,11 @@ expect_status "CPTs not exposed via wp/v2" 404 "$BASE/wp-json/wp/v2/lr_lawyer"
 
 echo "==> Ranking engine"
 wp lexranked recalculate >/dev/null
-expect "ranking comes from engine snapshots with breakdowns" '(.calculatedAt != null) and ((.entries | length) == 8) and all(.entries[]; (.breakdown | length) == 7)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
+expect "ranking comes from engine snapshots with breakdowns (v1.2: reviews not scored)" '(.calculatedAt != null) and ((.entries | length) == 8) and all(.entries[]; (.breakdown | length) == 6 and ([.breakdown[].key] | index("review_strength")) == null)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 expect "second calculation reports movement" 'all(.entries[]; .movement == 0 and .isNew == false)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 expect "ranking history has both runs" '(.runs | length) == 2 and ((.runs[0].entries | length) == 8)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo/history"
 expect "profile has breakdown summing to the score" '((.ranking.breakdown | map(.points) | add) * 100 | round) == ((.ranking.score) * 100 | round) and ((.rankings | length) == 2)' "$API/lawyers/avery-example-demo"
-expect "score versions endpoint: v1.1 reads the fact layer, v1.0 kept" '.active == "v1.1" and ([.versions[0].weights[].weight] | add) == 100 and ([.versions[] | select(.id == "v1.1")][0].input == "facts") and ([.versions[] | select(.id == "v1.0")][0].input == "profile")' "$API/score-versions"
+expect "score versions endpoint: v1.2 is active, v1.1 and v1.0 kept" '.active == "v1.2" and ([.versions[0].weights[].weight] | add) == 100 and ([.versions[] | select(.id == "v1.2")][0].input == "facts") and ([.versions[] | select(.id == "v1.1")][0].input == "facts") and ([.versions[] | select(.id == "v1.0")][0].input == "profile")' "$API/score-versions"
 if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "all snapshots reproduce exactly from stored inputs"; else fail "snapshot reproduction"; fi
 
 echo "==> Entity layer (Etap A)"
@@ -149,7 +151,7 @@ check "raw and normalised values are stored side by side" '. > 0' "$(wp db query
 expect "profile facts: one per attribute, with source, tier and freshness" '(.facts | map(.attribute) | index("bar_status") != null) and ((.facts[] | select(.attribute == "bar_status")) | .status == "verified" and .value == "active" and .source.tier == 1 and .source.tierLabel == "Official / regulatory" and .freshness.category == "bar_status" and .verifiedAt != null) and ((.facts[] | select(.attribute == "review_count")) | .value == 387 and .freshness.category == "review_data")' "$API/lawyers/avery-example-demo"
 expect "evidence keeps the raw value and the normalised one" '[.sources[] | select(.field == "website")][0] | (.normalizedValue | type) == "string"' "$API/lawyers/avery-example-demo"
 expect "sources are objects: domain, tier label, status" 'all(.[]; .domain != null and .tierLabel != null and .status != null)' "$API/sources"
-check "provenance traces fact → claim → source → ranking input" '.[0].attribute == "bar_status" and (.[0].claim | test("raw=")) and (.[0].source | test("tier 1")) and (.[0].ranking_input != "—")' "$(wp lexranked provenance lawyer:avery-example-demo --attribute=bar_status --format=json)"
+check "provenance traces fact → claim → source → ranking input" '.[0].attribute == "bar_status" and (.[0].claim | test("raw=")) and (.[0].source | test("tier 1")) and (.[0].ranking_input != "-")' "$(wp lexranked provenance lawyer:avery-example-demo --attribute=bar_status --format=json)"
 
 echo "==> Data Quality Score (Etap C)"
 expect "the Data Quality model is published (weights sum to 100)" '.version == "dq-1.0" and ([.dimensions[].weight] | add) == 100 and .summary.count >= 11' "$API/data-quality"
@@ -158,16 +160,20 @@ expect "a lawyer with failed verification scores lower on verification" '[.dataQ
 check "CLI explains the score" 'test("Data Quality [0-9.]+% \\(dq-1.0\\)")' "$(wp lexranked quality lawyer:avery-example-demo | sed -n 1p | jq -Rs .)"
 expect "Data Quality is not part of the ranking entries" '(.entries | tostring | test("dataQuality|quality_score") | not)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
 
-echo "==> Ranking explanations and methodology v1.1 (Etap D)"
+echo "==> Ranking explanations and methodology v1.2 (Etap D)"
 RANKING_URL="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
-expect "entries were calculated with v1.1 from the fact layer" 'all(.entries[]; .scoreVersion == "v1.1")' "$RANKING_URL"
+expect "entries were calculated with v1.2 from the fact layer" 'all(.entries[]; .scoreVersion == "v1.2")' "$RANKING_URL"
 expect "every entry explains its position from its components" 'all(.entries[]; (.why.summary | startswith("Ranks #")) and (.why.strengths | type) == "array") and .entries[0].why.behind == null and .entries[1].why.behind.position == 1' "$RANKING_URL"
 BLAKE_WP="$(curl -sS "$API/lawyers/blake-sample-demo" | jq .id)"
 wp eval "\\LexRanked\\Core\\Plugin::services()->claims->insert( array( 'entity_id' => $BLAKE_WP, 'entity_type' => 'lawyer', 'field_name' => 'review_count', 'value' => 900, 'source_url' => 'https://example.com/demo/reviews', 'source_type' => 'review_platform', 'retrieved_at' => gmdate( 'c' ), 'confidence' => 0.8, 'verification_status' => 'verified' ) );" >/dev/null
 expect "new evidence reaches the fact layer" '(.facts[] | select(.attribute == "review_count")) | .value == 900 and .status == "verified"' "$API/lawyers/blake-sample-demo"
+BLAKE_SCORE="$(curl -sS "$API/lawyers/blake-sample-demo" | jq .ranking.score)"
 wp lexranked recalculate >/dev/null
-expect "the change is explained from the snapshot difference" '(.entries[] | select(.entity.slug == "blake-sample-demo")) | .change != null and ([.change.reasons[].text] | any(test("review count 154 → 900"))) and ([.change.reasons[].type] | index("component") != null)' "$RANKING_URL"
-if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "v1.0 and v1.1 snapshots all reproduce from their stored inputs"; else fail "snapshot reproduction after v1.1"; fi
+check "review data does not move a v1.2 score" ". == $BLAKE_SCORE" "$(curl -sS "$API/lawyers/blake-sample-demo" | jq .ranking.score)"
+wp eval "\\LexRanked\\Core\\Plugin::services()->claims->insert( array( 'entity_id' => $BLAKE_WP, 'entity_type' => 'lawyer', 'field_name' => 'awards', 'value' => array( array( 'name' => 'Example Award (Demo)', 'issuer' => 'Example Bar Foundation (Demo)', 'year' => '2025' ) ), 'source_url' => 'https://example.com/demo/awards', 'source_type' => 'professional_association', 'retrieved_at' => gmdate( 'c' ), 'confidence' => 0.9, 'verification_status' => 'verified' ) );" >/dev/null
+wp lexranked recalculate >/dev/null
+expect "the change is explained from the snapshot difference" '(.entries[] | select(.entity.slug == "blake-sample-demo")) | .change != null and ([.change.reasons[].text] | any(test("awards on record 0 → 1"))) and ([.change.reasons[].type] | index("component") != null)' "$RANKING_URL"
+if wp lexranked verify-snapshots >/dev/null 2>&1; then pass "all snapshots reproduce from their stored inputs"; else fail "snapshot reproduction after new evidence"; fi
 
 echo "==> Comparison engine (Etap E)"
 AVERY_E="$(curl -sS "$API/lawyers/avery-example-demo" | jq .entityId)"
@@ -217,8 +223,8 @@ expect "comparisons exist but are never indexed" '.eligibility.exists and (.elig
 check "the pages report lists every decision" 'any(.[]; .path == "/rankings/florida/miami/personal-injury/spanish-speaking/" and .exists == "no") and any(.[]; .type == "profile" and .exists == "yes")' "$(wp lexranked pages --format=json)"
 
 echo "==> AI-readable pages (Etap H)"
-expect "the methodology is live: version, last calculation, sources, update frequency" '.active.id == "v1.1" and (.updatedAt | length) > 0 and ([.sourceTiers[].tier] | unique) == [1,2,3,4,5] and ([.freshness[] | select(.category == "review_data")][0].maxAgeDays == 7) and .pageEligibility == "pe-1.0"' "$API/methodology"
-expect "profiles carry an answer-first summary built from their facts" '(.aiSummary.text | startswith("Avery Example (Demo) is a Founding Partner at Harbor Example Injury Law (Demo) in Miami, Florida")) and (.aiSummary.text | test("LexRank score: [0-9.]+/100 \\(methodology v1.1\\)")) and ([.aiSummary.facts[] | select(.key == "bar_status")][0].status == "verified")' "$API/lawyers/avery-example-demo"
+expect "the methodology is live: version, last calculation, sources, update frequency" '.active.id == "v1.2" and (.updatedAt | length) > 0 and ([.sourceTiers[].tier] | unique) == [1,2,3,4,5] and ([.freshness[] | select(.category == "review_data")][0].maxAgeDays == 7) and .pageEligibility == "pe-1.0"' "$API/methodology"
+expect "profiles carry an answer-first summary built from their facts" '(.aiSummary.text | startswith("Avery Example (Demo) is a Founding Partner at Harbor Example Injury Law (Demo) in Miami, Florida")) and (.aiSummary.text | test("LexRank score: [0-9.]+/100 \\(methodology v1.2\\)")) and ([.aiSummary.facts[] | select(.key == "bar_status")][0].status == "verified")' "$API/lawyers/avery-example-demo"
 expect "summaries say verified only when the fact is" '(.aiSummary.text | test("Practice areas on record: Personal Injury")) and (.aiSummary.text | test("Verified case types: Car Accidents"))' "$API/lawyers/avery-example-demo"
 expect "summaries never mention paid status" '(.commercial.status == "premium") and (.aiSummary.text | test("premium|sponsor|paid"; "i") | not)' "$API/lawyers/emery-mockwell-demo"
 expect "rankings list the sources behind their entries, best tier first" '(.sources | length) >= 2 and .sources[0].tier == 1 and all(.sources[]; .facts > 0 and .entities > 0)' "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
@@ -231,6 +237,8 @@ expect "the summary states computed numbers only" '(.summary | startswith("LexRa
 expect "a place-level market names its most common practice area" '.stats.mostCommonPractice.slug == "personal-injury" and (.summary | test("most common practice area in Miami, Florida is Personal Injury"))' "$API/market?location=miami"
 expect "too little data is withheld, not estimated" '.stats.lawyers == 0 and .stats.averageRating == null and .stats.medianReviewCount == null and .summary == ""' "$API/market?practice_area=car-accidents"
 expect_status "unknown market" 404 "$API/market?location=atlantis"
+expect "state figures count every published lawyer with samples" '.version == "sd-1.0" and .state.name == "Florida" and .lawyers >= 8 and (.cities | map(.slug) | index("miami")) != null and (.practiceAreas | length) > 0 and .experience.sample <= .lawyers' "$API/stats/florida"
+expect_status "state figures for a city slug are not found" 404 "$API/stats/miami"
 
 echo "==> Commercial features (Phase 9)"
 RANKING="$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo"
@@ -319,11 +327,169 @@ check "website structured data applied to the draft" '. == "+1 305 555 0142"' "\
 check "drafts stay out of the public API" '[.[].name] | all(. != "Sample & Fixture, P.A.")' "$(curl -sS "$API/law-firms?per_page=100")"
 dupes="$(wp db query "SELECT COUNT(*) - COUNT(DISTINCT claim_hash) FROM wp_lr_claims WHERE job_id = $JOB" --skip-column-names)"
 check "no duplicate claims after resume" '. == 0' "${dupes//[^0-9]/}"
-check "verification requests await an editor" '. == 6' "$(wp post list --post_type=lr_verification --post_status=pending --format=count)"
+check "verification requests await an editor" '. == 9' "$(wp post list --post_type=lr_verification --post_status=pending --format=count)"
 kill "$SITE_PID" >/dev/null 2>&1 || true
 SITE_PID=""
 wp lexranked research-job verification >/dev/null
 check "internal jobs run in WordPress" 'test("Processed 1 internal")' "\"$(wp lexranked research-run)\""
+
+echo "==> Autonomous research (publish what passes every check, keep doubts as drafts)"
+expect_status "workers cannot create jobs while autonomy is off" 403 "$API/research/jobs" -u "researcher:$WORKER_PW" \
+  -H 'Content-Type: application/json' -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-demo"}}'
+wp option update lexranked_settings '{"search_rate_per_minute":5,"research_autonomy":true,"min_ranking_entities":3}' --format=json >/dev/null
+expect_status "AI job types cannot be created through the API" 400 "$API/research/jobs" -u "researcher:$WORKER_PW" \
+  -H 'Content-Type: application/json' -d '{"job_type":"content_generation"}'
+cat >"$DATA_DIR/autonomy-demo.csv" <<'CSV'
+entity_type,name,city,state,practice_area,website,source_url,source_type,retrieved_at,phone,bar_state,bar_number,bar_status
+lawyer,Avery Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2001,bar_association,2026-09-01,,FL,2001,active
+lawyer,Blake Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2002,bar_association,2026-09-01,,FL,2002,active
+lawyer,Cameron Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2003,bar_association,2026-09-01,,FL,2003,active
+lawyer,Dana Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2004,bar_association,2026-09-01,,FL,2004,inactive
+lawyer,Emery Autotest,Hialeah,FL,personal-injury,,https://directory.fixture.test/lawyers/emery,professional_directory,2026-09-01,,,,
+CSV
+created="$(curl -sS -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' \
+  -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-demo","fetch_websites":false},"title":"Autonomy IT"}' "$API/research/jobs")"
+check "a worker creates a research job through the API" '.status == "pending" and .params.dataset == "autonomy-demo"' "$created"
+AUTO_JOB="$(jq -r '.id' <<<"$created")"
+run_worker && pass "worker runs the API-created job" || fail "worker failed on the API-created job (see $DATA_DIR/worker.log)"
+auto="$(wp lexranked research-status "$AUTO_JOB" --format=json)"
+check "API-created job completed" '.status == "completed" and .stats.candidates_created == 5' "$auto"
+check "the run is summarised in the job log" '[.log[].message] | any(startswith("Autonomous research: 3 published, 2 kept as drafts, 9 verification records and 3 sources published, 1 rankings created"))' "$auto"
+check "profiles with official checks are published" '. == 3' "$(wp post list --post_type=lr_lawyer --post_status=publish --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+held_ids="$(wp post list --post_type=lr_lawyer --post_status=draft --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --field=ID --format=csv | tr -dc '0-9\n')"
+holds=""
+for id in $held_ids; do holds+="$(wp post meta get "$id" _lr_auto_publish_hold) "; done
+check "doubtful profiles stay drafts with the reason" 'test("bar status is not active") and test("no bar state and bar number")' "\"${holds//\"/\'}\""
+check "their verification records are published with them" '. == 9' "$(wp post list --post_type=lr_verification --post_status=publish --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+check "the doubtful profiles' records stay pending" '. >= 2' "$(wp post list --post_type=lr_verification --post_status=pending --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+check "official sources behind them are published" '. == 3' "$(wp post list --post_type=lr_source --post_status=publish --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --format=count)"
+check "a ranking is created once the city has enough profiles" '. == 1' "$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Personal Injury Lawyers in Hialeah, Florida' --format=count)"
+expect "published autonomous profiles appear in the public API" 'map(.name) | (index("Avery Autotest") != null) and (index("Dana Autotest") == null)' "$API/lawyers?city=hialeah&per_page=100"
+cat >"$DATA_DIR/autonomy-awards.csv" <<'CSV'
+entity_type,name,city,state,practice_area,website,source_url,source_type,retrieved_at,phone,bar_state,bar_number,bar_status,years_experience,awards
+lawyer,Avery Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2001,bar_association,2026-09-01,,FL,2001,active,12,Board Certified in Civil Trial Law | The Florida Bar | 2020
+CSV
+awards_job="$(curl -sS -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-awards","fetch_websites":false}}' "$API/research/jobs" | jq -r '.id')"
+run_worker && pass "worker adds facts to a published profile" || fail "awards job failed (see $DATA_DIR/worker.log)"
+check "official facts on a published profile are approved automatically" '[.log[].message] | any(test("Approved [0-9]+ facts from official sources"))' "$(wp lexranked research-status "$awards_job" --format=json)"
+expect "the certification shows as an award on the profile" '.professional.awards | any(.name == "Board Certified in Civil Trial Law")' "$API/lawyers/avery-autotest"
+again="$(wp lexranked research-auto-publish "$AUTO_JOB")"
+check "re-applying the rules creates nothing twice" 'test("0 published, 2 kept as drafts, 0 verification records and 0 sources published, 0 rankings created")' "\"$(tail -n1 <<<"$again")\""
+check "a completed job's publication can be finished through the API, idempotently" '.published == 0 and .held == 2 and (.rankings | length) == 0' "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
+wp user create itEditor editor@example.com --role=editor >/dev/null
+ED_PW="$(wp user application-password create itEditor it --porcelain | tail -1)"
+HIALEAH_RANKING="$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Personal Injury Lawyers in Hialeah, Florida' --field=ID | tail -1)"
+# A ranking held for missing text is published by a later re-run, even though its profiles were published earlier.
+wp post update "$HIALEAH_RANKING" --post_status=draft >/dev/null
+wp post meta update "$HIALEAH_RANKING" _lr_held_for_content 1 >/dev/null
+check "a re-run publishes a held ranking whose profiles an earlier run published" ".rankings == [$HIALEAH_RANKING]" "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
+check "the held ranking is public and no longer marked held" '. == "publish"' "\"$(wp post get "$HIALEAH_RANKING" --field=post_status)$(wp post meta get "$HIALEAH_RANKING" _lr_held_for_content)\""
+# Enough lawyers listing a language on official records earn a language ranking under the published one
+# (2 of the 3 Hialeah lawyers, with a minimum of 2: a page listing all 3 would repeat the broader ranking).
+wp option update lexranked_settings '{"search_rate_per_minute":5,"research_autonomy":true,"min_ranking_entities":2}' --format=json >/dev/null
+cat >"$DATA_DIR/autonomy-languages.csv" <<'CSV'
+entity_type,name,city,state,practice_area,website,source_url,source_type,retrieved_at,phone,bar_state,bar_number,bar_status,languages
+lawyer,Avery Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2001,bar_association,2026-09-01,,FL,2001,active,Spanish
+lawyer,Blake Autotest,Hialeah,FL,personal-injury,,https://bar.fixture.test/profile/2002,bar_association,2026-09-01,,FL,2002,active,Spanish
+CSV
+languages_job="$(curl -sS -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' -d '{"job_type":"candidate_discovery","params":{"dataset":"autonomy-languages","fetch_websites":false}}' "$API/research/jobs" | jq -r '.id')"
+run_worker && pass "worker adds languages to published profiles" || fail "languages job failed (see $DATA_DIR/worker.log)"
+check "a re-run creates a language ranking once enough lawyers list the language" '(.rankings | length) == 1' "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
+SPANISH_RANKING="$(wp post list --post_type=lr_ranking --post_status=publish --title='Best Spanish-Speaking Personal Injury Lawyers in Hialeah, Florida' --field=ID | tail -1)"
+expect "the language ranking is public with its context and language-specific text" '.context.type == "language" and .context.segment == "spanish-speaking" and (.entries | length) == 2 and (.faq | map(.question) | index("Will my court hearing be in Spanish?")) != null' "$API/rankings/$SPANISH_RANKING"
+check "re-running does not create it twice" '(.rankings | length) == 0' "$(curl -sS -u "researcher:$WORKER_PW" -X POST "$API/research/jobs/$AUTO_JOB/auto-publish")"
+check "a statewide ranking waits for enough lawyers in more than one city" '[.log[].message] | any(test("No new ranking \"Best Personal Injury Lawyers in Florida\": 3 published profiles statewide \\(needs 4\\)"))' "$(wp lexranked research-status "$AUTO_JOB" --format=json)"
+wp option update lexranked_settings '{"search_rate_per_minute":5,"research_autonomy":true,"min_ranking_entities":3}' --format=json >/dev/null
+expect "an automatically created ranking is published with complete generated page text" '(.summary | test("personal injury lawyers? in Hialeah, Florida")) and (.body | test("<h2>Florida rules to know</h2>")) and (.body | test("Eleventh Judicial Circuit")) and (.body | test("<h2>Sources for the rules above</h2>")) and (.body | test("About this ranking") | not) and (.faq | length) >= 6 and .generated == true' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW"
+expect "an editor's text replaces the generated text and is kept" '.summary == "Edited by hand." and .generated == false' "$API/editorial/rankings/$HIALEAH_RANKING" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"summary":"Edited by hand."}'
+expect "generated text can be restored on request" '.generated == true and (.summary | test("Hialeah"))' "$API/editorial/rankings/$HIALEAH_RANKING/generate" -u "itEditor:$ED_PW" -X POST
+# Remove the autonomous-research records so later sections see the same data as before.
+auto_ids="$(wp post list --post_type=lr_lawyer,lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$AUTO_JOB" --field=ID --format=csv | tr -dc '0-9\n')"
+auto_ids+=" $(wp post list --post_type=lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$awards_job" --field=ID --format=csv | tr -dc '0-9\n')"
+auto_ids+=" $(wp post list --post_type=lr_ranking --post_status=any --title='Best Personal Injury Lawyers in Hialeah, Florida' --field=ID --format=csv | tr -dc '0-9\n')"
+auto_ids+=" $(wp post list --post_type=lr_ranking --post_status=any --title='Best Spanish-Speaking Personal Injury Lawyers in Hialeah, Florida' --field=ID --format=csv | tr -dc '0-9\n')"
+auto_ids+=" $(wp post list --post_type=lr_verification,lr_source --post_status=any --meta_key=_lr_research_job --meta_value="$languages_job" --field=ID --format=csv | tr -dc '0-9\n')"
+# shellcheck disable=SC2086 # Word splitting on IDs is intended.
+wp post delete $auto_ids --force >/dev/null
+wp option update lexranked_settings '{"search_rate_per_minute":5}' --format=json >/dev/null
+
+echo "==> Editorial API (page text for rankings, hubs and profiles)"
+ED_RANKING="$(curl -sS "$API/rankings?per_page=1" | jq -r '.[0].id')"
+ED_CITY="$(curl -sS "$API/cities" | jq -r '.[] | select(.slug == "miami") | .id')"
+ED_LAWYER="$(curl -sS "$API/lawyers?per_page=1" | jq -r '.[0].id')"
+ED_RANKING_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/rankings/$ED_RANKING" | jq -c '{summary: (.summary // ""), faq, reviewed_by: (.reviewedBy // ""), reviewed_at: (.reviewedAt // "")}')"
+ED_CITY_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/terms/location/$ED_CITY" | jq -c '{summary: (.summary // ""), body: (.body // ""), faq}')"
+ED_LAWYER_BEFORE="$(curl -sS "$API/lawyers/$ED_LAWYER" | jq -c '{summary: (.summary // "")}')"
+expect_status "research workers cannot edit page text" 403 "$API/editorial/rankings/$ED_RANKING" -u "researcher:$WORKER_PW" \
+  -H 'Content-Type: application/json' -d '{"summary":"x"}'
+expect "an editor sets the ranking summary and FAQ" '.summary == "Miami has a busy personal injury bar." and (.faq | length) == 1 and .reviewedBy == "IT Editor"' \
+  "$API/editorial/rankings/$ED_RANKING" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' \
+  -d '{"summary":"Miami has a busy personal injury bar.","faq":[{"question":"How long do I have to file in Florida?","answer":"Two years for most negligence claims."}],"reviewed_by":"IT Editor","reviewed_at":"2026-10-02"}'
+expect "the public ranking shows the editorial text" '.summary == "Miami has a busy personal injury bar." and .faq[0].question == "How long do I have to file in Florida?"' "$API/rankings/$ED_RANKING"
+expect_status "malformed FAQ items are rejected" 400 "$API/editorial/rankings/$ED_RANKING" -u "itEditor:$ED_PW" \
+  -H 'Content-Type: application/json' -d '{"faq":[{"question":"Q?"}]}'
+expect "an editor sets hub text" '.summary == "Lawyers in Miami." and (.body | test("<h2>Courts</h2>")) and (.body | test("script") | not)' \
+  "$API/editorial/terms/location/$ED_CITY" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' \
+  -d '{"summary":"Lawyers in Miami.","body":"<h2>Courts</h2><p>Miami-Dade is the Eleventh Judicial Circuit.</p><script>alert(1)</script>"}'
+expect "the public hub shows it" '.[] | select(.slug == "miami") | .content.summary == "Lawyers in Miami."' "$API/cities"
+expect "an editor sets a profile summary" '.summary == "A Miami personal injury lawyer."' "$API/editorial/profiles/$ED_LAWYER" -u "itEditor:$ED_PW" \
+  -H 'Content-Type: application/json' -d '{"summary":"A Miami personal injury lawyer."}'
+expect "content drafts are listed for editors" 'type == "array"' "$API/editorial/drafts" -u "itEditor:$ED_PW"
+# Put the original text back so later sections see the same data as before.
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$ED_RANKING_BEFORE" "$API/editorial/rankings/$ED_RANKING"
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$ED_CITY_BEFORE" "$API/editorial/terms/location/$ED_CITY"
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$ED_LAWYER_BEFORE" "$API/editorial/profiles/$ED_LAWYER"
+expect "original ranking text restored" "(.summary // \"\") == $(jq '.summary' <<<"$ED_RANKING_BEFORE")" "$API/editorial/rankings/$ED_RANKING" -u "itEditor:$ED_PW"
+
+echo "==> Knowledge added over the API (no plugin update)"
+KN_AREA='{"name":"Health Care","cert":"Health","certName":"Board Certified in Health Law","lead":"A lead about Florida health law.","rows":[["Rule","What it means"]],"src":[["https://www.flsenate.gov/Laws/Statutes/2025/456.057","Florida Statutes, section 456.057"]],"faq":[["A question?","An answer."]],"guides":[]}'
+expect_status "research workers cannot change knowledge" 403 "$API/editorial/knowledge/FL/areas/health-law" -u "researcher:$WORKER_PW" -H 'Content-Type: application/json' -d "$KN_AREA"
+expect_status "an incomplete area is rejected" 400 "$API/editorial/knowledge/FL/areas/health-law" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"cert":"Health","certName":"Board Certified in Health Law","lead":"x","rows":[],"src":[["http://insecure.test/","x"]],"faq":[]}'
+expect "an editor adds a practice area and its term" '.stored == true and (.practiceAreaId | type) == "number"' "$API/editorial/knowledge/FL/areas/health-law" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$KN_AREA"
+expect "an editor adds a city" '.stored == true' "$API/editorial/knowledge/FL/cities/key-west" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"county":"Monroe","circuit":"Sixteenth"}'
+expect "the pack lists the additions next to the shipped entries" '(.areas | index("health-law")) != null and (.areas | index("personal-injury")) != null and (.cities | index("key-west")) != null and .added.cities["key-west"].county == "Monroe"' "$API/editorial/knowledge/FL" -u "itEditor:$ED_PW"
+expect "removing an addition leaves the shipped pack" '.removed == true' "$API/editorial/knowledge/FL/cities/key-west" -u "itEditor:$ED_PW" -X DELETE
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -X DELETE "$API/editorial/knowledge/FL/areas/health-law"
+wp term delete lr_practice_area "$(wp term get lr_practice_area health-law --by=slug --field=term_id)" >/dev/null
+expect "additions removed" '(.areas | index("health-law")) == null and (.cities | index("key-west")) == null and (.cities | index("miami")) != null' "$API/editorial/knowledge/FL" -u "itEditor:$ED_PW"
+
+echo "==> Generated hub text"
+PI_ID="$(curl -sS "$API/practice-areas" | jq -r '.[] | select(.slug == "personal-injury") | .id')"
+TERM_KEYS='{summary: (.summary // ""), body: (.body // ""), faq}'
+MIAMI_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/terms/location/$ED_CITY" | jq -c "$TERM_KEYS")"
+PI_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/terms/practice-area/$PI_ID" | jq -c "$TERM_KEYS")"
+expect "a city hub gets generated text with an answer under every heading" '.generated == true and (.summary | test("Miami, Florida")) and (.body | test("<h2>Which court handles cases in Miami\\?</h2>\n<p><strong>")) and (.faq | length) >= 5' "$API/editorial/terms/location/$ED_CITY/generate" -u "itEditor:$ED_PW" -X POST
+expect "a practice-area hub gets generated text" '.generated == true and (.body | test("What does a personal injury lawyer do\\?")) and (.body | test("/rankings/florida/miami/personal-injury/"))' "$API/editorial/terms/practice-area/$PI_ID/generate" -u "itEditor:$ED_PW" -X POST
+expect "hub text links only published guides" '(.body | test("/articles/personal-injury-lawyer-cost/")) | not' "$API/editorial/terms/practice-area/$PI_ID" -u "itEditor:$ED_PW"
+expect "the public hub shows the generated summary" '(.[] | select(.slug == "miami") | .content.summary) | test("LexRanked lists")' "$API/cities"
+expect "an editor's text turns generation off" '.generated == false' "$API/editorial/terms/location/$ED_CITY" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$MIAMI_BEFORE"
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$PI_BEFORE" "$API/editorial/terms/practice-area/$PI_ID"
+
+echo "==> Client reviews (email-confirmed, editor-approved)"
+AVERY_ID="$(curl -sS "$API/lawyers/avery-example-demo" | jq .id)"
+REVIEW="{\"entityType\":\"lawyer\",\"entityId\":$AVERY_ID,\"rating\":5,\"title\":\"Clear and responsive\",\"body\":\"She explained every step of my case and returned my calls the same day. I would hire her again.\",\"name\":\"jordan taylor\",\"email\":\"jordan@example.com\",\"serviceYear\":2024,\"client\":true}"
+expect_status "reviews cannot be submitted anonymously" 401 "$API/reviews" -X POST -H 'Content-Type: application/json' -d "$REVIEW"
+expect_status "a review without the client confirmation is rejected" 400 "$API/reviews" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "${REVIEW/\"client\":true/\"client\":false}"
+expect "review accepted, email confirmation pending" '.status == "pending_email"' "$API/reviews" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "$REVIEW"
+expect "an unconfirmed review is not public" '.clientReviews.count == 0' "$API/lawyers/avery-example-demo"
+RTOKEN="$("${COMPOSE[@]}" exec -T wordpress sh -c 'cat /tmp/it-mail.log' | grep 'review' | grep -o 'token=[A-Za-z0-9_-]*' | tail -1 | cut -d= -f2)"
+expect "email confirmed, review waits for moderation" '.status == "pending_review"' "$API/reviews/confirm" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "{\"token\":\"$RTOKEN\"}"
+REVIEW_ID="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/reviews" | jq '.[0].id')"
+expect "editors see the moderation queue without email addresses" 'length == 1 and .[0].author == "Jordan T." and (tostring | test("jordan@example.com") | not)' "$API/editorial/reviews" -u "itEditor:$ED_PW"
+expect_status "research workers cannot moderate reviews" 403 "$API/editorial/reviews/$REVIEW_ID" -u "researcher:$WORKER_PW" -X POST -H 'Content-Type: application/json' -d '{"action":"approve"}'
+expect "an editor approves the review" '.status == "approved"' "$API/editorial/reviews/$REVIEW_ID" -u "itEditor:$ED_PW" -X POST -H 'Content-Type: application/json' -d '{"action":"approve"}'
+expect "the approved review is on the profile, with first name and initial only" '.clientReviews.count == 1 and .clientReviews.average == 5 and .clientReviews.items[0].author == "Jordan T." and (tostring | test("jordan@example.com|jordan taylor") | not)' "$API/lawyers/avery-example-demo"
+check "the reviewer's email is deleted after moderation" '. == 0' "$(wp db query "SELECT LENGTH(reviewer_email) FROM wp_lr_client_reviews WHERE review_id = $REVIEW_ID" --skip-column-names | tr -dc 0-9)"
+check "approved reviews are recorded as rating evidence from the LexRanked reviews source" '. == 2' "$(wp db query "SELECT COUNT(*) FROM wp_lr_claims WHERE entity_id = $AVERY_ID AND source_type = 'lexranked_reviews' AND review_status = 'approved'" --skip-column-names | tr -dc 0-9)"
+expect "an editor can withdraw a review" '.status == "rejected"' "$API/editorial/reviews/$REVIEW_ID" -u "itEditor:$ED_PW" -X POST -H 'Content-Type: application/json' -d '{"action":"reject"}'
+expect "a withdrawn review leaves the profile" '.clientReviews.count == 0' "$API/lawyers/avery-example-demo"
+check "its rating evidence is retired with it" '. == 0' "$(wp db query "SELECT COUNT(*) FROM wp_lr_claims WHERE entity_id = $AVERY_ID AND source_type = 'lexranked_reviews' AND review_status = 'approved'" --skip-column-names | tr -dc 0-9)"
+echo "==> Contact form (emailed to the editors, never stored)"
+CONTACT='{"name":"Jordan Taylor","email":"jordan@example.com","topic":"correction","page":"/lawyers/avery-example-demo/","message":"The years in practice on this profile look wrong; see the Florida Bar record."}'
+expect_status "contact messages cannot be sent anonymously" 401 "$API/contact" -X POST -H 'Content-Type: application/json' -d "$CONTACT"
+expect_status "an invalid contact message is rejected" 400 "$API/contact" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d '{"name":"J","email":"x","topic":"sales","message":"short"}'
+expect "a contact message is accepted" '.status == "sent"' "$API/contact" -u "apiuser:$APP_PW" -X POST -H 'Content-Type: application/json' -d "$CONTACT"
+check "the message is emailed with the sender as reply-to" 'test("LexRanked contact.*Correction to a profile or ranking")' "$("${COMPOSE[@]}" exec -T wordpress sh -c 'tail -n1 /tmp/it-mail.log' | jq -Rs .)"
 
 echo "==> Entity resolution identifiers (Etap B)"
 check "research drafts are indexed by bar number" '. >= 1' "$(wp db query "SELECT COUNT(*) FROM wp_postmeta WHERE meta_key = '_lr_id_bar' AND meta_value = 'FL:1001'" --skip-column-names | tr -dc 0-9)"
@@ -351,7 +517,7 @@ check "content job completed" '.status == "completed" and .stats.drafts_ready + 
 DRAFT_ID="$(wp post list --post_type=lr_content_draft --post_status=any --field=ID --posts_per_page=1 | tail -1)"
 check "generated content is stored as a draft, never published" '. == "draft"' "\"$(wp post get "$DRAFT_ID" --field=post_status)\""
 check "draft carries its facts and QA status" 'test("ready_for_review|needs_review")' "\"$(wp post meta get "$DRAFT_ID" _lr_qa_status)\""
-check "drafts record the interpretation contract (Etap J)" 'startswith("interp/1+ranking-content/")' "\"$(wp post meta get "$DRAFT_ID" _lr_prompt_version)\""
+check "drafts record the interpretation contract (Etap J)" 'startswith("interp/2+ranking-content/")' "\"$(wp post meta get "$DRAFT_ID" _lr_prompt_version)\""
 check "draft facts say which backend computation they come from" 'fromjson | any(.[]; .origin == "ranking snapshot") and any(.[]; .status == "computed")' "$(wp post meta get "$DRAFT_ID" _lr_facts | jq -Rs .)"
 check "draft body is built from escaped plain text" 'test("<h2>How positions are decided</h2>")' "$(wp post get "$DRAFT_ID" --field=post_content | jq -Rs .)"
 check "ranking content unchanged until an editor applies the draft" '(.summary | test("LexRank methodology") | not)' "$(curl -sS "$API/rankings/best-personal-injury-lawyers-in-miami-florida-demo")"
@@ -362,6 +528,14 @@ check "hub content job drafted the Miami page" '.status == "completed" and (.sta
 check "article content job drafted an article" '.status == "completed" and (.stats.drafts_ready + .stats.drafts_need_review) == 1' "$(wp lexranked research-status "$ART_JOB" --format=json)"
 HUB_DRAFT="$(wp post list --post_type=lr_content_draft --post_status=any --meta_key=_lr_content_type --meta_value=hub_content --field=ID --posts_per_page=1 | tail -1)"
 check "hub draft targets the city term" '. == "lr_location"' "\"$(wp post meta get "$HUB_DRAFT" _lr_target_taxonomy)\""
+HUB_TERM="$(wp post meta get "$HUB_DRAFT" _lr_target_term)"
+HUB_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/terms/location/$HUB_TERM" | jq -c '{summary: (.summary // ""), body: (.body // ""), faq, reviewed_by: (.reviewedBy // ""), reviewed_at: (.reviewedAt // "")}')"
+expect "editors see the hub draft with its QA status" "any(.[]; .id == $HUB_DRAFT and .contentType == \"hub_content\" and .canApply)" "$API/editorial/drafts" -u "itEditor:$ED_PW"
+expect "an editor applies the hub draft through the API" '.status == "applied" or .status == "partial"' "$API/editorial/drafts/$HUB_DRAFT/apply" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"acknowledge":true}'
+expect "applying twice changes nothing" '.status == "already"' "$API/editorial/drafts/$HUB_DRAFT/apply" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"acknowledge":true}'
+expect "the applied draft text is on the hub" '(.summary | length) > 0' "$API/editorial/terms/location/$HUB_TERM" -u "itEditor:$ED_PW"
+# Restore the seeded hub text that the frontend checks rely on.
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$HUB_BEFORE" "$API/editorial/terms/location/$HUB_TERM"
 check "the generator creates no WordPress posts (only content drafts)" '. == "2"' "\"$(wp post list --post_type=post --post_status=any --format=count)\""
 if grep -q "sk-fake-it-only" "$DATA_DIR/worker.log"; then fail "worker logged the OpenAI key"; else pass "OpenAI key never logged"; fi
 kill "$AI_PID" >/dev/null 2>&1 || true
@@ -402,7 +576,7 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "ranking shows #1 entry" "/rankings/florida/miami/personal-injury/" "Avery Example (Demo)"
   page_has "ranking has ItemList JSON-LD" "/rankings/florida/miami/personal-injury/" '"@type":"ItemList"'
   page_has "demo ranking is noindex" "/rankings/florida/miami/personal-injury/" 'content="noindex, follow"'
-  page_has "ranking explains methodology" "/rankings/florida/miami/personal-injury/" "Why this ranking?"
+  page_has "ranking links the methodology" "/rankings/florida/miami/personal-injury/" "How we rank"
   page_has "ranking has answer-first summary from data" "/rankings/florida/miami/personal-injury/" "the top-ranked personal injury lawyers in Miami, Florida are Avery Example (Demo)"
   page_has "ranking shows editorial summary" "/rankings/florida/miami/personal-injury/" "Demo content: this sample ranking compares"
   page_has "ranking shows editorial body below the list" "/rankings/florida/miami/personal-injury/" "What to ask a personal injury lawyer"
@@ -418,12 +592,14 @@ if [[ -n "$FRONTEND" ]]; then
   expect_status "ranking slug redirects to canonical path" 308 "$WEB/rankings/best-personal-injury-lawyers-in-miami-florida-demo/"
   expect_status "lawyer profile" 200 "$WEB/lawyers/avery-example-demo/"
   page_has "profile shows score breakdown" "/lawyers/avery-example-demo/" "Score breakdown"
-  page_has "profile explains a component" "/lawyers/avery-example-demo/" "adjusted for volume to"
+  page_has "profile explains a component" "/lawyers/avery-example-demo/" "years in practice (full credit at"
   page_has "profile shows sources" "/lawyers/avery-example-demo/" "Example State Bar Registry (Demo)"
   page_has "profile shows data freshness" "/lawyers/avery-example-demo/" "Data verified"
   page_has "profile canonical" "/lawyers/avery-example-demo/" '<link rel="canonical" href="https://lexranked.com/lawyers/avery-example-demo/"/>'
   page_has "profile Person JSON-LD" "/lawyers/avery-example-demo/" '"@type":"Person"'
   page_has "profile links to related lawyers" "/lawyers/avery-example-demo/" "/lawyers/blake-sample-demo/"
+  page_has "profile has the client reviews section with the review form" "/lawyers/avery-example-demo/" "Write a review"
+  page_has "profile links to its Google reviews without an API key" "/lawyers/avery-example-demo/" "google.com/maps/search/?api=1"
   expect_status "law firm profile" 200 "$WEB/law-firms/harbor-example-injury-law-demo/"
   for path in /lawyers/ /law-firms/ /rankings/ /states/ /states/florida/ /cities/ /cities/miami/ /practice-areas/ /practice-areas/personal-injury/ /methodology/ /verified/ "/search/?q=avery" /status/; do
     expect_status "page $path" 200 "$WEB$path"
@@ -462,9 +638,9 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "breadcrumbs lead to the broader ranking" "/rankings/florida/miami/personal-injury/car-accidents/" 'href="/rankings/florida/miami/personal-injury/"'
   page_has "the broader ranking links its narrower rankings" "/rankings/florida/miami/personal-injury/" "Narrower rankings"
   page_has "cards show key attributes" "/rankings/florida/miami/personal-injury/" "22 years experience"
-  page_has "the header names the methodology the entries used" "/rankings/florida/miami/personal-injury/" "LexRank v1.1"
+  page_has "the header names the methodology the entries used" "/rankings/florida/miami/personal-injury/" "LexRank v1.2"
   expect_status "a context below its threshold is a 404" 404 "$WEB/rankings/florida/miami/personal-injury/spanish-speaking/"
-  if grep -q "spanish-speaking" <<<"$(curl -sS "$WEB/sitemap.xml")"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
+  if grep -q "/personal-injury/spanish-speaking/" <<<"$(curl -sS "$WEB/sitemap.xml")"; then fail "an ineligible context is in the sitemap"; else pass "ineligible contexts stay out of the sitemap"; fi
 
   echo "==> Page eligibility on pages (Etap G)"
   page_has "methodology publishes when a page exists" "/methodology/" 'id="page-eligibility"'
@@ -479,6 +655,9 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "profile has the answer-first summary" "/lawyers/avery-example-demo/" "At a glance"
   page_has "schema.org mirrors the visible bar admission" "/lawyers/avery-example-demo/" '"hasCredential"'
   page_has "ranking lists its sources" "/rankings/florida/miami/personal-injury/" 'id="sources"'
+  page_has "methodology answers whether reviews affect the score" "/methodology/" "Do client reviews affect the LexRank score?"
+  page_has "profiles state the same rule on reviews" "/lawyers/avery-example-demo/" "Client reviews do not affect the LexRank score: neither star ratings nor the number of reviews is scored."
+  page_has "ranking FAQ asks the reviews question" "/rankings/florida/miami/personal-injury/" "Do client reviews affect the LexRank score?"
   page_has "ranking answers related questions from its data" "/rankings/florida/miami/personal-injury/" "Which lawyers are verified?"
   page_has "related questions link narrower rankings" "/rankings/florida/miami/personal-injury/" "list car accidents among their case types"
   page_has "methodology lists data sources" "/methodology/" 'id="data-sources"'
@@ -516,8 +695,20 @@ if [[ -n "$FRONTEND" ]]; then
   page_has "claim page has the form" "/claim/lawyer/avery-example-demo/" 'name="barNumber"'
   expect_status "claim page for an unknown profile is 404" 404 "$WEB/claim/lawyer/does-not-exist/"
   page_has "confirm page never acts on GET" "/claim/confirm/?token=$(printf 'A%.0s' $(seq 1 43))" "Confirm my email address"
+  page_has "review confirm page never acts on GET" "/reviews/confirm/?token=$(printf 'A%.0s' $(seq 1 43))" "Confirm my review"
   expect_status "advertising policy" 200 "$WEB/advertising/"
   page_has "advertising policy states the rule" "/advertising/" "Payment never changes a score"
+  page_has "about page" "/about/" "What is LexRanked?"
+  page_has "editorial policy" "/editorial-policy/" "What standard does every LexRanked page follow?"
+  page_has "privacy policy states the cookie rule" "/privacy/" "sets no cookies"
+  page_has "terms of use" "/terms/" "What are the rules for client reviews?"
+  page_has "legal disclaimer" "/disclaimer/" "is not a law firm"
+  page_has "contact page has the form" "/contact/" "Send message"
+  page_has "author profile" "/authors/ryan-mitchell/" "Is Ryan a lawyer?"
+  page_has "statutes of limitations table" "/data/florida-statutes-of-limitations/" "Which negligence claims still have 4 years?"
+  page_has "judicial circuits table" "/data/florida-judicial-circuits/" "Which counties are in each Florida judicial circuit?"
+  page_has "data index lists statistics pages" "/data/" "/data/florida-lawyer-experience/"
+  page_has "experience statistics page" "/data/florida-lawyer-experience/" "How many lawyers fall into each band of experience?"
   sitemap="$(curl -sS "$WEB/sitemap.xml")"
   if grep -q "/advertising/" <<<"$sitemap" && ! grep -q "/claim/" <<<"$sitemap"; then pass "sitemap lists the policy, not claim pages"; else fail "sitemap commercial pages"; fi
   sitemap="$(curl -sS "$WEB/sitemap.xml")"

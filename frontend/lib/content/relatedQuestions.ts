@@ -1,11 +1,12 @@
 import type { RankingDetail, RankingSummary } from "@/types/api";
 import { formatScore } from "@/lib/format";
+import { REVIEWS_QUESTION, reviewsStatement } from "@/lib/methodology";
 import { compareHref } from "./compare";
 
 /**
  * "Related questions" for ranking pages (spec §24). Every question is asked
  * only when the ranking's own data can answer it, and every answer is built
- * from that data — no generic SEO FAQ, no generated prose.
+ * from that data - no generic SEO FAQ, no generated prose.
  */
 
 export interface RelatedQuestion {
@@ -26,11 +27,18 @@ export function relatedQuestions(ranking: RankingDetail, all: RankingSummary[] =
   const version = entries[0]?.scoreVersion ? `LexRank ${entries[0].scoreVersion}` : "LexRank";
   const out: RelatedQuestion[] = [];
 
-  out.push({
+  // The one methodology question, unless the page's own FAQ already asks it; the methodology page has the detail.
+  const asksMethod = ranking.faq.some((f) => /\bhow (is|are|was|were) .* (ranked|ordered)\b/i.test(f.question));
+  if (!asksMethod) out.push({
     question: `How were these ${noun} ranked?`,
-    answer: `By their ${version} score: seven weighted components (reputation, review strength, experience, practice-area relevance, credentials, local relevance and data quality) calculated only from facts backed by a source. Missing facts score zero; nothing is estimated, and payment never changes a position.`,
-    link: { href: "/methodology/", label: "Read the methodology" },
+    answer: `By their ${version} score, calculated only from facts backed by a cited source. Payment never changes a position.`,
+    link: { href: "/methodology/", label: "How we rank" },
   });
+
+  // The reviews question, asked the same way on every page with the same answer as the methodology page and profiles.
+  if (!ranking.faq.some((f) => f.question === REVIEWS_QUESTION)) {
+    out.push({ question: REVIEWS_QUESTION, answer: reviewsStatement(false), link: { href: "/methodology/#client-reviews", label: "How we rank" } });
+  }
 
   const verified = entries.filter((e) => e.entity.verification.status === "verified").map((e) => e.entity.name);
   out.push({
@@ -45,7 +53,7 @@ export function relatedQuestions(ranking: RankingDetail, all: RankingSummary[] =
   if (reviewed.length >= 2) {
     out.push({
       question: `Which ${noun} have the most reviews?`,
-      answer: `${names(reviewed.slice(0, 3).map((e) => `${e.entity.name} (${(e.entity.reviewCount ?? 0).toLocaleString("en-US")})`))}. Review counts come from the cited review platforms; ratings are adjusted for volume in the score.`,
+      answer: `${names(reviewed.slice(0, 3).map((e) => `${e.entity.name} (${(e.entity.reviewCount ?? 0).toLocaleString("en-US")})`))}. Review counts come from the cited review platforms and are shown for information: ${reviewsStatement(false)}`,
     });
   }
 
@@ -59,14 +67,15 @@ export function relatedQuestions(ranking: RankingDetail, all: RankingSummary[] =
           : c.type === "client_type"
             ? `Which ${noun} serve ${c.value}?`
             : `Which ${noun} list ${c.label.toLowerCase()} among their case types?`,
-      answer: `${c.eligibility.qualified} of the ${c.eligibility.parentCount} ${noun} in this ranking have it on record, ${c.eligibility.verified} confirmed by a verified fact. They are ranked separately by the same LexRank score.`,
+      answer: `${c.eligibility.qualified} of the ${c.eligibility.parentCount} ${noun} in this ranking have it on record, ${c.eligibility.verified} confirmed by a verified fact or an official record. They are ranked separately by the same LexRank score.`,
       link: { href: child.path as string, label: child.title },
     });
   }
 
   const second = entries[1];
   const behind = second?.why?.behind;
-  if (second && behind) {
+  // Only when there is a difference to explain (a tie has none).
+  if (second && behind && behind.scoreGap > 0) {
     const first = entries[0]!;
     const gaps = behind.components.filter((c) => c.delta > 0).slice(0, 2).map((c) => c.label.toLowerCase());
     const href = compareHref(ranking.entityType === "law_firm" ? "law_firm" : "lawyer", [first.entity.entityId, second.entity.entityId]);

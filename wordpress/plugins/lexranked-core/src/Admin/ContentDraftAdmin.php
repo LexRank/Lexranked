@@ -9,11 +9,8 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\Admin;
 
-use LexRanked\Core\Content\TermContent;
-use LexRanked\Core\PostTypes\Article;
+use LexRanked\Core\Content\DraftApplier;
 use LexRanked\Core\PostTypes\ContentDraft;
-use LexRanked\Core\PostTypes\LawFirm;
-use LexRanked\Core\Security\AuditLog;
 use LexRanked\Core\Services;
 
 /**
@@ -58,22 +55,22 @@ final class ContentDraftAdmin {
 		$fields = $this->services->entities->record( $post, $this->services->content_draft )['fields'];
 		$issues = json_decode( (string) ( $fields['qa_report'] ?? '[]' ), true );
 		$issues = is_array( $issues ) ? $issues : array();
-		$target = $this->target( $fields );
+		$target = $this->applier()->target( $fields );
 		$labels = array(
-			ContentDraft::QA_READY        => '✅ Ready for review — automated checks passed',
-			ContentDraft::QA_NEEDS_REVIEW => '⚠️ Needs review — automated checks found problems',
+			ContentDraft::QA_READY        => '✅ Ready for review - automated checks passed',
+			ContentDraft::QA_NEEDS_REVIEW => '⚠️ Needs review - automated checks found problems',
 			ContentDraft::QA_APPLIED      => '✔ Applied',
 		);
 		printf( '<p><strong>%s</strong></p>', esc_html( $labels[ (string) $fields['qa_status'] ] ?? (string) $fields['qa_status'] ) );
 		printf(
 			'<p>Type: <code>%s</code> · Target: %s · Model: <code>%s</code> · Prompt: <code>%s</code> · Job #%d</p>',
 			esc_html( (string) $fields['content_type'] ),
-			null === $target ? '—' : '<a href="' . esc_url( $target['edit'] ) . '">' . esc_html( $target['label'] ) . '</a>',
+			null === $target ? '-' : '<a href="' . esc_url( $target['edit'] ) . '">' . esc_html( $target['label'] ) . '</a>',
 			esc_html( (string) $fields['model'] ),
 			esc_html( (string) $fields['prompt_version'] ),
 			(int) $fields['job_id']
 		);
-		echo '<p class="description">Generated from the numbered facts below only. Automated QA checks every number, name and ranking position against those facts; it cannot judge tone or usefulness — that is your review.</p>';
+		echo '<p class="description">Generated from the numbered facts below only. Automated QA checks every number, name and ranking position against those facts; it cannot judge tone or usefulness - that is your review.</p>';
 
 		if ( array() !== $issues ) {
 			echo '<table class="widefat striped"><thead><tr><th>Severity</th><th>Check</th><th>Problem</th><th>Excerpt</th></tr></thead><tbody>';
@@ -96,7 +93,7 @@ final class ContentDraftAdmin {
 			}
 			return;
 		}
-		if ( ! $this->can_apply( $fields, $target ) ) {
+		if ( ! $this->applier()->can_apply( $fields ) ) {
 			return;
 		}
 		// A form inside the post form is invalid HTML; the button submits a separate form via the form attribute.
@@ -136,7 +133,7 @@ final class ContentDraftAdmin {
 		$fields = $this->services->entities->record( $post, $this->services->content_draft )['fields'];
 		$facts  = json_decode( (string) ( $fields['facts'] ?? '[]' ), true );
 		if ( ! is_array( $facts ) || array() === $facts ) {
-			echo '<p>—</p>';
+			echo '<p>-</p>';
 			return;
 		}
 		echo '<table class="widefat striped"><tbody>';
@@ -162,136 +159,29 @@ final class ContentDraftAdmin {
 		if ( ! $post instanceof \WP_Post || ContentDraft::SLUG !== $post->post_type ) {
 			wp_die( esc_html__( 'Draft not found.', 'lexranked-core' ), 404 );
 		}
-		$type   = $this->services->content_draft;
-		$fields = $this->services->entities->record( $post, $type )['fields'];
-		$target = $this->target( $fields );
-		if ( ! $this->can_apply( $fields, $target ) ) {
+		$fields = $this->services->entities->record( $post, $this->services->content_draft )['fields'];
+		if ( ! $this->applier()->can_apply( $fields ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'lexranked-core' ), 403 );
 		}
 		$back = (string) get_edit_post_link( $id, 'url' );
-		if ( ContentDraft::QA_APPLIED === $fields['qa_status'] ) {
-			wp_safe_redirect( add_query_arg( 'lexranked_draft', 'already', $back ) );
+		try {
+			$result = $this->applier()->apply( $id, ! empty( $_POST['acknowledge'] ) );
+		} catch ( \RuntimeException $e ) {
+			wp_die( esc_html__( 'Could not create the article draft.', 'lexranked-core' ), 500 );
+		}
+		if ( null !== $result['article_id'] ) {
+			wp_safe_redirect( (string) get_edit_post_link( $result['article_id'], 'url' ) );
 			exit;
 		}
-		if ( ContentDraft::QA_NEEDS_REVIEW === $fields['qa_status'] && empty( $_POST['acknowledge'] ) ) {
-			wp_safe_redirect( add_query_arg( 'lexranked_draft', 'ack', $back ) );
-			exit;
-		}
-
-		$faq     = is_array( $fields['faq'] ) ? $fields['faq'] : array();
-		$errors  = array();
-		$changes = array(
-			'qa_status'  => ContentDraft::QA_APPLIED,
-			'applied_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
-		);
-		switch ( (string) $fields['content_type'] ) {
-			case 'hub_content':
-				$errors = TermContent::store(
-					(int) $fields['target_term'],
-					array(
-						'summary' => (string) $fields['summary'],
-						'body'    => (string) $post->post_content,
-						'faq'     => $faq,
-					)
-				);
-				break;
-			case 'profile_summary':
-				$entity = get_post( (int) $fields['target_id'] );
-				$def    = $entity instanceof \WP_Post && LawFirm::SLUG === $entity->post_type ? $this->services->law_firm : $this->services->lawyer;
-				$errors = $this->services->entities->save_fields( (int) $fields['target_id'], $def, array( 'summary' => $fields['summary'] ) );
-				break;
-			case 'article':
-				$article = wp_insert_post(
-					wp_slash(
-						array(
-							'post_type'    => Article::SLUG,
-							'post_status'  => 'draft',
-							'post_title'   => (string) preg_replace( '/^AI draft: (.*) \(\d{4}-\d{2}-\d{2}\)$/', '$1', (string) $post->post_title ),
-							'post_content' => (string) $post->post_content,
-							'post_excerpt' => (string) $fields['summary'],
-						)
-					),
-					true
-				);
-				if ( is_wp_error( $article ) ) {
-					wp_die( esc_html__( 'Could not create the article draft.', 'lexranked-core' ), 500 );
-				}
-				if ( null !== $fields['target_id'] ) {
-					$this->services->entities->save_fields( (int) $article, $this->services->article, array( 'related_ranking' => (int) $fields['target_id'] ) );
-				}
-				$changes['article_id'] = (int) $article;
-				break;
-			default:
-				$errors = $this->services->entities->save_fields(
-					(int) $fields['target_id'],
-					$this->services->ranking,
-					array(
-						'summary' => $fields['summary'],
-						'faq'     => $faq,
-					)
-				);
-				wp_update_post(
-					wp_slash(
-						array(
-							'ID'           => (int) $fields['target_id'],
-							'post_content' => (string) $post->post_content,
-						)
-					)
-				);
-		}//end switch
-		$this->services->entities->save_fields( $id, $type, $changes, true );
-		AuditLog::log(
-			'content_draft.applied',
-			ContentDraft::SLUG,
-			$id,
-			array(
-				'content_type' => $fields['content_type'],
-				'target'       => $target['label'] ?? null,
-				'acknowledged' => ! empty( $_POST['acknowledge'] ),
-				'invalid'      => array_keys( $errors ),
-			)
-		);
-		if ( isset( $changes['article_id'] ) ) {
-			wp_safe_redirect( (string) get_edit_post_link( $changes['article_id'], 'url' ) );
-			exit;
-		}
-		wp_safe_redirect( add_query_arg( 'lexranked_draft', array() === $errors ? 'applied' : 'partial', $back ) );
+		wp_safe_redirect( add_query_arg( 'lexranked_draft', $result['status'], $back ) );
 		exit;
 	}
 
 	/**
-	 * The draft's target: label and edit link (null when there is none).
-	 *
-	 * @param array<string, mixed> $fields Draft fields.
-	 * @return array{label: string, edit: string}|null
+	 * Shared apply implementation.
 	 */
-	private function target( array $fields ): ?array {
-		if ( 'hub_content' === $fields['content_type'] ) {
-			$term = get_term( (int) $fields['target_term'], (string) $fields['target_taxonomy'] );
-			return $term instanceof \WP_Term ? array(
-				'label' => $term->name,
-				'edit'  => (string) get_edit_term_link( $term->term_id, $term->taxonomy ),
-			) : null;
-		}
-		$post = null === $fields['target_id'] ? null : get_post( (int) $fields['target_id'] );
-		return $post instanceof \WP_Post ? array(
-			'label' => get_the_title( $post ),
-			'edit'  => (string) get_edit_post_link( $post->ID, 'url' ),
-		) : null;
-	}
-
-	/**
-	 * Whether the current user may apply this draft.
-	 *
-	 * @param array<string, mixed>                    $fields Draft fields.
-	 * @param array{label: string, edit: string}|null $target Target.
-	 */
-	private function can_apply( array $fields, ?array $target ): bool {
-		return match ( (string) $fields['content_type'] ) {
-			'hub_content' => null !== $target && current_user_can( 'manage_categories' ),
-			'article'     => current_user_can( 'edit_posts' ),
-			default       => null !== $target && current_user_can( 'edit_post', (int) $fields['target_id'] ),
-		};
+	private function applier(): DraftApplier {
+		return new DraftApplier( $this->services );
 	}
 
 	/**
@@ -302,7 +192,7 @@ final class ContentDraftAdmin {
 		$state    = isset( $_GET['lexranked_draft'] ) ? sanitize_key( wp_unslash( $_GET['lexranked_draft'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$messages = array(
 			'applied' => array( 'success', 'Draft applied to the ranking. The public page updates within a few minutes.' ),
-			'partial' => array( 'warning', 'Draft applied, but some fields were invalid and were skipped — check the ranking.' ),
+			'partial' => array( 'warning', 'Draft applied, but some fields were invalid and were skipped - check the ranking.' ),
 			'ack'     => array( 'error', 'This draft failed automated QA. Confirm that you reviewed every problem before applying it.' ),
 			'already' => array( 'info', 'This draft was already applied.' ),
 		);

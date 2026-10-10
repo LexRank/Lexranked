@@ -1,0 +1,1297 @@
+{
+ "state": "FL",
+ "name": "Florida",
+ "checked": "2026-10",
+ "bar": {
+  "name": "The Florida Bar",
+  "directory": "https://www.floridabar.org/directories/find-mbr/",
+  "complaints": "The Florida Bar's Attorney Consumer Assistance Program (ACAP), 866-352-0707",
+  "short": "Florida Bar"
+ },
+ "certification": {
+  "share": "4.9%",
+  "source": [
+   "https://www.floridabar.org/the-florida-bar-news/board-certification-continues-to-set-florida-lawyers-apart/",
+   "The Florida Bar News: Board certification continues to set Florida lawyers apart (July 2026)"
+  ],
+  "requirements": "Florida Bar board certification requires at least five years of practice, substantial involvement in the field, peer review by other lawyers and judges, continuing legal education and a written exam, and it must be renewed every five years."
+ },
+ "crashSource": [
+  "https://www.flhsmv.gov/pdf/crashreports/crash_facts_2023.pdf",
+  "Florida Department of Highway Safety and Motor Vehicles: Traffic Crash Facts 2023"
+ ],
+ "areas": {
+  "personal-injury": {
+   "cert": "Civil Trial",
+   "lead": "Most injury claims must be filed within two years, a person more than 50% at fault recovers nothing, and car crash injuries start with your own PIP insurance.",
+   "rows": [
+    [
+     "Filing deadline",
+     "2 years for negligence claims that arose on or after March 24, 2023 (Fla. Stat. § 95.11)"
+    ],
+    [
+     "Shared fault",
+     "More than 50% at fault: no recovery; 50% or less: damages reduced by your share (Fla. Stat. § 768.81)"
+    ],
+    [
+     "Car crashes",
+     "Your own PIP pays first, up to $10,000, if you get care within 14 days (Fla. Stat. § 627.736)"
+    ],
+    [
+     "Lawyer fees",
+     "Contingency fees are capped, for example 33⅓% of the first $1 million if the case resolves before the defendant answers (Rule 4-1.5)"
+    ],
+    [
+     "Which court",
+     "Claims above $50,000 go to the circuit court; smaller claims go to the county court"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/95.11",
+     "Florida Statutes, section 95.11"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/768.81",
+     "Florida Statutes, section 768.81"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/627.736",
+     "Florida Statutes, section 627.736"
+    ]
+   ],
+   "faq": [
+    [
+     "How long do I have to file a personal injury lawsuit in Florida?",
+     "Two years from the date of the injury for most negligence claims that arose on or after March 24, 2023. Claims that arose before that date have four years. Medical malpractice and wrongful death claims also have two-year deadlines, with their own rules on when the clock starts."
+    ],
+    [
+     "Can I recover compensation if I was partly at fault?",
+     "Yes, if you were 50% or less at fault; your damages are reduced by your share. If you are found more than 50% at fault, Florida law bars recovery, except in medical negligence cases."
+    ],
+    [
+     "How much does a personal injury lawyer cost in Florida?",
+     "Most work on a contingency fee: a percentage of the recovery and nothing if there is none. Florida caps these fees, for example at 33⅓% of the first $1 million if the case resolves before the defendant answers the lawsuit, and 40% after that. You can cancel the agreement within 3 business days of signing."
+    ],
+    [
+     "Who pays my medical bills after a car accident in Florida?",
+     "Your own Personal Injury Protection (PIP) insurance pays first, whoever caused the crash: 80% of medical bills and 60% of lost income, up to $10,000 combined, if you get care within 14 days. You can claim against the at-fault driver only for serious, permanent injuries."
+    ]
+   ],
+   "guides": [
+    [
+     "/articles/personal-injury-claims-miami-florida-law/",
+     "Florida personal injury rules"
+    ],
+    [
+     "/articles/personal-injury-lawyer-cost/",
+     "How much a personal injury lawyer costs"
+    ],
+    [
+     "/articles/personal-injury-case-timeline/",
+     "How long a personal injury case takes"
+    ],
+    [
+     "/articles/florida-medical-malpractice-rules/",
+     "Florida medical malpractice: pre-suit rules and deadlines"
+    ]
+   ],
+   "certName": "Board Certified in Civil Trial Law",
+   "hub": {
+    "what": "A personal injury lawyer represents people hurt by someone else's carelessness and claims compensation for medical bills, lost income and pain and suffering from the person at fault or their insurer.",
+    "matters": [
+     "Car, truck and motorcycle crashes",
+     "Slip and fall and other unsafe property injuries",
+     "Medical malpractice",
+     "Wrongful death claims for the family",
+     "Dog bites",
+     "Defective products"
+    ],
+    "whenLead": "Call a personal injury lawyer soon after a serious injury, before you give a recorded statement or accept a settlement offer.",
+    "when": [
+     "You were hurt and someone else may be at fault",
+     "The insurer disputes fault or offers less than your bills",
+     "Your injury is permanent or keeps you from working",
+     "A family member died because of someone's negligence"
+    ],
+    "cost": "Most personal injury lawyers work on a contingency fee: a percentage of what you recover and nothing if you recover nothing. Florida caps these percentages, for example 33 1/3% of the first $1 million when the case settles before the defendant answers.",
+    "questions": [
+     "How many cases like mine have you taken to trial?",
+     "What percentage do you charge, and are costs deducted before or after your fee?",
+     "Who will handle my case day to day?"
+    ]
+   }
+  },
+  "criminal-defense": {
+   "cert": "Criminal Trial",
+   "lead": "Florida sets deadlines for charging a crime, and anyone who cannot afford a lawyer is entitled to a public defender.",
+   "rows": [
+    [
+     "Time limit to prosecute a first-degree felony",
+     "4 years after the offense (Fla. Stat. § 775.15)"
+    ],
+    [
+     "Other felonies",
+     "3 years (§ 775.15)"
+    ],
+    [
+     "First-degree misdemeanor",
+     "2 years (§ 775.15)"
+    ],
+    [
+     "Second-degree misdemeanor",
+     "1 year (§ 775.15)"
+    ],
+    [
+     "No time limit",
+     "Capital and life felonies and felonies resulting in death (§ 775.15)"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/775.15",
+     "Florida Statutes, section 775.15 (time limitations)"
+    ]
+   ],
+   "faq": [
+    [
+     "How long does Florida have to charge a crime?",
+     "Generally 4 years for a first-degree felony, 3 years for other felonies, 2 years for a first-degree misdemeanor and 1 year for a second-degree misdemeanor. Capital and life felonies and felonies resulting in death have no time limit."
+    ],
+    [
+     "What if I cannot afford a criminal defense lawyer?",
+     "You can ask the court to appoint the public defender, who represents people who cannot afford a lawyer."
+    ]
+   ],
+   "guides": [
+    [
+     "/articles/florida-dui-penalties/",
+     "Florida DUI penalties: first, second and third offense"
+    ],
+    [
+     "/articles/florida-arrest-process/",
+     "What happens after an arrest in Florida"
+    ]
+   ],
+   "certName": "Board Certified in Criminal Trial Law",
+   "hub": {
+    "what": "A criminal defense lawyer represents people investigated for or charged with a crime, from first appearance and bail through plea negotiations, trial and sentencing.",
+    "matters": [
+     "DUI",
+     "Drug charges",
+     "Theft and burglary",
+     "Assault, battery and domestic violence",
+     "White-collar and fraud charges",
+     "Sealing or expunging a record"
+    ],
+    "whenLead": "Ask for a lawyer as soon as you are arrested or learn you are under investigation, and do not answer questions about the case without one.",
+    "when": [
+     "You were arrested or received a notice to appear",
+     "Police want to interview you",
+     "You face a license suspension after a DUI arrest",
+     "You want to seal or expunge an old arrest"
+    ],
+    "cost": "Criminal defense lawyers charge a flat fee or by the hour; Florida's rules bar contingency fees for defending a criminal case. If you cannot afford a lawyer, the court can appoint the public defender.",
+    "questions": [
+     "How often do you handle this charge in this county?",
+     "What outcomes are realistic, including diversion or a reduced charge?",
+     "What does your fee cover if the case goes to trial?"
+    ]
+   }
+  },
+  "family-law": {
+   "cert": "Marital and Family",
+   "lead": "Florida divorce is no-fault, requires six months of residency, and presumes equal time-sharing of children unless shown otherwise.",
+   "rows": [
+    [
+     "Residency to file for divorce",
+     "One spouse must have lived in Florida 6 months before filing (Fla. Stat. § 61.021)"
+    ],
+    [
+     "Waiting period",
+     "At least 20 days from filing before a final judgment (§ 61.19)"
+    ],
+    [
+     "Time-sharing",
+     "Rebuttable presumption that equal time-sharing is in the child's best interests (§ 61.13)"
+    ],
+    [
+     "Grounds",
+     "No-fault: the marriage is irretrievably broken (§ 61.052)"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/61.021",
+     "Florida Statutes, section 61.021"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/61.13",
+     "Florida Statutes, section 61.13"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/61.19",
+     "Florida Statutes, section 61.19"
+    ]
+   ],
+   "faq": [
+    [
+     "How long do you have to live in Florida to get divorced?",
+     "At least one spouse must have lived in Florida for 6 months before filing the petition."
+    ],
+    [
+     "Does Florida favor equal time-sharing?",
+     "Yes. Florida law presumes equal time-sharing is in the child's best interests, but a parent can rebut that by showing it is not."
+    ]
+   ],
+   "guides": [
+    [
+     "/articles/florida-divorce-process/",
+     "How to get divorced in Florida: steps, costs and timeline"
+    ],
+    [
+     "/articles/florida-child-custody-time-sharing/",
+     "Florida child custody and time-sharing explained"
+    ]
+   ],
+   "certName": "Board Certified in Marital and Family Law",
+   "hub": {
+    "what": "A family lawyer handles legal matters between spouses, parents and children: divorce, time-sharing and parenting plans, child support, alimony and property division.",
+    "matters": [
+     "Divorce, contested and uncontested",
+     "Parenting plans and time-sharing",
+     "Child support and alimony",
+     "Division of property and debts",
+     "Prenuptial and postnuptial agreements",
+     "Paternity and relocation with a child"
+    ],
+    "whenLead": "See a family lawyer before you file or sign anything, especially when there are children, a business or significant assets.",
+    "when": [
+     "You are considering divorce or were served with a petition",
+     "You and the other parent disagree on time-sharing",
+     "Support needs to be set, changed or enforced",
+     "You plan to move away with a child"
+    ],
+    "cost": "Family lawyers usually bill by the hour against a retainer, and some offer flat fees for uncontested cases. Florida's rules bar fees that depend on securing a divorce or on the amount of alimony or support, and a court can order one spouse to contribute to the other's fees (section 61.16).",
+    "questions": [
+     "Do you recommend mediation for my case?",
+     "How do you bill, and what retainer do you need?",
+     "How often do you appear before the judges in this circuit?"
+    ],
+    "costSrc": [
+     [
+      "https://www.flsenate.gov/Laws/Statutes/2025/61.16",
+      "Florida Statutes, section 61.16 (attorney fees in family cases)"
+     ]
+    ]
+   }
+  },
+  "immigration": {
+   "cert": "Immigration and Nationality",
+   "lead": "Immigration is federal law, decided by USCIS and the immigration courts, and only lawyers or accredited representatives may give legal advice on it.",
+   "rows": [
+    [
+     "Which law applies",
+     "Federal immigration law, the same in every state"
+    ],
+    [
+     "Who decides",
+     "U.S. Citizenship and Immigration Services (applications) and the immigration courts of the Executive Office for Immigration Review (removal cases)"
+    ],
+    [
+     "Who may represent you",
+     "A licensed lawyer or a representative accredited by the Department of Justice (8 C.F.R. § 292.1)"
+    ],
+    [
+     "Florida Bar credential",
+     "Board Certification in Immigration and Nationality Law"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-292",
+     "8 C.F.R. part 292 (representation)"
+    ],
+    [
+     "https://www.uscis.gov/",
+     "U.S. Citizenship and Immigration Services"
+    ]
+   ],
+   "faq": [
+    [
+     "Can a notary help with my immigration case?",
+     "No. Only a licensed lawyer or a Department of Justice accredited representative may give legal advice or represent you in immigration matters."
+    ],
+    [
+     "Do I need a Florida lawyer for immigration?",
+     "Immigration law is federal, so a lawyer licensed in any U.S. state can handle it; a Florida Bar board-certified lawyer has met Florida's standards in the field."
+    ]
+   ],
+   "guides": [],
+   "certName": "Board Certified in Immigration and Nationality Law",
+   "hub": {
+    "what": "An immigration lawyer helps people and employers with visas, green cards, citizenship and deportation defense before USCIS, the immigration courts and the State Department.",
+    "matters": [
+     "Family-based green cards",
+     "Employment visas and green cards",
+     "Naturalization and citizenship",
+     "Asylum and humanitarian protection",
+     "Removal (deportation) defense",
+     "Waivers of inadmissibility"
+    ],
+    "whenLead": "Talk to an immigration lawyer before you file a form, travel abroad or attend an interview or court hearing, because one mistake can delay or end a case.",
+    "when": [
+     "You received a notice to appear in immigration court",
+     "A petition was denied or you got a request for evidence",
+     "You have a past arrest or immigration violation",
+     "You want to sponsor a relative or employee"
+    ],
+    "cost": "Immigration lawyers often charge a flat fee per application and bill court cases separately; government filing fees are extra. Ask for the fee and what it covers in writing before work starts.",
+    "questions": [
+     "Have you handled cases with facts like mine?",
+     "Which forms and government fees will my case need?",
+     "Will you attend the interview or hearing with me?"
+    ]
+   }
+  },
+  "estate-planning": {
+   "cert": "Wills, Trusts and Estates",
+   "lead": "A Florida will must be signed in front of two witnesses, and small or older estates can use a simpler probate.",
+   "rows": [
+    [
+     "Signing a will",
+     "Signed at the end by the testator in front of at least two witnesses, who sign in front of the testator and each other (Fla. Stat. § 732.502)"
+    ],
+    [
+     "Summary administration",
+     "Available when the estate is $75,000 or less (excluding exempt property) or the person died more than 2 years ago (§ 735.201)"
+    ],
+    [
+     "Homestead",
+     "If survived by a spouse or minor child, the home can only be left to the spouse (Fla. Const. art. X, § 4)"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/732.502",
+     "Florida Statutes, section 732.502"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/735.201",
+     "Florida Statutes, section 735.201"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Constitution",
+     "Florida Constitution, Article X, Section 4"
+    ]
+   ],
+   "faq": [
+    [
+     "How many witnesses does a Florida will need?",
+     "Two. The person making the will signs in front of both witnesses, and the witnesses sign in front of that person and each other."
+    ],
+    [
+     "What is summary administration in Florida?",
+     "A simpler probate for estates worth $75,000 or less, not counting exempt property, or where the person died more than 2 years ago."
+    ]
+   ],
+   "guides": [
+    [
+     "/articles/florida-probate-process/",
+     "Florida probate: how it works and how long it takes"
+    ]
+   ],
+   "certName": "Board Certified in Wills, Trusts and Estates Law",
+   "hub": {
+    "what": "An estate planning lawyer prepares wills, trusts, powers of attorney and health care directives so your property passes as you choose and someone you trust can act if you cannot.",
+    "matters": [
+     "Wills",
+     "Revocable and irrevocable trusts",
+     "Durable powers of attorney",
+     "Health care surrogates and living wills",
+     "Probate and trust administration",
+     "Planning for a family business"
+    ],
+    "whenLead": "Make an estate plan when you buy a home, marry, have children or own a business, and review it after any major life change.",
+    "when": [
+     "You have no will or it is out of date",
+     "You want to avoid probate for your family",
+     "You own property in more than one state",
+     "A loved one died and you are named personal representative"
+    ],
+    "cost": "Estate planning lawyers often charge flat fees for wills and trust packages and hourly rates for probate. Ask what documents the fee includes and whether funding the trust is extra.",
+    "questions": [
+     "Do I need a trust, or is a will enough?",
+     "What does the flat fee include?",
+     "How do you handle probate if my family needs it?"
+    ]
+   }
+  },
+  "real-estate": {
+   "cert": "Real Estate",
+   "lead": "Florida taxes deeds at 70 cents per $100 and protects primary homes with a homestead exemption and an annual cap on assessment increases.",
+   "rows": [
+    [
+     "Documentary stamp tax on deeds",
+     "70 cents per $100 of the price (Fla. Stat. § 201.02)"
+    ],
+    [
+     "Homestead exemption",
+     "Up to $50,000 off the assessed value of a primary residence (Fla. Const. art. VII, § 6)"
+    ],
+    [
+     "Save Our Homes cap",
+     "Assessed value of a homestead rises by no more than 3% a year or inflation, whichever is lower (art. VII, § 4)"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/201.02",
+     "Florida Statutes, section 201.02"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Constitution",
+     "Florida Constitution, Article VII"
+    ]
+   ],
+   "faq": [
+    [
+     "What is the documentary stamp tax on a Florida home sale?",
+     "70 cents for every $100 of the price on the deed, under section 201.02 of the Florida Statutes."
+    ],
+    [
+     "How much does the Florida homestead exemption save?",
+     "It removes up to $50,000 from the assessed value of a primary residence, and the Save Our Homes cap limits yearly increases to 3% or inflation."
+    ]
+   ],
+   "guides": [
+    [
+     "/articles/florida-condo-hoa-disputes/",
+     "Florida condo and HOA disputes: your rights as an owner"
+    ],
+    [
+     "/articles/florida-hurricane-insurance-claims/",
+     "Hurricane insurance claims in Florida: deadlines and disputes"
+    ]
+   ],
+   "certName": "Board Certified in Real Estate Law",
+   "hub": {
+    "what": "A real estate lawyer handles the legal side of buying, selling, leasing and developing property, from contracts and title to closings and disputes.",
+    "matters": [
+     "Residential and commercial closings",
+     "Purchase and sale contracts",
+     "Title problems and quiet title",
+     "Leases and landlord-tenant disputes",
+     "Foreclosure",
+     "Zoning and development"
+    ],
+    "whenLead": "Bring in a real estate lawyer before you sign a contract, when title is unclear, or as soon as a deal or lease turns into a dispute.",
+    "when": [
+     "You are buying or selling commercial property",
+     "The title search found a lien or defect",
+     "A tenant or landlord breached the lease",
+     "You face foreclosure"
+    ],
+    "cost": "Real estate lawyers often charge flat fees for closings and hourly rates for disputes. Ask for the fee in writing and what it covers before the deal starts.",
+    "questions": [
+     "Will you review the contract before I sign?",
+     "What does your closing fee include?",
+     "How do you handle title problems?"
+    ]
+   }
+  },
+  "business-law": {
+   "cert": "Business Litigation",
+   "lead": "Florida gives five years to sue on a written contract and four on an oral one.",
+   "rows": [
+    [
+     "Written contract",
+     "5 years to sue (Fla. Stat. § 95.11(2)(b))"
+    ],
+    [
+     "Oral contract",
+     "4 years to sue (§ 95.11(3))"
+    ],
+    [
+     "Deceptive trade practices",
+     "The Florida Deceptive and Unfair Trade Practices Act (ch. 501, part II)"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/95.11",
+     "Florida Statutes, section 95.11"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/501.201",
+     "Florida Statutes, section 501.201 (FDUTPA)"
+    ]
+   ],
+   "faq": [
+    [
+     "How long do I have to sue for breach of contract in Florida?",
+     "5 years for a written contract and 4 years for an oral one."
+    ],
+    [
+     "What does a business litigation lawyer do?",
+     "Represents companies and owners in disputes such as contract breaches, partnership and shareholder conflicts and unfair competition, in court or arbitration."
+    ]
+   ],
+   "guides": [],
+   "certName": "Board Certified in Business Litigation",
+   "hub": {
+    "what": "A business lawyer advises companies and owners on forming, running, buying and selling a business, and represents them in commercial disputes in court or arbitration.",
+    "matters": [
+     "Forming corporations and LLCs",
+     "Contracts with customers, suppliers and partners",
+     "Shareholder and partner disputes",
+     "Buying or selling a business",
+     "Commercial litigation and arbitration",
+     "Non-compete and trade secret disputes"
+    ],
+    "whenLead": "Use a business lawyer before you sign a major contract, take on partners or investors, or when a dispute could reach court.",
+    "when": [
+     "You are starting a company with partners",
+     "A customer or supplier breached a contract",
+     "You are buying or selling a business",
+     "You were sued or need to sue over a commercial deal"
+    ],
+    "cost": "Business lawyers usually bill by the hour; some offer flat fees for formation and contract work. Ask for a written estimate and how disputes will be billed.",
+    "questions": [
+     "Have you handled disputes in my industry?",
+     "Do you try cases yourself or refer them out?",
+     "How will you keep costs predictable?"
+    ]
+   }
+  },
+  "tax-law": {
+   "cert": "Tax",
+   "lead": "Florida has no personal income tax; it taxes corporate income at 5.5% and most sales at 6% at the state level.",
+   "rows": [
+    [
+     "Personal income tax",
+     "None; the Florida Constitution prohibits it (art. VII, § 5)"
+    ],
+    [
+     "Corporate income tax",
+     "5.5% of net income (Fla. Stat. § 220.11)"
+    ],
+    [
+     "State sales tax",
+     "6%, plus any county surtax (§ 212.05)"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Constitution",
+     "Florida Constitution, Article VII, Section 5"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/220.11",
+     "Florida Statutes, section 220.11"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/212.05",
+     "Florida Statutes, section 212.05"
+    ]
+   ],
+   "faq": [
+    [
+     "Does Florida have a state income tax?",
+     "Not for individuals; the Florida Constitution bars a personal income tax. Corporations pay 5.5% on net income."
+    ],
+    [
+     "When do I need a tax lawyer?",
+     "For IRS or Florida Department of Revenue audits and disputes, tax debt, business structuring and estate tax planning."
+    ]
+   ],
+   "guides": [],
+   "certName": "Board Certified in Tax Law",
+   "hub": {
+    "what": "A tax lawyer advises on federal and Florida taxes and represents individuals and businesses in audits, appeals and disputes with the IRS and the Florida Department of Revenue.",
+    "matters": [
+     "IRS and state audits",
+     "Tax debt, liens and levies",
+     "Offers in compromise and payment plans",
+     "Tax planning for businesses and estates",
+     "Appeals and Tax Court cases",
+     "Criminal tax investigations"
+    ],
+    "whenLead": "Contact a tax lawyer when you receive an audit notice, owe tax you cannot pay, or before a transaction with large tax consequences.",
+    "when": [
+     "You received an IRS or state audit notice",
+     "The IRS filed a lien or levy",
+     "You face a large tax bill you cannot pay",
+     "You are planning a sale, merger or estate transfer"
+    ],
+    "cost": "Tax lawyers usually bill by the hour, and some offer flat fees for defined work such as an offer in compromise. Ask for an estimate in writing.",
+    "questions": [
+     "How often do you deal with this kind of IRS matter?",
+     "Can you represent me in Tax Court if needed?",
+     "What will the first stage of work cost?"
+    ]
+   }
+  },
+  "employment-law": {
+   "cert": "Labor and Employment",
+   "lead": "Florida's minimum wage is $15.00 an hour, and discrimination complaints must reach the state commission within 365 days.",
+   "rows": [
+    [
+     "Minimum wage",
+     "$15.00 per hour from September 30, 2026 (Fla. Const. art. X, § 24)"
+    ],
+    [
+     "State anti-discrimination law",
+     "Florida Civil Rights Act, employers with 15 or more employees (Fla. Stat. § 760.02)"
+    ],
+    [
+     "Deadline to complain",
+     "365 days to file with the Florida Commission on Human Relations (§ 760.11)"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/760.11",
+     "Florida Statutes, section 760.11"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/760.02",
+     "Florida Statutes, section 760.02"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Constitution",
+     "Florida Constitution, Article X, Section 24"
+    ]
+   ],
+   "faq": [
+    [
+     "What is the minimum wage in Florida?",
+     "$15.00 per hour since September 30, 2026; from 2027 it is adjusted each year for inflation."
+    ],
+    [
+     "How long do I have to file a discrimination complaint in Florida?",
+     "365 days from the act to file with the Florida Commission on Human Relations."
+    ]
+   ],
+   "guides": [],
+   "certName": "Board Certified in Labor and Employment Law",
+   "hub": {
+    "what": "An employment lawyer handles disputes between employers and employees: discrimination, harassment, unpaid wages, wrongful termination, contracts and workplace policies.",
+    "matters": [
+     "Discrimination and harassment",
+     "Unpaid wages and overtime",
+     "Retaliation and whistleblower claims",
+     "Wrongful termination",
+     "Employment contracts and severance",
+     "Non-compete agreements"
+    ],
+    "whenLead": "Talk to an employment lawyer before you sign a severance agreement and as soon as you suspect discrimination, retaliation or unpaid wages, because filing deadlines can be short.",
+    "when": [
+     "You were fired after complaining or taking leave",
+     "You were not paid overtime you earned",
+     "You are asked to sign a severance or non-compete",
+     "Your company needs policies or faces a claim"
+    ],
+    "cost": "Lawyers for employees often take discrimination and wage cases on contingency or a hybrid fee; employers are usually billed by the hour. A contingent fee agreement must be in writing and state the percentage the lawyer receives (Rule 4-1.5(f)).",
+    "questions": [
+     "What deadlines apply to my claim?",
+     "Do you represent employees, employers or both?",
+     "How do you charge for a case like mine?"
+    ]
+   }
+  },
+  "elder-law": {
+   "cert": "Elder",
+   "lead": "Florida elder law covers guardianship, long-term care planning and powers of attorney, which must be signed before two witnesses and a notary.",
+   "rows": [
+    [
+     "Durable power of attorney",
+     "Signed by the principal before two witnesses and a notary (Fla. Stat. § 709.2105)"
+    ],
+    [
+     "Guardianship",
+     "Court-supervised under chapter 744 when a person cannot manage their affairs"
+    ],
+    [
+     "Report abuse",
+     "Florida Abuse Hotline: 1-800-962-2873"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/709.2105",
+     "Florida Statutes, section 709.2105"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/744.101",
+     "Florida Statutes, chapter 744 (guardianship)"
+    ]
+   ],
+   "faq": [
+    [
+     "How is a power of attorney signed in Florida?",
+     "The principal signs in front of two witnesses and a notary, under section 709.2105."
+    ],
+    [
+     "Where do I report elder abuse in Florida?",
+     "Call the Florida Abuse Hotline at 1-800-962-2873."
+    ]
+   ],
+   "guides": [
+    [
+     "/articles/florida-probate-process/",
+     "Florida probate: how it works and how long it takes"
+    ]
+   ],
+   "certName": "Board Certified in Elder Law",
+   "hub": {
+    "what": "An elder law lawyer helps older adults and their families with long-term care planning, Medicaid eligibility, guardianship, powers of attorney and protection from abuse or exploitation.",
+    "matters": [
+     "Medicaid planning for long-term care",
+     "Guardianship and alternatives",
+     "Powers of attorney and health care surrogates",
+     "Nursing home rights",
+     "Elder abuse and financial exploitation",
+     "Wills and trusts for older adults"
+    ],
+    "whenLead": "See an elder law lawyer before a parent needs long-term care, while they can still sign documents, or as soon as you suspect abuse or exploitation.",
+    "when": [
+     "A parent may need nursing home care soon",
+     "A relative can no longer manage money or health decisions",
+     "You suspect financial exploitation",
+     "You need to plan for Medicaid eligibility"
+    ],
+    "cost": "Elder law lawyers often charge flat fees for planning documents and hourly rates for guardianship and litigation. Ask for the fee and what it covers in writing.",
+    "questions": [
+     "Do you handle Medicaid applications yourself?",
+     "Is guardianship needed, or is there an alternative?",
+     "What does your flat fee include?"
+    ]
+   }
+  },
+  "workers-compensation": {
+   "cert": "Workers' Compensation",
+   "lead": "Report a work injury to your employer within 30 days and file any petition for benefits within 2 years; lawyer fees are set by statute.",
+   "rows": [
+    [
+     "Report the injury",
+     "Within 30 days (Fla. Stat. § 440.185)"
+    ],
+    [
+     "Petition for benefits",
+     "Within 2 years of knowing the injury was work-related (§ 440.19)"
+    ],
+    [
+     "Who must carry coverage",
+     "Employers with 4 or more employees; construction employers with 1 or more (§ 440.02)"
+    ],
+    [
+     "Lawyer fees",
+     "20% of the first $5,000 of benefits, 15% of the next $5,000, then 10% (5% after 10 years) (§ 440.34)"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/440.185",
+     "Florida Statutes, section 440.185"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/440.19",
+     "Florida Statutes, section 440.19"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/440.34",
+     "Florida Statutes, section 440.34"
+    ]
+   ],
+   "faq": [
+    [
+     "How long do I have to report a work injury in Florida?",
+     "30 days from the injury or from when symptoms first appear."
+    ],
+    [
+     "How much does a workers' compensation lawyer cost in Florida?",
+     "Fees are set by law: 20% of the first $5,000 of benefits secured, 15% of the next $5,000 and 10% of the rest during the first 10 years."
+    ]
+   ],
+   "guides": [
+    [
+     "/articles/florida-workers-compensation-benefits/",
+     "Florida workers' compensation benefits: what you can get"
+    ]
+   ],
+   "certName": "Board Certified in Workers' Compensation Law",
+   "hub": {
+    "what": "A workers' compensation lawyer helps employees injured on the job get medical care and wage benefits from the employer's insurer, and handles disputes before a judge of compensation claims.",
+    "matters": [
+     "Denied or delayed claims",
+     "Medical treatment disputes",
+     "Wage replacement benefits",
+     "Permanent impairment benefits",
+     "Settlements",
+     "Death benefits for the family"
+    ],
+    "whenLead": "Contact a workers' compensation lawyer when the insurer denies your claim, cuts benefits or pushes a settlement, or when your injury is serious.",
+    "when": [
+     "Your claim or a treatment was denied",
+     "Wage benefits stopped",
+     "The insurer offers a lump-sum settlement",
+     "You cannot return to your old job"
+    ],
+    "cost": "Florida law sets the fee: a judge of compensation claims must approve it, and it equals 20% of the first $5,000 of benefits secured, 15% of the next $5,000, 10% of the rest for the first 10 years and 5% after that (section 440.34).",
+    "questions": [
+     "How many workers' compensation cases do you handle?",
+     "Will you handle my hearing before the judge?",
+     "How will a settlement affect my medical care?"
+    ],
+    "costSrc": [
+     [
+      "https://www.flsenate.gov/Laws/Statutes/2025/440.34",
+      "Florida Statutes, section 440.34 (attorney fees in workers' compensation)"
+     ]
+    ]
+   }
+  },
+  "appellate": {
+   "cert": "Appellate Practice",
+   "lead": "A notice of appeal must be filed within 30 days of the order being appealed, and Florida's six district courts of appeal hear most appeals from the trial courts.",
+   "rows": [
+    [
+     "Notice of appeal",
+     "Filed with the clerk of the lower tribunal within 30 days of rendition of the order (Fla. R. App. P. 9.110(b))"
+    ],
+    [
+     "Initial brief",
+     "Served within 70 days of filing the notice of appeal (Rule 9.110(f))"
+    ],
+    [
+     "Answer and reply briefs",
+     "Answer brief 30 days after the initial brief; reply brief 30 days after the answer brief (Rule 9.210(g))"
+    ],
+    [
+     "Rehearing",
+     "Motion for rehearing or clarification within 15 days of the court's decision (Rule 9.330(a))"
+    ],
+    [
+     "Florida Supreme Court",
+     "Discretionary review is invoked by a notice filed within 30 days of the district court's decision (Rule 9.120(b))"
+    ],
+    [
+     "Appellate courts",
+     "Six district courts of appeal, each covering contiguous judicial circuits (Fla. Stat. § 35.01)"
+    ]
+   ],
+   "src": [
+    [
+     "https://www-media.floridabar.org/uploads/2026/10/Appellate-Court-Rules-10-01-26.pdf",
+     "Florida Rules of Appellate Procedure (as amended to October 1, 2026): Rules 9.110, 9.120, 9.210 and 9.330"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/35.01",
+     "Florida Statutes, section 35.01 (district courts of appeal)"
+    ]
+   ],
+   "faq": [
+    [
+     "How long do I have to appeal a judgment in Florida?",
+     "30 days from rendition of the final order. The notice of appeal is filed with the clerk of the court that entered the order, under Rule 9.110(b) of the Florida Rules of Appellate Procedure. The deadline is jurisdictional, so a late notice usually ends the appeal."
+    ],
+    [
+     "Can I appeal an order before the case is over?",
+     "Only certain nonfinal orders can be appealed right away, such as orders on venue, injunctions and personal jurisdiction, listed in Rule 9.130. Other orders are usually reviewed after the final judgment."
+    ],
+    [
+     "Which court hears my appeal?",
+     "Most appeals from the circuit courts go to one of Florida's six district courts of appeal, determined by the circuit where the case was heard. The Florida Supreme Court reviews only certain cases."
+    ],
+    [
+     "Why hire a separate appellate lawyer?",
+     "An appeal is decided on the written record and the briefs, not on new evidence. Appellate lawyers focus on legal research, brief writing and oral argument, and The Florida Bar certifies lawyers in Appellate Practice after peer review and an exam."
+    ]
+   ],
+   "guides": [],
+   "certName": "Board Certified in Appellate Practice",
+   "hub": {
+    "what": "An appellate lawyer asks a higher court to review and reverse or change a trial court's decision, or defends a win on appeal, through written briefs and oral argument.",
+    "matters": [
+     "Civil appeals after a judgment",
+     "Appeals of certain orders before final judgment",
+     "Criminal appeals",
+     "Family law appeals",
+     "Petitions to the Florida Supreme Court",
+     "Help preserving issues during trial"
+    ],
+    "whenLead": "Contact an appellate lawyer right after an adverse judgment, because the notice of appeal is usually due within 30 days, or during trial to preserve issues for appeal.",
+    "when": [
+     "You lost at trial or on summary judgment",
+     "The other side appealed your win",
+     "A trial court order needs immediate review",
+     "You want to preserve issues for a possible appeal"
+    ],
+    "cost": "Appellate lawyers usually bill by the hour or charge a flat fee for the appeal; the cost depends on the size of the record and the number of briefs. Ask for an estimate in writing.",
+    "questions": [
+     "How many appeals have you argued in this district court?",
+     "What issues are strong enough to appeal?",
+     "What is the timeline and cost for briefs and argument?"
+    ]
+   }
+  },
+  "condominium-hoa": {
+   "cert": "Condominium and Planned Development",
+   "lead": "Florida condominiums are governed by chapter 718 and homeowners' associations by chapter 720, and many disputes must go to arbitration or mediation before a lawsuit.",
+   "rows": [
+    [
+     "Access to records",
+     "The association must make official records available within 10 working days (condo) or 10 business days (HOA) of a written request (Fla. Stat. §§ 718.111(12), 720.303(5))"
+    ],
+    [
+     "Fines",
+     "At most $100 per violation and $1,000 in total, after 14 days' notice and a hearing before a committee of owners (§§ 718.303(3), 720.305(2))"
+    ],
+    [
+     "Before suing",
+     "Many condo disputes go to nonbinding arbitration with the state (§ 718.1255); many HOA disputes require presuit mediation (§ 720.311)"
+    ],
+    [
+     "Milestone inspections",
+     "Condo buildings three stories or taller need a structural inspection by December 31 of the year they turn 30, then every 10 years (§ 553.899)"
+    ],
+    [
+     "Reserve studies",
+     "Condo associations must complete a structural integrity reserve study at least every 10 years for buildings three stories or taller (§ 718.112(2)(g))"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/718.111",
+     "Florida Statutes, section 718.111 (condominium official records)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/718.112",
+     "Florida Statutes, section 718.112 (structural integrity reserve study)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/718.303",
+     "Florida Statutes, section 718.303 (condominium fines)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/718.1255",
+     "Florida Statutes, section 718.1255 (condominium dispute resolution)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/720.303",
+     "Florida Statutes, section 720.303 (HOA official records)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/720.305",
+     "Florida Statutes, section 720.305 (HOA fines)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/720.311",
+     "Florida Statutes, section 720.311 (HOA dispute resolution)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/553.899",
+     "Florida Statutes, section 553.899 (milestone inspections)"
+    ]
+   ],
+   "faq": [
+    [
+     "How much can a Florida HOA or condo association fine me?",
+     "Up to $100 per violation and $1,000 in total for a continuing violation, unless an HOA's governing documents allow more, and only after 14 days' written notice and a hearing before a committee of at least three owners."
+    ],
+    [
+     "Do I have to go to arbitration or mediation before suing my association?",
+     "Often, yes. Many condominium disputes go first to nonbinding arbitration with the Division of Florida Condominiums, Timeshares and Mobile Homes, and many HOA disputes require a demand for presuit mediation."
+    ],
+    [
+     "When does a Florida condo building need a milestone inspection?",
+     "Buildings three habitable stories or taller need one by December 31 of the year the building reaches 30 years of age, and every 10 years after that. Local officials can require it at 25 years near salt water."
+    ],
+    [
+     "Who certifies condominium lawyers in Florida?",
+     "The Florida Bar certifies lawyers in Condominium and Planned Development Law after at least five years of practice, peer review and a written exam."
+    ]
+   ],
+   "guides": [
+    [
+     "/articles/florida-condo-hoa-disputes/",
+     "Florida condo and HOA disputes: your rights as an owner"
+    ]
+   ],
+   "certName": "Board Certified in Condominium and Planned Development Law",
+   "hub": {
+    "what": "A condo and HOA lawyer represents unit owners, homeowners or associations in disputes over fines, assessments, records, elections, repairs and the association's governing documents.",
+    "matters": [
+     "Fines and violation hearings",
+     "Assessments, liens and foreclosure",
+     "Access to official records",
+     "Board elections and recalls",
+     "Repairs, inspections and reserves",
+     "Amending the declaration or bylaws"
+    ],
+    "whenLead": "Talk to a condo or HOA lawyer when you receive a fine or lien notice, when the board refuses records, or before you sue, because many disputes must go to arbitration or mediation first.",
+    "when": [
+     "You received a fine, violation notice or claim of lien",
+     "The association will not provide records",
+     "You dispute a special assessment",
+     "The board faces a structural or reserve problem"
+    ],
+    "cost": "Condo and HOA lawyers usually bill by the hour; associations often pay a monthly retainer. In many association disputes the prevailing party can recover attorney fees, so ask about that risk early.",
+    "questions": [
+     "Do you represent owners, associations or both?",
+     "Does my dispute need arbitration or mediation first?",
+     "Could I owe the other side's attorney fees?"
+    ]
+   }
+  },
+  "construction-law": {
+   "cert": "Construction",
+   "lead": "Florida's Construction Lien Law sets strict deadlines for notices and liens, and a construction defect claim needs written notice to the contractor before any lawsuit.",
+   "rows": [
+    [
+     "Notice to owner",
+     "Subcontractors and suppliers without a contract with the owner must serve it within 45 days of starting work (Fla. Stat. § 713.06(2)(a))"
+    ],
+    [
+     "Claim of lien",
+     "Recorded no later than 90 days after the final furnishing of labor, services or materials (§ 713.08(5))"
+    ],
+    [
+     "Enforcing a lien",
+     "A lawsuit must be filed within 1 year after the claim of lien is recorded, or the lien expires (§ 713.22(1))"
+    ],
+    [
+     "Defect claims: presuit notice",
+     "Written notice of claim at least 60 days before suing, or 120 days for an association of more than 20 parcels (§ 558.004)"
+    ],
+    [
+     "Defect claims: deadlines",
+     "4 years, generally from the certificate of occupancy or completion, and never more than 7 years for latent defects (§ 95.11(3)(b))"
+    ]
+   ],
+   "src": [
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/713.06",
+     "Florida Statutes, section 713.06 (notice to owner)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/713.08",
+     "Florida Statutes, section 713.08 (claim of lien)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/713.22",
+     "Florida Statutes, section 713.22 (duration of lien)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/558.004",
+     "Florida Statutes, section 558.004 (construction defects: notice and opportunity to repair)"
+    ],
+    [
+     "https://www.flsenate.gov/Laws/Statutes/2025/95.11",
+     "Florida Statutes, section 95.11 (limitations)"
+    ]
+   ],
+   "faq": [
+    [
+     "How long does a contractor have to file a lien in Florida?",
+     "A claim of lien must be recorded no later than 90 days after the lienor's final furnishing of labor, services or materials, and a lawsuit to enforce it must follow within 1 year of recording."
+    ],
+    [
+     "Do I have to notify the contractor before suing over a construction defect?",
+     "Yes. Under chapter 558 you must serve a written notice of claim at least 60 days before filing suit, or 120 days for an association representing more than 20 parcels, giving the contractor a chance to inspect and offer to repair."
+    ],
+    [
+     "How long do I have to sue for a construction defect in Florida?",
+     "Generally 4 years, counted from the certificate of occupancy, certificate of completion or abandonment of construction. For latent defects the time runs from discovery, but no action may be brought more than 7 years after those dates."
+    ],
+    [
+     "Who certifies construction lawyers in Florida?",
+     "The Florida Bar certifies lawyers in Construction Law after at least five years of practice, peer review and a written exam."
+    ]
+   ],
+   "guides": [],
+   "certName": "Board Certified in Construction Law",
+   "hub": {
+    "what": "A construction lawyer represents owners, contractors, subcontractors and suppliers in contracts, payment disputes, construction liens, defect claims and delays.",
+    "matters": [
+     "Construction contracts",
+     "Construction liens and payment bonds",
+     "Payment disputes",
+     "Construction defect claims",
+     "Delay and change order claims",
+     "Licensing and permitting issues"
+    ],
+    "whenLead": "Bring in a construction lawyer before you sign the contract and as soon as payment stops or defects appear, because lien and notice deadlines are short.",
+    "when": [
+     "You have not been paid for work or materials",
+     "A lien was filed against your property",
+     "You found defects after completion",
+     "The project is delayed or the contract was terminated"
+    ],
+    "cost": "Construction lawyers usually bill by the hour, and some disputes can be handled on a hybrid or contingency basis. A contingent fee agreement must be in writing and state the percentage the lawyer receives (Rule 4-1.5(f)).",
+    "questions": [
+     "What notices and deadlines apply to my claim now?",
+     "Do you represent owners, contractors or both?",
+     "How do you handle cases that go to arbitration?"
+    ]
+   }
+  }
+ },
+ "cities": {
+  "miami": {
+   "county": "Miami-Dade",
+   "circuit": "Eleventh",
+   "crashes": "64,009",
+   "injuries": "29,816",
+   "deaths": "325",
+   "crashRank": "the most of any Florida county"
+  },
+  "fort-lauderdale": {
+   "county": "Broward",
+   "circuit": "Seventeenth",
+   "crashes": "40,304",
+   "injuries": "24,540",
+   "deaths": "219",
+   "crashRank": "the second most of any Florida county"
+  },
+  "tampa": {
+   "county": "Hillsborough",
+   "circuit": "Thirteenth",
+   "crashes": "27,474",
+   "injuries": "18,873",
+   "deaths": "230",
+   "crashRank": "the third most of any Florida county"
+  },
+  "orlando": {
+   "county": "Orange",
+   "circuit": "Ninth",
+   "crashes": "26,263",
+   "injuries": "19,618",
+   "deaths": "172",
+   "crashRank": "the fourth most of any Florida county"
+  },
+  "jacksonville": {
+   "county": "Duval",
+   "circuit": "Fourth",
+   "crashes": "23,967",
+   "injuries": "15,916",
+   "deaths": "165",
+   "crashRank": "the sixth most of any Florida county"
+  },
+  "hialeah": {
+   "county": "Miami-Dade",
+   "circuit": "Eleventh",
+   "crashes": "64,009",
+   "injuries": "29,816",
+   "deaths": "325",
+   "crashRank": "the most of any Florida county"
+  },
+  "coral-gables": {
+   "county": "Miami-Dade",
+   "circuit": "Eleventh",
+   "crashes": "64,009",
+   "injuries": "29,816",
+   "deaths": "325",
+   "crashRank": "the most of any Florida county"
+  },
+  "st-petersburg": {
+   "county": "Pinellas",
+   "circuit": "Sixth"
+  },
+  "tallahassee": {
+   "county": "Leon",
+   "circuit": "Second"
+  },
+  "west-palm-beach": {
+   "county": "Palm Beach",
+   "circuit": "Fifteenth"
+  },
+  "boca-raton": {
+   "county": "Palm Beach",
+   "circuit": "Fifteenth"
+  },
+  "port-st-lucie": {
+   "county": "St. Lucie",
+   "circuit": "Nineteenth"
+  },
+  "cape-coral": {
+   "county": "Lee",
+   "circuit": "Twentieth"
+  },
+  "fort-myers": {
+   "county": "Lee",
+   "circuit": "Twentieth"
+  },
+  "naples": {
+   "county": "Collier",
+   "circuit": "Twentieth"
+  },
+  "sarasota": {
+   "county": "Sarasota",
+   "circuit": "Twelfth"
+  },
+  "gainesville": {
+   "county": "Alachua",
+   "circuit": "Eighth"
+  },
+  "clearwater": {
+   "county": "Pinellas",
+   "circuit": "Sixth"
+  },
+  "pensacola": {
+   "county": "Escambia",
+   "circuit": "First"
+  },
+  "lakeland": {
+   "county": "Polk",
+   "circuit": "Tenth"
+  },
+  "hollywood": {
+   "county": "Broward",
+   "circuit": "Seventeenth",
+   "crashes": "40,304",
+   "injuries": "24,540",
+   "deaths": "219",
+   "crashRank": "the second most of any Florida county"
+  },
+  "daytona-beach": {
+   "county": "Volusia",
+   "circuit": "Seventh"
+  },
+  "melbourne": {
+   "county": "Brevard",
+   "circuit": "Eighteenth"
+  },
+  "winter-park": {
+   "county": "Orange",
+   "circuit": "Ninth",
+   "crashes": "26,263",
+   "injuries": "19,618",
+   "deaths": "172",
+   "crashRank": "the fourth most of any Florida county"
+  }
+ },
+ "circuitSource": [
+  "https://www.flsenate.gov/Laws/Statutes/2025/26.021",
+  "Florida Statutes, section 26.021 (judicial circuits)"
+ ],
+ "courts": {
+  "circuits": 20,
+  "appellateDistricts": 6,
+  "src": [
+   [
+    "https://www.flsenate.gov/Laws/Statutes/2025/26.021",
+    "Florida Statutes, section 26.021 (judicial circuits)"
+   ],
+   [
+    "https://www.flsenate.gov/Laws/Statutes/2025/35.01",
+    "Florida Statutes, section 35.01 (district courts of appeal)"
+   ]
+  ]
+ },
+ "feeRule": [
+  "https://www-media.floridabar.org/uploads/2026/10/2027_04-OCT-Chapter-4-RRTFB.pdf",
+  "Rules Regulating The Florida Bar, Rule 4-1.5 (fees and costs for legal services)"
+ ]
+}

@@ -4,7 +4,6 @@ import { ArticleCard, RankingCard } from "@/components/cards";
 import { CheckIcon, MapPinIcon, XCircleIcon } from "@/components/icons";
 import { CollectArt, HeroArt, RankArt, VerifyArt } from "@/components/home/Illustrations";
 import { PracticeIcon } from "@/components/home/PracticeIcon";
-import { JsonLd } from "@/components/JsonLd";
 import { RankingFinder } from "@/components/RankingFinder";
 import { DemoNotice } from "@/components/ui";
 import { finderOptions } from "@/lib/content/rankings";
@@ -13,16 +12,15 @@ import { allRankings, load } from "@/lib/data/loaders";
 import { formatCount, pluralize } from "@/lib/format";
 import { componentsWithWeights, METHODOLOGY_PRINCIPLES } from "@/lib/methodology";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/jsonld";
 import { getArticles, getPracticeAreas, getScoreVersions, getStates } from "@/lib/wordpress/api";
 
 export const revalidate = 300;
 
 export const metadata: Metadata = buildMetadata({
-  title: `${SITE_NAME} — Top-rated lawyers, ranked by data`,
+  title: `${SITE_NAME} - Top-rated lawyers, ranked by data`,
   absoluteTitle: true,
   description:
-    "Find top-rated lawyers and law firms in the United States. Transparent, source-backed rankings with verified credentials — payment never changes a ranking.",
+    "Find top-rated lawyers and law firms in the United States. Transparent, source-backed rankings with verified credentials - payment never changes a ranking.",
   path: "/",
 });
 
@@ -64,7 +62,8 @@ export default async function HomePage() {
   const guides = articles.ok ? articles.data.filter((a) => !a.isThin).slice(0, 3) : [];
 
   const published = rankings.ok ? rankings.data.filter((r) => !r.isThin) : [];
-  const lawyersCovered = published.reduce((sum, r) => sum + r.entryCount, 0);
+  // Distinct published lawyers: summing ranking entries would count a lawyer once per ranking (city, statewide, language).
+  const lawyersCovered = states.ok ? states.data.reduce((sum, s) => sum + s.lawyerCount, 0) : null;
   const hasDemo = published.some((r) => r.isDemo);
   const areas = practiceAreas.ok ? practiceAreas.data.filter((p) => p.eligibility?.exists !== false) : [];
   const active = versions.ok ? versions.data.versions.find((v) => v.id === versions.data.active) : undefined;
@@ -73,17 +72,16 @@ export default async function HomePage() {
 
   return (
     <>
-      <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
 
       <section className="hero hero--home">
         <div className="container hero__grid">
           <div className="hero__copy">
             <p className="eyebrow">Independent lawyer rankings · United States</p>
             <h1>
-              Find the right lawyer, <em>ranked by data</em> — not by ads.
+              Find the right lawyer, <em>ranked by data</em> - not by ads.
             </h1>
             <p className="lead">
-              LexRanked compares lawyers and law firms on verified facts: licenses, experience, practice focus and client reviews.
+              LexRanked compares lawyers and law firms on verified facts: licenses, experience, practice focus and credentials.
               Every fact is traceable to a source, the scoring formula is public, and payment never changes a ranking.
             </p>
             <RankingFinder options={finderOptions(published)} variant="bar" />
@@ -106,11 +104,11 @@ export default async function HomePage() {
         <dl className="trust-strip">
           <div>
             <dt>Published {published.length === 1 ? "ranking" : "rankings"}</dt>
-            <dd>{formatCount(published.length) ?? "—"}</dd>
+            <dd>{formatCount(published.length) ?? "-"}</dd>
           </div>
           <div>
             <dt>Ranked profiles</dt>
-            <dd>{formatCount(lawyersCovered) ?? "—"}</dd>
+            <dd>{formatCount(lawyersCovered) ?? "-"}</dd>
           </div>
           <div>
             <dt>Transparent scoring factors</dt>
@@ -211,7 +209,7 @@ export default async function HomePage() {
         <div className="container decides">
           <div>
             <p className="eyebrow">Why you can trust a position</p>
-            <h2>What decides a ranking — and what never does</h2>
+            <h2>What decides a ranking - and what never does</h2>
             <p className="lead">
               A position is the result of {components.length} weighted factors calculated from sourced facts. The ranking code cannot
               read commercial data at all.

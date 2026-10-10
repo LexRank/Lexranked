@@ -19,6 +19,7 @@ use LexRanked\Core\PostTypes\VerificationRecord;
 use LexRanked\Core\REST\DTO\EntityMapper;
 use LexRanked\Core\REST\DTO\SourceMapper;
 use LexRanked\Core\Services;
+use LexRanked\Core\Support\Text;
 use LexRanked\Core\Verification\VerificationPolicy;
 
 /**
@@ -225,7 +226,7 @@ final class SourcesController extends RestController {
 					array(
 						'id'    => (int) $entity->ID,
 						'slug'  => $entity->post_name,
-						'title' => get_the_title( $entity ),
+						'title' => Text::title( $entity ),
 					),
 					$is_lawyer ? '/lawyers/' : '/law-firms/'
 				),

@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { hubEligibility, listingEligibility, profileEligibility, rankingEligibility } from "@/lib/content/eligibility";
 import { finderOptions, rankingScopeLabel, resolveRanking } from "@/lib/content/rankings";
 import { buildSitemap, STATIC_PATHS } from "@/lib/content/sitemap";
-import { formatDate, formatLocation, formatRating, formatScore, humanize, initials, pluralize } from "@/lib/format";
+import type { StateStatsDto } from "@/types/api";
+import { formatDate, formatLocation, formatRating, formatScore, humanize, inSentence, initials, pluralize } from "@/lib/format";
 import { firmSummary, lawyerSummary, rankingSummary } from "./fixtures/api";
 
 describe("eligibility", () => {
@@ -52,7 +53,7 @@ describe("ranking resolution", () => {
   it("builds finder options only from rankings that exist", () => {
     const opts = finderOptions([...rankings, rankingSummary(3, { isThin: true, path: "/rankings/texas/" })]);
     expect(opts.map((o) => o.path)).toEqual(["/rankings/florida/personal-injury/", "/rankings/florida/miami/personal-injury/"]);
-    expect(opts[0]).toMatchObject({ locationLabel: "Florida" });
+    expect(opts[0]).toMatchObject({ locationLabel: "All of Florida" });
     expect(opts[1]).toMatchObject({ locationLabel: "Miami, FL", practiceLabel: "Personal Injury" });
     expect(rankingScopeLabel(rankings[0]!)).toBe("Personal Injury · Miami, FL");
   });
@@ -81,10 +82,47 @@ describe("sitemap", () => {
         "/practice-areas/personal-injury/",
       ]),
     );
-    for (const excluded of ["/rankings/texas/", "/rankings/florida/", "/lawyers/test-lawyer-4/", "/law-firms/test-firm-2/", "/search/", "/status/"]) {
+    // One state, one city, one ranking: the index pages are still thin.
+    for (const excluded of ["/rankings/texas/", "/rankings/florida/", "/lawyers/test-lawyer-4/", "/law-firms/test-firm-2/", "/search/", "/status/", "/rankings/", "/states/", "/cities/", "/practice-areas/"]) {
       expect(urls).not.toContain(excluded);
     }
     expect(new Set(urls).size).toBe(urls.length);
+  });
+
+  it("lists index pages once they link to enough pages", () => {
+    const city = (n: number) => ({ id: n, slug: `c${n}`, name: `C${n}`, path: `/cities/c${n}/`, state: { slug: "florida", name: "Florida", code: "FL" }, lawyerCount: 4, lawFirmCount: 0, eligibility: { exists: true, indexable: true, reasons: [] } });
+    const urls = (cities: ReturnType<typeof city>[]) =>
+      buildSitemap({ lawyers: [], lawFirms: [], rankings: [], states: [], cities, practiceAreas: [] }).map((e) => e.url.replace("https://lexranked.com", ""));
+    expect(urls([city(1), city(2)])).not.toContain("/cities/");
+    expect(urls([city(1), city(2), city(3)])).toContain("/cities/");
+  });
+
+  it("lists the statistics data pages only when their figures are ready", () => {
+    const spread = { sample: 0, min: null, median: null, max: null };
+    const stats: StateStatsDto = {
+      version: "sd-1.0",
+      state: { slug: "florida", name: "Florida" },
+      lawyers: 10,
+      certified: 10,
+      multiCertified: 0,
+      spanish: 0,
+      cities: [],
+      practiceAreas: [],
+      certifications: [],
+      languages: { sample: 0, items: [] },
+      schools: { sample: 0, items: [] },
+      experience: { ...spread, buckets: [] },
+      calculatedAt: "2026-10-09T00:00:00Z",
+    };
+    const urls = (s: StateStatsDto | null) =>
+      buildSitemap({ lawyers: [], lawFirms: [], rankings: [], states: [], cities: [], practiceAreas: [], stats: s }).map((e) => e.url.replace("https://lexranked.com", ""));
+    expect(urls(null)).toContain("/data/florida-statutes-of-limitations/");
+    expect(urls(null)).not.toContain("/data/florida-board-certified-lawyers/");
+    expect(urls(stats)).toContain("/data/florida-board-certified-lawyers/");
+    // No lawyer lists Spanish: that page would be empty, so it is not listed.
+    expect(urls(stats)).not.toContain("/data/spanish-speaking-lawyers-florida/");
+    expect(urls({ ...stats, spanish: 3 })).toContain("/data/spanish-speaking-lawyers-florida/");
+    expect(new Set(urls(stats)).size).toBe(urls(stats).length);
   });
 
   it("omits hubs whose real lawyers are below the minimum", () => {
@@ -101,6 +139,12 @@ describe("sitemap", () => {
 });
 
 describe("format", () => {
+  it("lowercases names inside a sentence but keeps acronyms", () => {
+    expect(inSentence("Condo and HOA")).toBe("condo and HOA");
+    expect(inSentence("DUI")).toBe("DUI");
+    expect(inSentence("Workers' Compensation")).toBe("workers' compensation");
+  });
+
   it("formats values for US readers and hides unknowns", () => {
     expect(formatDate("2026-09-23T19:14:23Z")).toBe("September 23, 2026");
     expect(formatDate(null)).toBeNull();
@@ -133,9 +177,16 @@ describe("methodology weights", () => {
   });
 
   it("uses API weights when available and falls back otherwise", () => {
-    expect(componentsWithWeights(null)).toBe(METHODOLOGY_COMPONENTS);
+    expect(componentsWithWeights(null).map((c) => c.key)).not.toContain("review_strength");
     const merged = componentsWithWeights([{ key: "reputation", weight: 25 }]);
     expect(merged.find((c) => c.key === "reputation")?.weight).toBe(25);
-    expect(merged.find((c) => c.key === "experience")?.weight).toBe(15);
+    expect(merged.find((c) => c.key === "experience")?.weight).toBe(30);
+  });
+
+  it("leaves out components the active version weights 0 (v1.2: reviews)", () => {
+    const v11 = componentsWithWeights([{ key: "review_strength", weight: 20 }]);
+    expect(v11.find((c) => c.key === "review_strength")?.weight).toBe(20);
+    const v12 = componentsWithWeights([{ key: "review_strength", weight: 0 }]);
+    expect(v12.map((c) => c.key)).not.toContain("review_strength");
   });
 });

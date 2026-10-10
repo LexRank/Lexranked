@@ -50,3 +50,9 @@ export const searchLimiter = new RateLimiter(30);
 
 /** Claim form submissions and confirmations: a few per minute per client. */
 export const claimLimiter = new RateLimiter(5);
+
+/** Review form submissions and confirmations. */
+export const reviewLimiter = new RateLimiter(5);
+
+/** Contact form messages. */
+export const contactLimiter = new RateLimiter(5);

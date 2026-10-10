@@ -4,7 +4,7 @@ import type { VerificationState } from "@/types/api";
 import { formatCount, formatRating, formatScore, initials } from "@/lib/format";
 import { AlertIcon, ClockIcon, InfoIcon, ShieldCheckIcon, XCircleIcon } from "./icons";
 
-/** LexRank score ring. Null scores render an explicit "Not scored" state — never a guessed value. */
+/** LexRank score ring. Null scores render an explicit "Not scored" state - never a guessed value. */
 export function ScoreRing({ score, size = "md", label = "LexRank" }: { score: number | null; size?: "sm" | "md" | "lg"; label?: string }) {
   const value = formatScore(score);
   const sizeClass = size === "md" ? "" : ` score--${size}`;

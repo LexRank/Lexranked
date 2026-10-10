@@ -1,5 +1,5 @@
 import type { RankingDetail } from "@/types/api";
-import { formatDate, formatScore } from "@/lib/format";
+import { formatDate, formatScore, inSentence } from "@/lib/format";
 import { methodologyLabel } from "@/lib/methodology";
 
 /**
@@ -42,7 +42,7 @@ function joinNames(items: string[]): string {
 /** Scope phrase: "personal injury lawyers in Miami, Florida". */
 export function rankingScopePhrase(ranking: Pick<RankingDetail, "entityType" | "practiceArea" | "location" | "context">): string {
   const noun = ranking.entityType === "law_firm" ? "law firms" : "lawyers";
-  const practice = ranking.practiceArea ? `${ranking.practiceArea.name.toLowerCase()} ` : "";
+  const practice = ranking.practiceArea ? `${inSentence(ranking.practiceArea.name)} ` : "";
   const where = ranking.location?.city
     ? `${ranking.location.city}${ranking.location.state ? `, ${ranking.location.state}` : ""}`
     : ranking.location?.state;
@@ -61,7 +61,7 @@ export function rankingScopePhrase(ranking: Pick<RankingDetail, "entityType" | "
  * Florida are A (LexRank 94.21), B (90.40) and C (88.75). LexRanked ranked 8
  * lawyers with the LexRank v1.0 methodology; 5 have fully verified profiles."
  */
-export function rankingAnswer(ranking: RankingDetail, facts: RankingFacts = rankingFacts(ranking)): string {
+export function rankingAnswer(ranking: RankingDetail, facts: RankingFacts = rankingFacts(ranking), options: { brief?: boolean } = {}): string {
   if (facts.count === 0) return "";
   const scope = rankingScopePhrase(ranking);
   const asOf = formatDate(ranking.updatedAt);
@@ -72,7 +72,8 @@ export function rankingAnswer(ranking: RankingDetail, facts: RankingFacts = rank
   const method = `LexRanked ranked ${facts.count} ${noun} with the ${methodologyLabel(ranking.entries[0]?.scoreVersion)} methodology${verified}.`;
   const ratings =
     facts.averageRating !== null && facts.totalReviews > 0
-      ? ` Their average client rating is ${facts.averageRating.toFixed(1)} out of 5 across ${facts.totalReviews.toLocaleString("en-US")} reviews.`
+      ? ` Their profiles show an average client rating of ${facts.averageRating.toFixed(1)} out of 5 across ${facts.totalReviews.toLocaleString("en-US")} reviews, for information only.`
       : "";
-  return `${lead} ${method}${ratings}`;
+  // Beside the ranking's own summary, only the lead is new: counts and the methodology are already shown on the page.
+  return options.brief ? lead : `${lead} ${method}${ratings}`;
 }

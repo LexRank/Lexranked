@@ -14,6 +14,10 @@ use LexRanked\Core\Eligibility\EligibilityService;
 use LexRanked\Core\Commercial\CommercialService;
 use LexRanked\Core\Commercial\PlacementRepository;
 use LexRanked\Core\Commercial\ProfileClaimRepository;
+use LexRanked\Core\Reviews\ReviewRepository;
+use LexRanked\Core\Reviews\ReviewService;
+use LexRanked\Core\Content\HubContentService;
+use LexRanked\Core\Content\RankingContentService;
 use LexRanked\Core\Entity\EntityRegistry;
 use LexRanked\Core\Fact\FactService;
 use LexRanked\Core\Quality\QualityService;
@@ -252,24 +256,45 @@ final class Services {
 	public readonly CommercialService $commercial;
 
 	/**
+	 * Client reviews (moderated; approved reviews become rating facts).
+	 *
+	 * @var ReviewService
+	 */
+	public readonly ReviewService $reviews;
+
+	/**
+	 * Generated ranking text (facts + state knowledge pack).
+	 *
+	 * @var RankingContentService
+	 */
+	public readonly RankingContentService $ranking_content;
+
+	/**
+	 * Generated hub text (rankings + state knowledge pack).
+	 *
+	 * @var HubContentService
+	 */
+	public readonly HubContentService $hub_content;
+
+	/**
 	 * Build the graph.
 	 *
 	 * @param Settings|null $settings Settings (injectable for tests).
 	 */
 	public function __construct( ?Settings $settings = null ) {
-		$this->settings      = $settings ?? new Settings();
-		$this->lawyer        = new Lawyer();
-		$this->law_firm      = new LawFirm();
-		$this->ranking       = new Ranking();
-		$this->source        = new Source( $this->settings->source_tiers() );
-		$this->verification  = new VerificationRecord();
-		$this->research_job  = new ResearchJob();
-		$this->content_draft = new ContentDraft();
-		$this->article       = new Article();
-		$this->registry      = new EntityRegistry();
-		$this->entities      = new EntityRepository( $this->registry );
-		$this->verifications = new VerificationRepository( $this->entities, $this->verification );
-		$this->claims        = new ClaimRepository(
+		$this->settings        = $settings ?? new Settings();
+		$this->lawyer          = new Lawyer();
+		$this->law_firm        = new LawFirm();
+		$this->ranking         = new Ranking();
+		$this->source          = new Source( $this->settings->source_tiers() );
+		$this->verification    = new VerificationRecord();
+		$this->research_job    = new ResearchJob();
+		$this->content_draft   = new ContentDraft();
+		$this->article         = new Article();
+		$this->registry        = new EntityRegistry();
+		$this->entities        = new EntityRepository( $this->registry );
+		$this->verifications   = new VerificationRepository( $this->entities, $this->verification );
+		$this->claims          = new ClaimRepository(
 			new ClaimValidator(
 				array(
 					'lawyer'   => self::traceable_fields( $this->lawyer ),
@@ -279,22 +304,25 @@ final class Services {
 			),
 			$this->registry
 		);
-		$this->facts         = new FactService( $this );
-		$this->quality       = new QualityService( $this );
-		$this->eligibility   = new EligibilityService( $this );
-		$this->market        = new MarketService( $this );
-		$this->snapshots     = new SnapshotRepository();
-		$this->versions      = new ScoreVersions();
-		$this->presenter     = new EntityPresenter( $this );
-		$this->runner        = new RankingRunner( $this, $this->snapshots, $this->versions );
-		$this->research_log  = new ResearchLog();
-		$this->candidates    = new CandidateRepository();
-		$this->entity_index  = new EntityIndex( $this->entities, $this->lawyer, $this->law_firm, $this->registry );
-		$this->jobs          = new JobService( $this, $this->research_log );
-		$this->ingest        = new ResearchIngest( $this, $this->candidates, $this->entity_index, $this->research_log );
-		$this->revalidator   = new Revalidator( $this->settings );
-		$this->commercial    = new CommercialService( $this, new ProfileClaimRepository(), new PlacementRepository() );
-		$this->health        = new HealthService( $this, $this->revalidator );
+		$this->facts           = new FactService( $this );
+		$this->quality         = new QualityService( $this );
+		$this->eligibility     = new EligibilityService( $this );
+		$this->market          = new MarketService( $this );
+		$this->snapshots       = new SnapshotRepository();
+		$this->versions        = new ScoreVersions();
+		$this->presenter       = new EntityPresenter( $this );
+		$this->runner          = new RankingRunner( $this, $this->snapshots, $this->versions );
+		$this->research_log    = new ResearchLog();
+		$this->candidates      = new CandidateRepository();
+		$this->entity_index    = new EntityIndex( $this->entities, $this->lawyer, $this->law_firm, $this->registry );
+		$this->jobs            = new JobService( $this, $this->research_log );
+		$this->ingest          = new ResearchIngest( $this, $this->candidates, $this->entity_index, $this->research_log );
+		$this->revalidator     = new Revalidator( $this->settings );
+		$this->commercial      = new CommercialService( $this, new ProfileClaimRepository(), new PlacementRepository() );
+		$this->reviews         = new ReviewService( $this, new ReviewRepository() );
+		$this->ranking_content = new RankingContentService( $this );
+		$this->hub_content     = new HubContentService( $this );
+		$this->health          = new HealthService( $this, $this->revalidator );
 	}
 
 	/**

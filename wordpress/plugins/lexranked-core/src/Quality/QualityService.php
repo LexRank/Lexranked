@@ -147,7 +147,7 @@ final class QualityService {
 
 	/**
 	 * Evidence coverage per entity: the Data Quality completeness dimension
-	 * (share of expected facts backed by a source), 0–1. Used by the page
+	 * (share of expected facts backed by a source), 0-1. Used by the page
 	 * eligibility engine (Etap G) to decide which pages exist and are
 	 * indexed; never by the ranking engine.
 	 *

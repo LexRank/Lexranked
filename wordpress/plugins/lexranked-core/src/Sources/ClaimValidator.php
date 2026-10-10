@@ -14,7 +14,7 @@ use LexRanked\Core\Schema\ValidationException;
 
 /**
  * Validates an evidence claim before storage. Every claim must point at a
- * source (URL and/or registered source) — facts without a source are rejected.
+ * source (URL and/or registered source) - facts without a source are rejected.
  */
 final class ClaimValidator {
 

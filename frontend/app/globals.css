@@ -1,6 +1,6 @@
 /*
  * LexRanked design system.
- * Direction: modern American legal authority — deep navy, brass accents,
+ * Direction: modern American legal authority - deep navy, brass accents,
  * paper-white surfaces, serif display type and a clean sans for UI.
  * All colours are tokens; components never hard-code values.
  */
@@ -1611,6 +1611,97 @@ main {
   margin-top: 0.35rem;
 }
 
+/* Tables inside editorial content (guides, ranking and hub guides). */
+.table-scroll {
+  margin: 1.25rem 0;
+  overflow-x: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(11 31 58 / 0.06);
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.93rem;
+  line-height: 1.5;
+}
+
+.prose th,
+.prose td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.prose th + th,
+.prose td + td {
+  border-left: 1px solid var(--line);
+}
+
+.prose thead th {
+  background: var(--navy-900);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  border-bottom: 2px solid var(--brass-500);
+}
+
+.prose thead th + th {
+  border-left-color: rgb(255 255 255 / 0.15);
+}
+
+.prose tbody tr:nth-child(even) td {
+  background: var(--paper);
+}
+
+.prose tbody tr:hover td {
+  background: var(--brass-100);
+}
+
+.prose tbody td:first-child {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.prose tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+@media (max-width: 40rem) {
+  .prose th,
+  .prose td {
+    padding: 0.55rem 0.65rem;
+    font-size: 0.88rem;
+  }
+}
+
+/* A table without a header row: the first column labels each row. */
+.prose table:not(:has(thead)) tbody td:first-child {
+  background: var(--navy-100);
+}
+
+/* The direct answer that opens a section. */
+.editorial__body h2 + p > strong:only-child,
+.editorial__body > p:first-child > strong:first-child {
+  color: var(--ink);
+}
+
+.editorial__body h2 + p:has(> strong:first-child) {
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--brass-500);
+  background: var(--brass-100);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* Frequently asked questions inside a guide. */
+.editorial__body h3 + p {
+  margin-top: 0.35rem;
+}
+
 .faq {
   display: grid;
   gap: 0.75rem;
@@ -1647,7 +1738,7 @@ main {
 }
 
 .faq__item[open] summary::after {
-  content: "–";
+  content: "-";
 }
 
 .faq__item p {
@@ -3370,4 +3461,367 @@ h2 {
   width: 0.9rem;
   height: 0.9rem;
   color: var(--brass-600);
+}
+
+/* Guides (blog): sidebar link lists, the "find a lawyer" band and category chips. */
+.link-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+  font-size: 0.92rem;
+}
+
+.link-list a {
+  text-decoration: none;
+  color: var(--navy-700);
+}
+
+.link-list a:hover {
+  text-decoration: underline;
+}
+
+.link-list a[aria-current="page"] {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cta-band {
+  background: linear-gradient(180deg, var(--brass-100), var(--surface));
+  border-color: var(--brass-300);
+}
+
+.chip[aria-current="page"] {
+  background: var(--navy-900);
+  border-color: var(--navy-900);
+  color: #fff;
+}
+
+.card--guide .card__thumb {
+  display: block;
+  width: calc(100% + 2 * var(--card-pad, 1.5rem));
+  max-width: none;
+  height: auto;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  margin: calc(-1 * var(--card-pad, 1.5rem)) calc(-1 * var(--card-pad, 1.5rem)) 1rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--neutral-bg);
+}
+
+/* ---------- Client reviews ---------- */
+
+.review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.review {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.review:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.review__head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.review__body {
+  margin: 0.5rem 0 0.35rem;
+  white-space: pre-line;
+}
+
+.review__meta {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.review-form-wrap > summary {
+  list-style: none;
+  width: fit-content;
+}
+
+.review-form-wrap > summary::-webkit-details-marker {
+  display: none;
+}
+
+.star-input {
+  border: 0;
+  padding: 0;
+  margin: 0 0 0.5rem;
+  display: flex;
+  gap: 0.15rem;
+  flex-wrap: wrap;
+}
+
+.star-input legend {
+  width: 100%;
+}
+
+.star-input label {
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--line-strong);
+}
+
+.star-input label.is-on,
+.star-input label:has(input:checked) {
+  color: var(--brass-500);
+}
+
+.star-input input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.star-input label:has(input:focus-visible) {
+  outline: 2px solid var(--brass-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Trust and legal pages: space between answer-first sections. */
+.editorial__body > section + section {
+  margin-top: 2.25rem;
+}
+
+/* Author profiles. */
+.author-profile {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .author-profile {
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+}
+
+.author-profile__portrait {
+  width: 100%;
+  max-width: 16rem;
+  height: auto;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+}
+
+.author-photos {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.author-photos img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.byline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.byline__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.author-box {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.author-box img {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: cover;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* Finder dropdowns (FinderSelect): styled to match the site instead of the OS menu. */
+.fselect {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.fselect__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.fselect__button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  height: 3rem;
+  padding: 0 0.9rem 0 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--paper);
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), background-color 0.2s var(--ease);
+}
+
+.fselect__button:focus-visible {
+  outline: none;
+  border-color: var(--brass-500);
+  box-shadow: var(--focus);
+  background: #fff;
+}
+
+.fselect__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fselect__chevron {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--brass-600);
+  transition: transform 0.2s var(--ease);
+}
+
+.fselect--open .fselect__chevron {
+  transform: rotate(180deg);
+}
+
+.fselect__list {
+  position: fixed;
+  z-index: 1000;
+  max-height: min(20rem, 60vh);
+  margin: 0;
+  padding: 0.4rem;
+  overflow-y: auto;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 24px 48px -16px rgb(6 20 38 / 35%), 0 2px 6px rgb(6 20 38 / 8%);
+  animation: fselect-in 0.14s var(--ease);
+}
+
+.fselect__list:focus {
+  outline: none;
+}
+
+@keyframes fselect-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.fselect__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fselect__option.is-active {
+  background: var(--brass-100);
+}
+
+.fselect__option.is-selected {
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.fselect__check {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--brass-600);
+}
+
+/* In the hero search bar the field itself is the frame. */
+.finder--bar .fselect {
+  gap: 0.1rem;
+}
+
+.finder--bar .fselect__label {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.finder--bar .fselect__button {
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  font-size: 1.02rem;
+}
+
+.finder--bar .fselect__button:focus-visible {
+  box-shadow: none;
+  background: transparent;
+  text-decoration: underline;
+  text-decoration-color: var(--brass-500);
+  text-underline-offset: 4px;
+}
+
+/* The hero's primary button: a solid brass call to action with depth. */
+.finder--bar .btn--primary {
+  gap: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 10px 24px -10px rgb(154 118 64 / 70%), inset 0 1px 0 rgb(255 255 255 / 35%);
+  transition: transform 0.15s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s var(--ease);
+}
+
+.finder--bar .btn--primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 14px 28px -10px rgb(154 118 64 / 80%), inset 0 1px 0 rgb(255 255 255 / 35%);
+}
+
+.finder--bar .btn--primary::after {
+  content: "\2192";
+  font-weight: 600;
+  transition: transform 0.15s var(--ease);
+}
+
+.finder--bar .btn--primary:hover::after {
+  transform: translateX(3px);
 }

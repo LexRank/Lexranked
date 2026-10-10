@@ -7,7 +7,7 @@ describe("comparison URLs (Etap E)", () => {
     expect(parseCompareQuery({ firm: ["7", "9", "11"] })).toEqual({ ok: true, type: "law_firm", ids: [7, 9, 11] });
   });
 
-  it("de-duplicates and enforces 2–4 entities", () => {
+  it("de-duplicates and enforces 2-4 entities", () => {
     expect(parseCompareQuery({ lawyer: ["45", "45"] })).toEqual({ ok: false, reason: "count" });
     expect(parseCompareQuery({ lawyer: "45" })).toEqual({ ok: false, reason: "count" });
     expect(parseCompareQuery({ lawyer: ["1", "2", "3", "4", "5"] })).toEqual({ ok: false, reason: "count" });

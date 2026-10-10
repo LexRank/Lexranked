@@ -164,12 +164,20 @@ export interface LawyerSummary extends EntityBase {
   firm: EntityRef | null;
 }
 
+/** Approved client reviews on a profile (API 1.20). */
+export interface ClientReviewsDto {
+  count: number;
+  average: number | null;
+  items: Array<{ id: number; rating: number; title: string; body: string; author: string; serviceYear: number | null; publishedAt: string | null }>;
+}
+
 export interface LawyerDetail extends LawyerSummary {
   /** Since API 1.15: answer-first summary generated from the profile's facts. */
   aiSummary?: AiSummaryDto;
   /** Answer-first profile summary (API 1.5). */
   summary?: string | null;
   premiumContent?: PremiumContentDto | null;
+  clientReviews?: ClientReviewsDto;
   /** Normalised facts with source and freshness (API 1.9). */
   facts?: FactDto[];
   dataQuality?: DataQualityDto | null;
@@ -206,6 +214,7 @@ export interface LawFirmDetail extends LawFirmSummary {
   /** Answer-first profile summary (API 1.5). */
   summary?: string | null;
   premiumContent?: PremiumContentDto | null;
+  clientReviews?: ClientReviewsDto;
   facts?: FactDto[];
   dataQuality?: DataQualityDto | null;
   contact: { website: string | null; phone: string | null; email: string | null };
@@ -232,7 +241,7 @@ export interface RankingEntry {
   change?: RankingChange | null;
   /** Since API 1.13: the inputs this entry was scored on. */
   keyFacts?: KeyFacts;
-  /** Since API 1.13: contextual rankings only — the fact that qualifies this entry. */
+  /** Since API 1.13: contextual rankings only - the fact that qualifies this entry. */
   qualification?: QualificationDto | null;
   entity: LawyerSummary | LawFirmSummary;
 }
@@ -488,7 +497,8 @@ export interface ArticleSummary {
   path: string;
   title: string;
   excerpt: string;
-  author: { name: string };
+  /** Byline; `slug` links to an author profile when one exists (lib/content/authors.ts). */
+  author: { name: string; slug?: string | null };
   publishedAt: string | null;
   updatedAt: string | null;
   reviewedBy: string | null;
@@ -671,4 +681,30 @@ export interface MarketDto {
     notes: string[];
   };
   summary: string;
+}
+
+/** Spread of a numeric fact with its sample (API 1.23). */
+export interface SpreadDto {
+  sample: number;
+  min: number | null;
+  median: number | null;
+  max: number | null;
+}
+
+/** Statewide figures for the data pages: GET /stats/{state} (API 1.23). */
+export interface StateStatsDto {
+  version: string;
+  state: { slug: string; name: string };
+  lawyers: number;
+  /** Lawyers with at least one Florida Bar board certification; with two or more; listing Spanish. */
+  certified: number;
+  multiCertified: number;
+  spanish: number;
+  cities: Array<{ slug: string; name: string; lawyers: number; certified: number; spanish: number; experience: SpreadDto; areas: Array<{ slug: string; name: string; count: number }> }>;
+  practiceAreas: Array<{ slug: string; name: string; lawyers: number; certified: number; spanish: number; cities: number; experience: SpreadDto }>;
+  certifications: Array<{ name: string; count: number }>;
+  languages: { sample: number; items: Array<{ name: string; count: number }> };
+  schools: { sample: number; items: Array<{ name: string; count: number }> };
+  experience: SpreadDto & { buckets: Array<{ label: string; count: number }> };
+  calculatedAt: string;
 }

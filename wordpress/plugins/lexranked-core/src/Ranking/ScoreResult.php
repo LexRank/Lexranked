@@ -17,7 +17,7 @@ final class ScoreResult {
 	/**
 	 * Constructor.
 	 *
-	 * @param float                            $total      Total 0–100 (sum of component points).
+	 * @param float                            $total      Total 0-100 (sum of component points).
 	 * @param string                           $version    Score version id.
 	 * @param array<int, array<string, mixed>> $components Components: key, label, weight, factor, points, explanation, missing.
 	 */

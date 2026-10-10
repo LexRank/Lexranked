@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Content\RankingContentBuilder;
 use LexRanked\Core\Market\MarketStatistics;
 use LexRanked\Core\Plugin;
 use LexRanked\Core\Repository\EntityRepository;
@@ -18,7 +19,7 @@ use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
 
 /**
- * GET /market?location=miami&practice_area=personal-injury — statistics for a
+ * GET /market?location=miami&practice_area=personal-injury - statistics for a
  * market, computed from stored data (counts, verified counts, average rating,
  * median review count, most common practice area, data verification date),
  * each with its sample size, plus a template summary. Unknown slugs are 404.
@@ -50,6 +51,39 @@ final class MarketController extends RestController {
 				),
 			)
 		);
+		register_rest_route(
+			Plugin::REST_NAMESPACE,
+			'/stats/(?P<state>[a-z0-9-]+)',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'state' ),
+				'permission_callback' => array( $this, 'public_read_permission' ),
+			)
+		);
+	}
+
+	/**
+	 * Statewide figures for the data pages (API 1.23): counts by city and
+	 * practice area, certifications, languages, law schools and experience.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 */
+	public function state( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$state = get_term_by( 'slug', (string) $request['state'], Location::SLUG );
+		if ( ! $state instanceof \WP_Term || 0 !== (int) $state->parent ) {
+			return $this->not_found( 'State' );
+		}
+		[ $body ] = ResponseCache::remember(
+			'/stats',
+			array( 'state' => $state->slug ),
+			fn(): array => array(
+				'state' => array(
+					'slug' => $state->slug,
+					'name' => $this->place( $state ),
+				),
+			) + $this->services->market->for_state( $state )
+		);
+		return $this->item_response( $body );
 	}
 
 	/**
@@ -82,7 +116,7 @@ final class MarketController extends RestController {
 			function () use ( $location, $practice ): array {
 				$stats = $this->services->market->for_scope( $location, $practice );
 				$place = $this->place( $location );
-				$noun  = null === $practice ? '' : strtolower( $practice->name ) . ' ';
+				$noun  = null === $practice ? '' : RankingContentBuilder::in_sentence( $practice->name ) . ' ';
 				$scope = null === $practice && '' === $place ? '' : trim( ( '' === $noun ? '' : 'in ' . $noun . 'law' ) . ( '' === $place ? '' : ' in ' . $place ) );
 				return array(
 					'scope'   => array(

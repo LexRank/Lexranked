@@ -307,6 +307,17 @@ final class JobService {
 		$this->log->add( $job_id, 'info', 'complete', 'Job completed.' );
 		AuditLog::log( 'research_job.completed', ResearchJob::SLUG, $job_id );
 
+		// Autonomous research: publish what passes every check, keep doubts as drafts.
+		$publisher = new AutoPublisher( $this->services, $this->log );
+		if ( $publisher->enabled_for( $this->view( $job_id )['params'] ) ) {
+			try {
+				$publisher->run( $job_id );
+			} catch ( \Throwable $e ) {
+				// The job's data is stored; publication is retried with `wp lexranked research-auto-publish`.
+				$this->log->add( $job_id, 'error', 'auto_publish', 'Automatic publication stopped: ' . $e->getMessage() );
+			}
+		}
+
 		// New or changed evidence can move scores; the runner debounces this.
 		$this->services->runner->schedule_soon();
 		return $this->view( $job_id );
@@ -478,6 +489,37 @@ final class JobService {
 	public function assert_active( int $job_id, string $token ): array {
 		$this->assert_lease( $job_id, $token );
 		return $this->view( $job_id );
+	}
+
+	/**
+	 * Re-run automatic publication for a completed job, e.g. after a run was
+	 * cut short. Idempotent: published profiles are left alone and only what
+	 * is missing (sources, records, rankings) is added.
+	 *
+	 * @param int $job_id Job ID.
+	 * @return array<string, mixed> Summary counts.
+	 * @throws JobException When the job is not completed or autonomy is off.
+	 */
+	public function rerun_auto_publish( int $job_id ): array {
+		$view = $this->view( $job_id );
+		if ( ResearchJobStatus::Completed->value !== $view['status'] ) {
+			throw new JobException( 'lexranked_job_not_completed', 'Only completed jobs can be re-published.' );
+		}
+		$publisher = new AutoPublisher( $this->services, $this->log );
+		if ( ! $publisher->enabled_for( (array) $view['params'] ) ) {
+			throw new JobException( 'lexranked_autonomy_disabled', 'Autonomous research is off for this job.', 403 );
+		}
+		$this->log->add( $job_id, 'info', 'auto_publish', 'Automatic publication re-run requested.' );
+		$summary = $publisher->run( $job_id );
+		$this->services->runner->schedule_soon();
+		return array(
+			'published'     => count( $summary['published'] ),
+			'held'          => count( $summary['held'] ),
+			'verifications' => $summary['verifications'],
+			'sources'       => $summary['sources'],
+			'claims'        => $summary['claims'],
+			'rankings'      => array_values( $summary['rankings'] ),
+		);
 	}
 
 	/**

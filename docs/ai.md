@@ -23,8 +23,8 @@ anything. Nothing the model produces is published or decides a ranking position.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `OPENAI_API_KEY` | — | API key. Required together with `OPENAI_MODEL` |
-| `OPENAI_MODEL` | — | Model ID that supports Structured Outputs. No default, so the choice is explicit and reviewable |
+| `OPENAI_API_KEY` | - | API key. Enables AI |
+| `OPENAI_MODEL` | picked at startup | Optional override. Without it the worker lists the models the key can use and takes the first of `TEXT_MODEL_PREFERENCE` in `src/ai/models.ts`: the current cost-efficient tier (good quality, low price; not the flagship), then older fallbacks. The choice is logged at startup. Update the list when a new generation ships |
 | `OPENAI_BASE_URL` | `https://api.openai.com/v1` | https only (localhost allowed for tests) |
 | `OPENAI_MAX_CALLS_PER_JOB` | 200 | Cost cap per job attempt |
 | `OPENAI_TIMEOUT_MS` | 60000 | Per request |
@@ -97,7 +97,7 @@ audit log.
 | `ranking` (default) | published rankings (`rankings` IDs to narrow) | positions, scores, verification, movement, methodology | thin (< 3 entries) | ranking summary, body, FAQ |
 | `hub` | states, cities, practice areas (`hubs`: all/state/city/practice_area) | counts, highest-scoring profiles, practice areas, rankings | < 3 published lawyers (the page does not exist) | term summary, guide, FAQ |
 | `profile` | published lawyers and firms (`entities` IDs to narrow) | published fields, score, verification, positions | < 5 facts beyond name and type | profile `summary` |
-| `article` | one article per job (`topic` brief, optional `ranking` for context) | ranking facts (if given) + methodology facts | — | a new **draft** Post |
+| `article` | one article per job (`topic` brief, optional `ranking` for context) | ranking facts (if given) + methodology facts | - | a new **draft** Post |
 
 Articles may contain *uncited general guidance* ("ask who will handle your
 case"), which is the only exception to citing facts. QA forbids numbers
@@ -118,3 +118,28 @@ the real one. The end-to-end test (`scripts/wp-integration-test.sh`) runs
 the worker against `workers/research/fixtures/openai/server.mjs`, a **fake**
 local Responses endpoint that returns canned, schema-valid output. CI never
 calls OpenAI and needs no key.
+
+## Featured images for articles
+
+`lexranked-images` (worker package) generates an illustration for an article
+and sets it as the featured image:
+
+```bash
+cd workers/research && npm run build
+OPENAI_API_KEY=… \
+LEXRANKED_API_URL=https://cms.example.com/wp-json/lexranked/v1 \
+LEXRANKED_WORKER_USER=editor-account LEXRANKED_WORKER_APP_PASSWORD='…' \
+node dist/images-cli.js --post 42 [--post 43] [--force]
+```
+
+- The prompt is built from the article's title and excerpt plus fixed rules:
+  an editorial illustration with **no people, faces, hands, text, logos or
+  seals** (a lawyer-ranking site must not suggest real people or
+  endorsements).
+- The image is uploaded to the media library with alt text
+  ("Illustration for the article “…”") and set as the featured image.
+  Posts that already have one are skipped unless `--force`.
+- The image model is picked the same way from `IMAGE_MODEL_PREFERENCE`
+  (override: `OPENAI_IMAGE_MODEL`).
+- The WordPress user needs `upload_files` and `edit_posts` (an editor).
+

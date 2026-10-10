@@ -27,6 +27,8 @@ export interface PageSeo {
 }
 
 const MAX_DESCRIPTION = 160;
+/** Titles longer than this are usually truncated in search results. */
+const MAX_TITLE = 60;
 
 /** Collapse whitespace and cut at a word boundary to ~160 characters. */
 export function clampDescription(text: string, max = MAX_DESCRIPTION): string {
@@ -34,13 +36,15 @@ export function clampDescription(text: string, max = MAX_DESCRIPTION): string {
   if (clean.length <= max) return clean;
   const cut = clean.slice(0, max - 1);
   const lastSpace = cut.lastIndexOf(" ");
-  return `${(lastSpace > 60 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:–-]+$/, "")}…`;
+  return `${(lastSpace > 60 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:-]+$/, "")}…`;
 }
 
 export function buildMetadata(seo: PageSeo): Metadata {
   const url = absoluteUrl(seo.path);
   const description = clampDescription(seo.description);
-  const fullTitle = seo.absoluteTitle ? seo.title : `${seo.title} | ${SITE_NAME}`;
+  // The brand suffix is dropped when it would push the title past what search results show.
+  const absolute = seo.absoluteTitle || `${seo.title} | ${SITE_NAME}`.length > MAX_TITLE;
+  const fullTitle = absolute ? seo.title : `${seo.title} | ${SITE_NAME}`;
   const robots = seo.noindex
     ? { index: false, follow: true, googleBot: { index: false, follow: true } }
     : { index: true, follow: true, googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large" as const } };
@@ -49,10 +53,10 @@ export function buildMetadata(seo: PageSeo): Metadata {
   // page-level openGraph object replaces the inherited file-based image.
   const images = seo.image
     ? [{ url: seo.image.url, width: seo.image.width, height: seo.image.height, alt: seo.image.alt || seo.title }]
-    : [{ url: "/opengraph-image", width: 1200, height: 630, alt: `${SITE_NAME} — Data-driven lawyer rankings` }];
+    : [{ url: "/opengraph-image", width: 1200, height: 630, alt: `${SITE_NAME} - Data-driven lawyer rankings` }];
 
   return {
-    title: seo.absoluteTitle ? { absolute: seo.title } : seo.title,
+    title: absolute ? { absolute: seo.title } : seo.title,
     description,
     alternates: { canonical: url },
     robots,

@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/config/site";
+import { JsonLd } from "@/components/JsonLd";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/jsonld";
 import "./globals.css";
 
 // Self-hosted variable fonts (SIL OFL, files and licences in app/fonts/): no
@@ -28,7 +30,7 @@ const serif = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${SITE_NAME} — Data-driven lawyer rankings`,
+    default: `${SITE_NAME} - Data-driven lawyer rankings`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -54,6 +56,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         <main id="main">{children}</main>
         <SiteFooter />
+        {/* Site-wide nodes that every page's isPartOf / publisher references resolve to. */}
+        <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
       </body>
     </html>
   );

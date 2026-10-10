@@ -14,9 +14,10 @@ use LexRanked\Core\PostTypes\LawFirm;
 use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\REST\DTO\LocationMapper;
 use LexRanked\Core\Services;
+use LexRanked\Core\Support\Text;
 
 /**
- * GET /search?q=… — name search across lawyers and law firms.
+ * GET /search?q=… - name search across lawyers and law firms.
  * Search results are never indexable pages; stricter rate limit applies.
  */
 final class SearchController extends RestController {
@@ -109,7 +110,7 @@ final class SearchController extends RestController {
 				'type'     => $is_lawyer ? 'lawyer' : 'law_firm',
 				'id'       => (int) $post->ID,
 				'slug'     => $post->post_name,
-				'name'     => get_the_title( $post ),
+				'name'     => Text::title( $post ),
 				'path'     => ( $is_lawyer ? '/lawyers/' : '/law-firms/' ) . $post->post_name . '/',
 				'location' => LocationMapper::from_terms( $this->services->entities->location_terms( $post->ID ) ),
 			);

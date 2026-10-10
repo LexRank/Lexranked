@@ -14,7 +14,7 @@ use LexRanked\Core\Services;
 
 /**
  * Shows the latest calculation of a ranking and lets editors recalculate it.
- * Positions can only change through the engine — never by hand.
+ * Positions can only change through the engine - never by hand.
  */
 final class RankingCalculation {
 

@@ -28,7 +28,7 @@ describe("Sources & Verification (Etap H)", () => {
     expect(factValue(fact("case_types", "practice", ["car-accidents"]))).toBe("Car Accidents");
     expect(factValue(fact("practice_areas", "practice", ["personal-injury"]), { "personal-injury": "Personal Injury" })).toBe("Personal Injury");
     expect(factValue(fact("education", "credentials", [{ institution: "Law School", degree: "J.D.", year: "2003" }]))).toBe("J.D., Law School, 2003");
-    expect(factValue(fact("website", "contact", null))).toBe("—");
+    expect(factValue(fact("website", "contact", null))).toBe("-");
   });
 
   it("groups facts by category, credentials first, and hides redundant ones", () => {
@@ -50,6 +50,11 @@ describe("related questions from data (Etap H)", () => {
     expect(questions.map((q) => q.question)).toContain(`Which ${ranking.entityType === "law_firm" ? "firms" : "lawyers"} are verified?`);
     for (const q of questions) expect(q.answer).not.toMatch(/\b(best choice|recommend|should hire)\b/i);
     expect(relatedQuestions({ ...ranking, entries: [] })).toEqual([]);
+  });
+
+  it("does not repeat a methodology question the page's FAQ already asks", () => {
+    const ranking = { ...rankingDetail(), faq: [{ question: "How is this ranking ordered?", answer: "By the LexRank score." }] };
+    expect(relatedQuestions(ranking).map((q) => q.question).some((q) => /ranked\?$/.test(q))).toBe(false);
   });
 
   it("links narrower rankings that passed their threshold", () => {
@@ -82,5 +87,13 @@ describe("schema.org mirrors the visible profile (Etap H)", () => {
     const inactive = lawyerDetail();
     inactive.professional = { ...inactive.professional, barStatus: "inactive" };
     expect(lawyerJsonLd(inactive).hasCredential).toBeUndefined();
+  });
+
+  it("lists board certifications next to the license", () => {
+    const certified = lawyerDetail();
+    certified.professional = { ...certified.professional, awards: [{ name: "Board Certified in Civil Trial Law", issuer: "The Florida Bar", year: "2003" }, { name: "Local award", issuer: null, year: null }] };
+    const creds = lawyerJsonLd(certified).hasCredential as Array<Record<string, unknown>>;
+    expect(creds).toHaveLength(2);
+    expect(creds[1]).toMatchObject({ credentialCategory: "certification", name: "Board Certified in Civil Trial Law", recognizedBy: { "@type": "Organization", name: "The Florida Bar" } });
   });
 });

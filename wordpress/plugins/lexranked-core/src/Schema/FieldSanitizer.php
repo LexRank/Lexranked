@@ -315,7 +315,7 @@ final class FieldSanitizer {
 	}
 
 	/**
-	 * Validate a phone number: digits with common separators, 7–15 digits (E.164 length).
+	 * Validate a phone number: digits with common separators, 7-15 digits (E.164 length).
 	 *
 	 * @param Field  $field Field.
 	 * @param string $value Value.

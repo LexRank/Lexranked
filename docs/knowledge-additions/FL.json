@@ -1,0 +1,294 @@
+{
+  "areas": {
+    "intellectual-property": {
+      "cert": "Intellectual Property",
+      "lead": "Patents and copyrights are governed by federal law, while Florida law protects trade secrets and offers its own trademark registration; the filing deadlines run from 3 to 6 years.",
+      "rows": [
+        [
+          "Copyright lawsuits",
+          "Within 3 years after the claim accrued (17 U.S.C. § 507(b))"
+        ],
+        [
+          "Patent term",
+          "20 years from the filing date of the application, subject to maintenance fees (35 U.S.C. § 154(a)(2))"
+        ],
+        [
+          "Patent damages",
+          "No recovery for infringement committed more than 6 years before the lawsuit (35 U.S.C. § 286)"
+        ],
+        [
+          "Trade secrets",
+          "Within 3 years after the misappropriation is discovered or should have been discovered (Fla. Stat. § 688.007)"
+        ],
+        [
+          "Florida trademark registration",
+          "Lasts 5 years and can be renewed within the 6 months before it expires (Fla. Stat. § 495.071)"
+        ]
+      ],
+      "src": [
+        [
+          "https://www.law.cornell.edu/uscode/text/17/507",
+          "17 U.S. Code § 507 (limitations on copyright actions)"
+        ],
+        [
+          "https://www.law.cornell.edu/uscode/text/35/154",
+          "35 U.S. Code § 154 (patent term)"
+        ],
+        [
+          "https://www.law.cornell.edu/uscode/text/35/286",
+          "35 U.S. Code § 286 (time limitation on patent damages)"
+        ],
+        [
+          "https://www.flsenate.gov/Laws/Statutes/2025/688.007",
+          "Florida Statutes, section 688.007 (trade secrets: statute of limitations)"
+        ],
+        [
+          "https://www.flsenate.gov/Laws/Statutes/2025/495.071",
+          "Florida Statutes, section 495.071 (trademark registration: duration and renewal)"
+        ]
+      ],
+      "faq": [
+        [
+          "How long does a patent last?",
+          "A utility patent runs for 20 years from the date the application was filed in the United States, as long as the maintenance fees are paid."
+        ],
+        [
+          "How long do I have to sue for copyright infringement?",
+          "Three years after the claim accrued, under 17 U.S.C. § 507(b)."
+        ],
+        [
+          "How long do I have to sue over a stolen trade secret in Florida?",
+          "Three years after the misappropriation was discovered, or should have been discovered with reasonable diligence, under section 688.007. A continuing misappropriation counts as a single claim."
+        ],
+        [
+          "Who certifies intellectual property lawyers in Florida?",
+          "The Florida Bar certifies lawyers in Intellectual Property Law after at least five years of practice, peer review and a written exam."
+        ]
+      ],
+      "guides": [],
+      "certName": "Board Certified in Intellectual Property Law",
+      "hub": {
+        "what": "An intellectual property lawyer protects and enforces patents, trademarks, copyrights and trade secrets, and handles licensing and infringement disputes.",
+        "matters": [
+          "Trademark searches and registration",
+          "Patent applications (by registered patent attorneys)",
+          "Copyright registration and infringement",
+          "Trade secret protection and theft",
+          "Licensing agreements",
+          "Infringement lawsuits"
+        ],
+        "whenLead": "Talk to an intellectual property lawyer before you launch a brand or product, share an invention, or when someone copies your work.",
+        "when": [
+          "You are choosing a business or product name",
+          "You have an invention to protect",
+          "Someone is using your brand, content or code",
+          "You received a cease-and-desist letter"
+        ],
+        "cost": "Intellectual property lawyers often charge flat fees for searches and filings and hourly rates for disputes; government filing fees are extra. Ask for the fee in writing.",
+        "questions": [
+          "Are you a registered patent attorney if my matter needs one?",
+          "What searches do you recommend before filing?",
+          "How do you handle infringement cases?"
+        ]
+      }
+    },
+    "admiralty-maritime": {
+      "cert": "Admiralty and Maritime",
+      "lead": "Maritime injury claims are governed mostly by federal law: injured seamen can sue their employer under the Jones Act, and most maritime injury claims must be filed within 3 years.",
+      "rows": [
+        [
+          "Injured seamen",
+          "A seaman injured on the job may sue the employer, with a jury trial, under the Jones Act (46 U.S.C. § 30104)"
+        ],
+        [
+          "Injury and death claims",
+          "Within 3 years for personal injury or death from a maritime tort (46 U.S.C. § 30106)"
+        ],
+        [
+          "Limiting a vessel owner's liability",
+          "The owner must file in federal court within 6 months after a claimant gives written notice of a claim (46 U.S.C. § 30529)"
+        ],
+        [
+          "Florida boating accidents",
+          "The operator must file a written report for an injury, death, disappearance or at least $2,000 of damage (Fla. Stat. § 327.301)"
+        ]
+      ],
+      "src": [
+        [
+          "https://www.law.cornell.edu/uscode/text/46/30104",
+          "46 U.S. Code § 30104 (Jones Act: personal injury to or death of seamen)"
+        ],
+        [
+          "https://www.law.cornell.edu/uscode/text/46/30106",
+          "46 U.S. Code § 30106 (time limit for maritime torts)"
+        ],
+        [
+          "https://www.law.cornell.edu/uscode/text/46/30529",
+          "46 U.S. Code § 30529 (limitation of liability action)"
+        ],
+        [
+          "https://www.flsenate.gov/Laws/Statutes/2025/327.301",
+          "Florida Statutes, section 327.301 (written reports of boating accidents)"
+        ]
+      ],
+      "faq": [
+        [
+          "How long do I have to file a maritime injury claim?",
+          "Generally 3 years after the cause of action arose for personal injury or death from a maritime tort, under 46 U.S.C. § 30106."
+        ],
+        [
+          "What is the Jones Act?",
+          "A federal law that lets a seaman injured in the course of employment, or the family of a seaman who dies, sue the employer in a civil action with the right to a jury trial."
+        ],
+        [
+          "Do I have to report a boating accident in Florida?",
+          "Yes, when it causes injury, death or a disappearance, or at least $2,000 of damage: the operator must send a written report to the Fish and Wildlife Conservation Commission within the federal time limits."
+        ],
+        [
+          "Who certifies maritime lawyers in Florida?",
+          "The Florida Bar certifies lawyers in Admiralty and Maritime Law after at least five years of practice, peer review and a written exam."
+        ]
+      ],
+      "guides": [],
+      "certName": "Board Certified in Admiralty and Maritime Law",
+      "hub": {
+        "what": "A maritime lawyer handles legal matters on navigable waters: injuries to seamen and passengers, boating accidents, cargo and vessel disputes, and claims against ship owners.",
+        "matters": [
+          "Jones Act claims for injured seamen",
+          "Cruise ship passenger injuries",
+          "Boating accidents",
+          "Cargo damage and charter disputes",
+          "Vessel liens and arrests",
+          "Limitation of liability cases"
+        ],
+        "whenLead": "Contact a maritime lawyer soon after an injury at sea or a vessel accident, because federal deadlines apply and cruise tickets often set shorter ones.",
+        "when": [
+          "You were injured working on a vessel",
+          "You were hurt on a cruise ship",
+          "A boating accident caused injury or damage",
+          "A vessel owner filed to limit liability"
+        ],
+        "cost": "Maritime injury lawyers often work on contingency; commercial maritime disputes are usually billed by the hour. A contingent fee agreement must be in writing and state the percentage the lawyer receives (Rule 4-1.5(f)).",
+        "questions": [
+          "How many Jones Act or cruise cases have you handled?",
+          "Which deadlines apply to my claim?",
+          "Do you take cases to trial in federal court?"
+        ]
+      }
+    },
+    "health-law": {
+      "cert": "Health",
+      "lead": "Florida health law regulates how providers are licensed, paid and referred patients: kickbacks and patient brokering are prohibited, and every clinic location needs its own state license.",
+      "rows": [
+        [
+          "Kickbacks",
+          "Health care providers may not offer, pay, solicit or receive kickbacks for referring patients (Fla. Stat. § 456.054)"
+        ],
+        [
+          "Patient brokering",
+          "Paying or receiving anything to induce patient referrals is a third-degree felony with a $50,000 fine (§ 817.505)"
+        ],
+        [
+          "Clinic licensing",
+          "Each clinic location must be licensed separately by the Agency for Health Care Administration (§ 400.991)"
+        ],
+        [
+          "Patient records",
+          "Practitioners must furnish copies of a patient's reports and records on request, in a timely manner (§ 456.057)"
+        ],
+        [
+          "Hospital records",
+          "Licensed facilities furnish copies of patient records on written request after discharge (§ 395.3025)"
+        ]
+      ],
+      "src": [
+        [
+          "https://www.flsenate.gov/Laws/Statutes/2025/456.054",
+          "Florida Statutes, section 456.054 (kickbacks prohibited)"
+        ],
+        [
+          "https://www.flsenate.gov/Laws/Statutes/2025/817.505",
+          "Florida Statutes, section 817.505 (patient brokering prohibited)"
+        ],
+        [
+          "https://www.flsenate.gov/Laws/Statutes/2025/400.991",
+          "Florida Statutes, section 400.991 (clinic license requirements)"
+        ],
+        [
+          "https://www.flsenate.gov/Laws/Statutes/2025/456.057",
+          "Florida Statutes, section 456.057 (patient records)"
+        ],
+        [
+          "https://www.flsenate.gov/Laws/Statutes/2025/395.3025",
+          "Florida Statutes, section 395.3025 (hospital patient records)"
+        ]
+      ],
+      "faq": [
+        [
+          "Is it legal to pay for patient referrals in Florida?",
+          "No. Section 456.054 bars kickbacks for referrals, and under section 817.505 paying or receiving anything to induce a referral is patient brokering, a third-degree felony with a $50,000 fine, subject to the exceptions listed in the statute."
+        ],
+        [
+          "Does a medical clinic need a license in Florida?",
+          "Yes, unless it falls under an exemption: each clinic location needs its own license from the Agency for Health Care Administration."
+        ],
+        [
+          "How do I get copies of my medical records in Florida?",
+          "Ask the practitioner, who must furnish copies in a timely manner under section 456.057; a hospital furnishes copies on written request after discharge under section 395.3025."
+        ],
+        [
+          "Who certifies health lawyers in Florida?",
+          "The Florida Bar certifies lawyers in Health Law after at least five years of practice, peer review and a written exam."
+        ]
+      ],
+      "guides": [],
+      "certName": "Board Certified in Health Law",
+      "hub": {
+        "what": "A health care lawyer advises doctors, clinics, hospitals and other providers on licensing, regulatory compliance, billing, contracts and disciplinary matters.",
+        "matters": [
+          "Clinic and facility licensing",
+          "Referral and kickback compliance",
+          "Medicare and Medicaid billing audits",
+          "Professional license discipline",
+          "Physician employment and practice sales",
+          "Patient records and privacy"
+        ],
+        "whenLead": "Use a health care lawyer before opening or buying a practice, before entering a referral or marketing arrangement, and as soon as you receive an audit or licensing complaint.",
+        "when": [
+          "You are opening, buying or selling a practice",
+          "A payer or agency opened an audit",
+          "You received a complaint against your license",
+          "You plan a marketing or referral arrangement"
+        ],
+        "cost": "Health care lawyers usually bill by the hour, and some offer flat fees for licensing or compliance projects. Ask for an estimate in writing.",
+        "questions": [
+          "Do you represent providers like my practice?",
+          "Have you handled audits or license cases with this agency?",
+          "What will a compliance review cost?"
+        ]
+      }
+    }
+  },
+  "cities": {
+    "palm-beach-gardens": {
+      "county": "Palm Beach",
+      "circuit": "Fifteenth"
+    },
+    "stuart": {
+      "county": "Martin",
+      "circuit": "Nineteenth"
+    },
+    "vero-beach": {
+      "county": "Indian River",
+      "circuit": "Nineteenth"
+    },
+    "plantation": {
+      "county": "Broward",
+      "circuit": "Seventeenth"
+    },
+    "pompano-beach": {
+      "county": "Broward",
+      "circuit": "Seventeenth"
+    }
+  }
+}

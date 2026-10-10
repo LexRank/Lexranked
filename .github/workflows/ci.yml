@@ -110,3 +110,11 @@ jobs:
             echo "::error::Environment files must not be committed."
             exit 1
           fi
+      - name: Use a plain hyphen, never an en or em dash
+        run: |
+          # House style: "-" everywhere. The AI text normaliser keeps the dashes it replaces;
+          # frontend/AGENTS.md is rewritten by `next dev`.
+          if git ls-files | grep -vE '^(workers/research/src/ai/text\.ts|frontend/AGENTS\.md)$' | LC_ALL=C xargs grep -nP '\xE2\x80[\x93\x94]' 2>/dev/null; then
+            echo "::error::Replace en and em dashes with a plain hyphen (-)."
+            exit 1
+          fi

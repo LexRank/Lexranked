@@ -98,7 +98,7 @@ final class DemoData {
 	}
 
 	/**
-	 * Demo editorial body shown below the ranking. Generic guidance only — no
+	 * Demo editorial body shown below the ranking. Generic guidance only - no
 	 * jurisdiction-specific legal facts are asserted.
 	 */
 	public static function ranking_body(): string {

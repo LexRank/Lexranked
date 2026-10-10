@@ -55,8 +55,27 @@ final class Installer {
 		$services->quality->compute_all();
 		// Schema v6: commercial status is derived from claims and placements.
 		$services->commercial->sync_all();
+		// Schema v10: sites on the previous default score version move to the new one
+		// once (a version chosen deliberately in Settings is kept on later upgrades).
+		self::adopt_default_score_version();
+		// Scores and rankings follow the upgraded code and score version without waiting for the daily run.
+		if ( ! wp_next_scheduled( \LexRanked\Core\Ranking\RankingRunner::CRON_HOOK . '_soon' ) ) {
+			wp_schedule_single_event( time() + \LexRanked\Core\Ranking\RankingRunner::DEBOUNCE_S, \LexRanked\Core\Ranking\RankingRunner::CRON_HOOK . '_soon' );
+		}
 		// DTO shapes may have changed: drop cached API responses.
 		\LexRanked\Core\Support\ContentVersion::bump();
 		update_option( self::VERSION_OPTION, Schema::VERSION, false );
+	}
+
+	/**
+	 * Move a site still on the previous default score version to the new default.
+	 */
+	private static function adopt_default_score_version(): void {
+		$settings = get_option( \LexRanked\Core\Settings\Settings::OPTION, array() );
+		if ( ! is_array( $settings ) || \LexRanked\Core\Ranking\ScoreVersions::PREVIOUS_DEFAULT !== ( $settings['score_version'] ?? null ) ) {
+			return;
+		}
+		$settings['score_version'] = \LexRanked\Core\Ranking\ScoreVersions::DEFAULT_VERSION;
+		update_option( \LexRanked\Core\Settings\Settings::OPTION, $settings );
 	}
 }

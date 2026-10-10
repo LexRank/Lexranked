@@ -1,4 +1,4 @@
-# Fixtures — FICTIONAL TEST DATA
+# Fixtures - FICTIONAL TEST DATA
 
 Everything in this directory is invented for automated tests. The people,
 firms, phone numbers and `*.test` / `*.example` domains do not exist and

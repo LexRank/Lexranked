@@ -58,7 +58,7 @@ const GOOD: Generated = {
     {
       heading: 'How positions are decided',
       paragraphs: [
-        { text: 'Positions follow the LexRank score under methodology v1.0, a deterministic score from verified data, sources, experience and reviews. Payment never affects positions, and the ranking was last calculated on 2026-09-20.', factRefs: ['F6', 'F7', 'F8'] },
+        { text: 'Positions follow the LexRank score under methodology v1.0, a deterministic score from sourced facts; client reviews do not affect the LexRank score. Payment never affects positions, and the ranking was last calculated on 2026-09-20.', factRefs: ['F6', 'F7', 'F8'] },
       ],
     },
   ],
@@ -150,7 +150,7 @@ describe('content_generation and ai_candidate_review pipelines', () => {
     // The AI reviewer's issue with an excerpt that is not in the draft is dropped.
     expect(draft.qa.issues.map((i) => i.code)).toEqual(['ai_unnatural_language']);
     expect(draft.facts.length).toBe(12);
-    expect(draft.prompt_version).toBe('interp/1+ranking-content/2');
+    expect(draft.prompt_version).toBe('interp/2+ranking-content/2');
   });
 
   it('marks drafts with invented facts as needs_review', async () => {

@@ -18,7 +18,7 @@ namespace LexRanked\Core\Ranking;
  */
 final class ContextEligibility {
 
-	/** Default minimum entities whose context is confirmed by a verified fact. */
+	/** Default minimum entities whose context is confirmed by a verified fact or an official (tier 1) record. */
 	public const MIN_VERIFIED = 3;
 
 	/**
@@ -46,7 +46,7 @@ final class ContextEligibility {
 				$reasons[] = sprintf( '%d of the required %d entities have this context on record.', $qualified, $min_entities );
 			}
 			if ( $verified < $min_verified ) {
-				$reasons[] = sprintf( '%d of the required %d entities have it confirmed by a verified fact.', $verified, $min_verified );
+				$reasons[] = sprintf( '%d of the required %d entities have it confirmed by a verified fact or an official record.', $verified, $min_verified );
 			}
 			if ( $qualified > 0 && $qualified >= $parent ) {
 				$reasons[] = 'Every entity in the broader ranking qualifies, so the page would repeat it.';

@@ -1,9 +1,10 @@
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/config/site";
 import type { ArticleDetail, LawFirmDetail, LawyerDetail, LocationDto, RankingDetail } from "@/types/api";
+import { authorBySlug, authorPath, type AuthorProfile } from "@/lib/content/authors";
 import { absoluteUrl } from "./urls";
 
 /**
- * schema.org builders. Only facts present in API data are emitted — no
+ * schema.org builders. Only facts present in API data are emitted - no
  * invented values. Ratings are deliberately NOT emitted as AggregateRating:
  * they come from third-party platforms, and search-engine guidelines only
  * allow review markup for reviews collected by the site itself.
@@ -114,15 +115,63 @@ export function lawyerJsonLd(lawyer: LawyerDetail): JsonLdObject {
       .map((e) => ({ "@type": "EducationalOrganization", name: e.institution })),
     award: lawyer.professional.awards.filter((a) => a.name).map((a) => a.name as string),
     // Only when the page shows an active bar admission (Etap H: schema mirrors visible data).
-    hasCredential:
-      lawyer.professional.barState && lawyer.professional.barStatus === "active"
-        ? {
-            "@type": "EducationalOccupationalCredential",
-            credentialCategory: "license",
-            name: `Bar admission (${lawyer.professional.barState})`,
-          }
+    hasCredential: credentials(lawyer),
+    identifier:
+      lawyer.professional.barState && lawyer.professional.barNumber
+        ? { "@type": "PropertyValue", propertyID: `${lawyer.professional.barState} bar number`, value: lawyer.professional.barNumber }
         : undefined,
   });
+}
+
+/**
+ * The bar license (only while active) and board certifications, as shown on
+ * the profile. One credential stays a single object; several become a list.
+ */
+function credentials(lawyer: LawyerDetail): JsonLdObject | JsonLdObject[] | undefined {
+  const p = lawyer.professional;
+  const out: JsonLdObject[] = [];
+  if (p.barState && p.barStatus === "active") {
+    out.push(compact({ "@type": "EducationalOccupationalCredential", credentialCategory: "license", name: `Bar admission (${p.barState})`, recognizedBy: barRegulator(p.barState) }));
+  }
+  for (const a of p.awards) {
+    if (!a.name || !/^board certified/i.test(a.name)) continue;
+    out.push(
+      compact({
+        "@type": "EducationalOccupationalCredential",
+        credentialCategory: "certification",
+        name: a.name,
+        recognizedBy: a.issuer ? { "@type": "Organization", name: a.issuer } : undefined,
+      }),
+    );
+  }
+  return out.length === 0 ? undefined : out.length === 1 ? out[0] : out;
+}
+
+/** State bars LexRanked reads as official sources (shown on profiles as the evidence source). */
+const BAR_REGULATORS: Record<string, { name: string; url: string }> = {
+  FL: { name: "The Florida Bar", url: "https://www.floridabar.org/" },
+};
+
+function barRegulator(state: string): JsonLdObject | undefined {
+  const bar = BAR_REGULATORS[state.toUpperCase()];
+  return bar ? { "@type": "Organization", name: bar.name, url: bar.url } : undefined;
+}
+
+/** Node id of a profile, matching the @id its own page declares. */
+export function entityNodeId(entityType: string, path: string): string {
+  return `${absoluteUrl(path)}${entityType === "law_firm" ? "#organization" : "#person"}`;
+}
+
+/** City (inside its state) or state a page is about. */
+export function placeJsonLd(location: Pick<LocationDto, "city" | "state"> | null): JsonLdObject | undefined {
+  if (!location?.state) return undefined;
+  const state = { "@type": "State", name: location.state, containedInPlace: { "@type": "Country", name: "United States" } };
+  return location.city ? { "@type": "City", name: location.city, containedInPlace: state } : state;
+}
+
+/** Practice area a page is about, linked to its hub. */
+export function practiceAreaJsonLd(area: { name: string; slug: string } | null): JsonLdObject | undefined {
+  return area ? { "@type": "DefinedTerm", name: area.name, url: absoluteUrl(`/practice-areas/${area.slug}/`) } : undefined;
 }
 
 export function lawFirmJsonLd(firm: LawFirmDetail): JsonLdObject {
@@ -151,6 +200,7 @@ export function rankingJsonLd(ranking: RankingDetail, path: string): JsonLdObjec
   return compact({
     "@context": "https://schema.org",
     "@type": "ItemList",
+    "@id": `${absoluteUrl(path)}#list`,
     name: ranking.title,
     url: absoluteUrl(path),
     numberOfItems: ranking.entries.length,
@@ -160,19 +210,50 @@ export function rankingJsonLd(ranking: RankingDetail, path: string): JsonLdObjec
       position: entry.position,
       name: entry.entity.name,
       url: absoluteUrl(entry.entity.path),
+      // The same node the profile page declares, so the ranking links into the entity graph.
+      item: {
+        "@type": entry.entity.type === "law_firm" ? "LegalService" : "Person",
+        "@id": entityNodeId(entry.entity.type, entry.entity.path),
+        name: entry.entity.name,
+        url: absoluteUrl(entry.entity.path),
+      },
     })),
   });
 }
 
-export function collectionPageJsonLd(name: string, path: string, description: string): JsonLdObject {
-  return {
+/**
+ * CollectionPage for hubs. `items` lists the profiles shown on the page (in
+ * page order) as its main entity; `about` names the place / practice area.
+ */
+export function collectionPageJsonLd(
+  name: string,
+  path: string,
+  description: string,
+  extra: { items?: Array<{ name: string; path: string }>; about?: Array<JsonLdObject | undefined>; dateModified?: string | null } = {},
+): JsonLdObject {
+  const url = absoluteUrl(path);
+  const items = extra.items ?? [];
+  return compact({
     "@context": "https://schema.org",
     "@type": "CollectionPage",
+    "@id": `${url}#webpage`,
     name,
-    url: absoluteUrl(path),
+    url,
     description,
+    inLanguage: "en-US",
     isPartOf: { "@id": `${siteUrl}/#website` },
-  };
+    publisher: { "@id": `${siteUrl}/#organization` },
+    about: (extra.about ?? []).filter((a): a is JsonLdObject => a !== undefined),
+    dateModified: extra.dateModified ?? undefined,
+    mainEntity:
+      items.length > 0
+        ? {
+            "@type": "ItemList",
+            numberOfItems: items.length,
+            itemListElement: items.map((item, i) => ({ "@type": "ListItem", position: i + 1, name: item.name, url: absoluteUrl(item.path) })),
+          }
+        : undefined,
+  });
 }
 
 /** FAQPage for editorial FAQs (plain-text answers only). */
@@ -197,12 +278,19 @@ export function rankingPageJsonLd(input: {
   dateModified: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
+  /** The ranking's ItemList is the page's main entity. */
+  hasList?: boolean;
+  about?: Array<JsonLdObject | undefined>;
 }): JsonLdObject {
+  const url = absoluteUrl(input.path);
   return compact({
     "@context": "https://schema.org",
     "@type": "WebPage",
+    "@id": `${url}#webpage`,
     name: input.name,
-    url: absoluteUrl(input.path),
+    url,
+    mainEntity: input.hasList ? { "@id": `${url}#list` } : undefined,
+    about: (input.about ?? []).filter((a): a is JsonLdObject => a !== undefined),
     description: input.description,
     inLanguage: "en-US",
     isPartOf: { "@id": `${siteUrl}/#website` },
@@ -225,7 +313,7 @@ export function articleJsonLd(article: ArticleDetail): JsonLdObject {
     inLanguage: "en-US",
     datePublished: article.publishedAt ?? undefined,
     dateModified: article.updatedAt ?? undefined,
-    author: { "@type": article.author.name === "LexRanked Editorial Team" ? "Organization" : "Person", name: article.author.name },
+    author: articleAuthor(article.author),
     publisher: { "@id": `${siteUrl}/#organization` },
     image: article.image ? [article.image.url] : undefined,
     wordCount: article.wordCount,
@@ -233,5 +321,77 @@ export function articleJsonLd(article: ArticleDetail): JsonLdObject {
     reviewedBy: article.reviewedBy ? { "@type": "Person", name: article.reviewedBy } : undefined,
     articleSection: article.categories.map((c) => c.name),
     isPartOf: { "@id": `${siteUrl}/#website` },
+  });
+}
+
+/** The byline as schema.org: a Person with a profile URL when one exists. */
+function articleAuthor(author: ArticleDetail["author"]): JsonLdObject {
+  const profile = authorBySlug(author.slug);
+  if (profile) {
+    const url = absoluteUrl(authorPath(profile.slug));
+    return {
+      "@type": "Person",
+      "@id": `${url}#person`,
+      name: profile.name,
+      url,
+      image: absoluteUrl(profile.portrait.src),
+      jobTitle: profile.jobTitle,
+      description: profile.summary,
+      worksFor: { "@id": `${siteUrl}/#organization` },
+    };
+  }
+  return { "@type": author.name === "LexRanked Editorial Team" ? "Organization" : "Person", name: author.name };
+}
+
+/** ProfilePage for an author, with the Person as main entity. */
+export function authorJsonLd(profile: AuthorProfile): JsonLdObject {
+  const url = absoluteUrl(authorPath(profile.slug));
+  return compact({
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "@id": `${url}#webpage`,
+    url,
+    name: `${profile.name}, ${profile.jobTitle} at ${SITE_NAME}`,
+    inLanguage: "en-US",
+    isPartOf: { "@id": `${siteUrl}/#website` },
+    mainEntity: {
+      "@type": "Person",
+      "@id": `${url}#person`,
+      name: profile.name,
+      jobTitle: profile.jobTitle,
+      description: profile.summary,
+      image: absoluteUrl(profile.portrait.src),
+      url,
+      worksFor: { "@id": `${siteUrl}/#organization` },
+    },
+  });
+}
+
+/** Dataset (data pages): what the figures cover, where they come from and when they were calculated. */
+export function datasetJsonLd(input: {
+  name: string;
+  path: string;
+  description: string;
+  dateModified: string;
+  sources: string[];
+  variables: string[];
+  spatial?: string;
+}): JsonLdObject {
+  const url = absoluteUrl(input.path);
+  return compact({
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    "@id": `${url}#dataset`,
+    name: input.name,
+    description: input.description,
+    url,
+    isAccessibleForFree: true,
+    license: `${siteUrl}/terms/`,
+    creator: { "@id": `${siteUrl}/#organization` },
+    dateModified: input.dateModified,
+    isBasedOn: input.sources,
+    variableMeasured: input.variables,
+    spatialCoverage: input.spatial ? { "@type": "Place", name: input.spatial } : undefined,
+    inLanguage: "en-US",
   });
 }

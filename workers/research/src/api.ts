@@ -3,7 +3,7 @@ import type { ReviewCandidate } from './ai/matchReview.js';
 /**
  * Client for the private LexRanked research API (WordPress, lexranked/v1).
  *
- * Transient failures (network, 429, 502–504) are retried with exponential
+ * Transient failures (network, 429, 502-504) are retried with exponential
  * backoff and jitter; losing the job lease is surfaced as LeaseLostError so
  * the worker stops touching the job immediately.
  */

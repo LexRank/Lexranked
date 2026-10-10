@@ -42,7 +42,7 @@ CPT slugs are prefixed `lr_` to avoid collisions (≤ 20 chars, WP limit).
   admin form, sanitization (`FieldSanitizer`), storage (`MetaCodec`) and the
   DTO mapping.
 - Meta keys are `_lr_<field>` (underscore = hidden from the generic Custom
-  Fields box). Lists are JSON. **Empty input deletes the meta row** — unknown
+  Fields box). Lists are JSON. **Empty input deletes the meta row** - unknown
   stays unknown, it is never stored as a guess or an empty string.
 - Post title = lawyer full name / firm name; post content = bio/description.
 - `city`, `state`, `state_code` come from the assigned **Location** term
@@ -68,7 +68,7 @@ CPT slugs are prefixed `lr_` to avoid collisions (≤ 20 chars, WP limit).
 | website, phone, email | string? | email is **private** unless explicitly published |
 | practice_areas[] | term IDs | |
 | years_experience | int? | derived from bar admission date when sourced |
-| rating | decimal(3,2)? | 0–5 |
+| rating | decimal(3,2)? | 0-5 |
 | review_count | int? | |
 | bar_state, bar_number, bar_status | string? | |
 | education[], awards[], languages[] | structured arrays | each item may carry evidence |
@@ -101,15 +101,15 @@ score_version, verification_status, last_verified_at, created_at, updated_at`.
 | source_url | string |
 | source_type | string (configurable taxonomy) |
 | retrieved_at | datetime |
-| confidence | decimal(4,3) 0–1 |
+| confidence | decimal(4,3) 0-1 |
 | verification_status | `pending` \| `verified` \| `failed` \| `expired` |
-| claim_hash | sha1(entity, field, value, source) — unique; same fact from the same source is one claim |
+| claim_hash | sha1(entity, field, value, source) - unique; same fact from the same source is one claim |
 | job_id | research job that produced it (0 = editor / seed) |
 | review_status | `approved` (public) \| `pending_review` (research evidence about a published entity, hidden) \| `rejected` |
 | method | `manual` \| `seed` \| `structured_data` \| `ai` (schema v5) |
 
 `ClaimValidator` rejects any claim without a source (URL or registered
-source), with an unconfigured source type, a confidence outside 0–1, or a
+source), with an unconfigured source type, a confidence outside 0-1, or a
 field that is not traceable (system and commercial fields such as `score`
 or `commercial_status` can never be "evidenced").
 
@@ -159,7 +159,7 @@ cancel any job. Administrator-only (custom capability type `lr_research_job`).
 normalized_name, city, state, practice_area, website, source_url, status
 (new|matched|created|needs_review|rejected), entity_id, match_confidence,
 reason, payload, ai_note (advisory AI verdict, schema v5), created_at,
-updated_at`. Internal research data — never in the public API.
+updated_at`. Internal research data - never in the public API.
 
 ## AI content draft (`lr_content_draft`)
 
@@ -234,7 +234,7 @@ See `docs/knowledge-base.md`.
   (`active | paused | cancelled`), `premium_message, cta_url` (premium only),
   private `order_ref, notes`, `created_by`.
 - **`commercial_status`** (profile meta, read-only): derived from the two
-  tables — `free`, `claimed` or `premium`. Display only. The legacy values
+  tables - `free`, `claimed` or `premium`. Display only. The legacy values
   `verified`, `featured`, `sponsored` are no longer assigned to profiles.
 
 ## Freshness rules (configurable defaults)

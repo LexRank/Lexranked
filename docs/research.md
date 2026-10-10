@@ -2,17 +2,20 @@
 
 > Status: **implemented in Phase 5** (jobs, candidates, sources, claims,
 > verification, retries, logging, TypeScript worker); AI assistance added in
-> Phase 6 through the same validated intake — see [ai.md](ai.md).
+> Phase 6 through the same validated intake - see [ai.md](ai.md).
 
 ## Principles
 
 1. **WordPress is the source of truth.** Workers only *propose*: every
    submission is validated, deduplicated and applied by fixed rules inside
    the `lexranked-core` plugin.
-2. **Nothing is published automatically.** New lawyers and firms are created
-   as **drafts**; evidence about published profiles waits in an editorial
-   review queue; research-created sources and verification records are
-   `pending` posts.
+2. **Nothing is published without passing fixed rules.** New lawyers and
+   firms are created as **drafts**; evidence about published profiles waits
+   in an editorial review queue; research-created sources and verification
+   records are `pending` posts. With **Autonomous research** on (off by
+   default, see below), a completed job publishes only what passes every
+   check of `AutoPublishPolicy`; anything doubtful stays a draft with the
+   reason.
 3. **Every fact has a source.** A claim without a source URL/record and
    a retrieval date is rejected. Candidates must name the source they came
    from.
@@ -55,6 +58,7 @@ Seed dataset (curated CSV) ──► Candidates ──► Deterministic matching
 | Plugin `Research/VerificationRules` | Pure | caps `verified` by source tier per verification type |
 | Plugin `Research/ResearchIngest` | Intake | sources, candidates, claims, verifications, draft creation, applying facts |
 | Plugin `Research/ResearchLog` | Log | per-job log (redacted context) |
+| Plugin `Research/AutoPublishPolicy` · `AutoPublisher` | Autonomous research | pure publish / keep-as-draft rules; applies them when a job completes |
 | Plugin `REST/ResearchController` | API | private `/research/*` endpoints (see [api.md](api.md#research-api-private)) |
 | Plugin `Admin/ResearchAdmin` | Admin | job progress/log box, **LexRanked → Research review** page |
 | `workers/research` | TypeScript worker | claims jobs, runs pipelines, heartbeats, reports outcome |
@@ -65,9 +69,9 @@ Seed dataset (curated CSV) ──► Candidates ──► Deterministic matching
 |---|---|---|---|
 | `candidate_discovery` | worker | seed dataset → candidates → claims (+ website JSON-LD) → verification requests | `dataset` (required), `fetch_websites` (default `true`) |
 | `source_refresh` | worker | re-reads the websites of entities in the job's scope (Location / Practice Area terms on the job) | `entity_type` (`lawyer` \| `law_firm`, optional) |
-| `verification` | WordPress (cron) | marks published verification records past `expires_at` as `expired` | — |
-| `ranking_recalculation` | WordPress (cron) | scores all entities and recalculates published rankings | — |
-| `ai_candidate_review` | worker + AI | advisory AI verdict on candidates in review ([ai.md](ai.md)) | — |
+| `verification` | WordPress (cron) | marks published verification records past `expires_at` as `expired` | - |
+| `ranking_recalculation` | WordPress (cron) | scores all entities and recalculates published rankings | - |
+| `ai_candidate_review` | worker + AI | advisory AI verdict on candidates in review ([ai.md](ai.md)) | - |
 | `content_generation` | worker + AI | drafts with QA for rankings, hubs, profiles and articles ([ai.md](ai.md)) | `kind` (ranking\|hub\|profile\|article), `rankings`, `hubs`, `entities`, `topic`, `ranking`, `ai_qa` |
 
 `source_refresh` and `candidate_discovery` also accept `ai_extraction: true`
@@ -75,14 +79,56 @@ Seed dataset (curated CSV) ──► Candidates ──► Deterministic matching
 types wait until **AI assistance** is enabled in Settings.
 
 Create jobs in **LexRanked → Research Jobs** (set parameters as JSON and the
-scope with the taxonomy boxes) or with WP-CLI:
+scope with the taxonomy boxes), through the API when **Autonomous research**
+is on (`POST /research/jobs`, `candidate_discovery` and `source_refresh`
+only), or with WP-CLI:
 
 ```bash
 wp lexranked research-job candidate_discovery --params='{"dataset":"florida-personal-injury"}' --location=miami
 wp lexranked research-status 42          # progress, stats, log
 wp lexranked research-run                # run due internal jobs now
 wp lexranked research-reindex            # rebuild the matching index
+wp lexranked research-auto-publish 42    # apply the autonomous-research rules to a completed job
 ```
+
+## Autonomous research
+
+**LexRanked → Settings → Autonomous research** (off by default). When it is
+on, research workers may create `candidate_discovery` and `source_refresh`
+jobs through the API, and every completed job is passed to `AutoPublisher`
+(a job can opt out with `"auto_publish": false`). For each lawyer or firm
+the job **created** (matched, existing profiles are never touched),
+`AutoPublishPolicy` decides:
+
+| Entity | Published only when all of these hold |
+|---|---|
+| Lawyer | still a draft, not demo, no conflicting facts (sources disagree → doubt), a name, a city under a state, at least one practice area, bar state + bar number, bar status `active`, and **license** and **bar status** checks `verified` (only a tier-1 source can verify them, see Verification) with no failed or expired record for the same check |
+| Law firm | the same general checks, a website, and a `verified` **business** check |
+
+- Published: the profile, its verification records and the sources behind
+  them (tier ≤ 2) are published; scores and rankings recalculate as usual.
+- Kept: the profile stays a draft; the reasons are stored in
+  `_lr_auto_publish_hold` and logged on the job ("Kept #… as a draft: …").
+  Its records and sources stay pending for an editor.
+- Rankings: for each city and practice area of a newly published profile,
+  a ranking ("Best Personal Injury Lawyers in Miami, Florida") is created and
+  published when there are at least *Minimum entities for a ranking*
+  published, non-demo profiles and no ranking for that pair exists in any
+  status. The engine calculates positions; editorial text can be added later.
+- Evidence about profiles that are already published (a later job adding,
+  say, a board certification as an award) is approved and applied when it
+  comes from an official (tier 1) source, was not AI-extracted, targets a
+  profile field and the field is empty or already has that value; anything
+  that would change a shown value stays in the review queue.
+- Seed datasets may carry `years_experience`, `languages` (`a; b`),
+  `education` and `awards` (`Name | Issuer | Year; …`), read from the same
+  source as the row.
+- Unchanged: AI content drafts are never published automatically, claims
+  stay pending, payment never affects anything, and every publication is in
+  the audit log (`research.auto_published`, `research.ranking_created`).
+
+Re-applying the rules (`wp lexranked research-auto-publish <job>`) is
+idempotent: published items are skipped and held drafts are re-checked.
 
 ## Job lifecycle, leases and retries
 
@@ -99,7 +145,7 @@ pending ──claim──► running ──complete──► completed
   in `X-LexRanked-Lease`. The lease lasts *Research job lease* minutes
   (default 10) and is extended by each heartbeat. A worker that lost the
   lease (expired, taken over, or cancelled by an admin) gets `409` and must
-  stop — it can never write into a job someone else owns.
+  stop - it can never write into a job someone else owns.
 - **Retry with backoff.** `fail` with `retryable: true` schedules the next
   attempt at `base × 2^(attempt−1)` seconds (default base 300 s, capped at
   6 h) up to *Research job retries* (default 3). `retryable: false`
@@ -113,14 +159,14 @@ pending ──claim──► running ──complete──► completed
 
 ## Candidates and matching
 
-A candidate is a *lead* — "this name appears in that source" — never a fact.
+A candidate is a *lead* - "this name appears in that source" - never a fact.
 It is deduplicated by `sha1(type | normalized name | city | state)` and
 matched against existing lawyers/firms of **any** status:
 
 | Situation | Decision |
 |---|---|
 | Firm with the same website domain in the same state (one firm) | **match** (0.95) |
-| Same normalized name in the same state and the same city or domain | **match** (0.9–1.0) |
+| Same normalized name in the same state and the same city or domain | **match** (0.9-1.0) |
 | Same name, same state, different/unknown city | **review** |
 | Several profiles with that name, or same name in another state | **review** |
 | Lawyer: same last name + first initial in the same city | **review** |
@@ -141,14 +187,19 @@ suggested profile; editors pick *Same as #…*, *Create draft* or *Reject*.
 - Research claims are always stored with `verification_status = pending`;
   only verification records certify facts.
 - `review_status`: `approved` (public evidence), `pending_review` (research
-  evidence about a published profile — hidden from the public API and the
+  evidence about a published profile - hidden from the public API and the
   ranking engine until an editor approves it) or `rejected`.
 - For **draft / pending** entities the `FactResolver` picks the best value
-  per field and writes it — but never over a value an editor typed into a
+  per field and writes it - but never over a value an editor typed into a
   draft that research did not create, and never when the best sources
   disagree (the conflict is logged and the profile flagged for review).
   Locations are created under their state when missing; practice areas are
-  only assigned from existing terms (unknown ones are logged).
+  only assigned from existing terms (unknown ones are logged). The plugin
+  seeds a catalog of 16 practice areas (`PracticeArea::CATALOG`: personal
+  injury, criminal defense, family, divorce, immigration, bankruptcy,
+  employment, medical malpractice, workers' compensation, estate planning,
+  real estate, business, DUI, wrongful death, tax, elder law); areas without
+  published profiles stay out of the public API.
 
 ## Verification
 
@@ -157,7 +208,8 @@ status and business need a **tier 1** source; location, website and
 practice area tier ≤ 2; review data tier ≤ 4. A `verified` request from a
 weaker source is recorded as `pending` (and logged as downgraded). Records
 get `verified_at`, `expires_at` from the freshness rules, `verified_by =
-research:job-<id>`, and are created as **pending** posts an editor publishes.
+research:job-<id>`, and are created as **pending** posts an editor publishes
+(or that autonomous research publishes with a profile that passes every check).
 
 ## Worker (`workers/research`)
 
@@ -176,8 +228,8 @@ node dist/cli.js --loop        # or --once (cron / CI)
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `LEXRANKED_API_URL` | — | REST base (`…/wp-json/lexranked/v1`); https required except localhost |
-| `LEXRANKED_WORKER_USER` / `LEXRANKED_WORKER_APP_PASSWORD` | — | user with the **LexRanked Research Worker** role + application password |
+| `LEXRANKED_API_URL` | - | REST base (`…/wp-json/lexranked/v1`); https required except localhost |
+| `LEXRANKED_WORKER_USER` / `LEXRANKED_WORKER_APP_PASSWORD` | - | user with the **LexRanked Research Worker** role + application password |
 | `LEXRANKED_DATA_DIR` | `data` | directory of seed datasets (`<dataset>.csv`) |
 | `LEXRANKED_WORKER_ID` | `research-<pid>` | shown on the job |
 | `LEXRANKED_WORKER_JOB_TYPES` | both | `candidate_discovery,source_refresh` |
@@ -196,7 +248,7 @@ wp user create research-worker research@example.com --role=lexranked_worker
 wp user application-password create research-worker worker --porcelain
 ```
 
-The role can call the research API and read the public API — nothing in
+The role can call the research API and read the public API - nothing in
 wp-admin.
 
 ### Seed datasets
@@ -212,7 +264,7 @@ CSV, one row per lawyer/firm **as read by a person from a public source**:
 | `retrieved_at` | ✓ | date the source was read |
 | `city`, `state`, `practice_area`, `website`, `phone` | | only what the source states |
 | `bar_state`, `bar_number`, `bar_status` | | lawyers; from the bar source |
-| `confidence` | | 0–1, default 0.9 |
+| `confidence` | | 0-1, default 0.9 |
 
 Invalid rows are skipped and logged; they keep their position so the
 cursor stays stable. Real datasets live outside the repository; the fixtures
@@ -244,5 +296,5 @@ internal services.
 ## AI usage (Phase 6)
 
 See [ai.md](ai.md): quote-checked extraction and practice-area
-classification, advisory match review, ranking content drafts with QA — all
+classification, advisory match review, ranking content drafts with QA - all
 with strict JSON Schemas, validated output and no publication.

@@ -1,4 +1,4 @@
-# Ranking methodology — LexRank
+# Ranking methodology - LexRank
 
 > Status: **implemented (Phase 4)**. Engine: `wordpress/plugins/lexranked-core/src/Ranking/`.
 
@@ -27,11 +27,37 @@ sum to 100) and parameters:
 - Built-in versions live in code (`ScoreVersions::builtin()`), so any change
   is reviewed and versioned in git.
 - A built-in id can never be redefined.
-- Changing weights or the input source means adding a new version (v1.1 changed the input source).
+- Changing weights or the input source means adding a new version (v1.1 changed the input source; v1.2 stopped scoring reviews).
 - The active version is selected in **LexRanked › Settings**.
 - A ranking may pin its own version.
 
-## v1.1 (active): scores from evidence
+## v1.2 (active): client reviews not scored
+
+Google and other platforms do not allow their ratings to be stored, and
+LexRanked's own client reviews (email-confirmed, approved by an editor) are
+only starting, so v1.2 leaves reviews out of the score until enough exist to
+compare lawyers fairly. Reviews are still collected and shown on profiles.
+
+| Component | v1.1 | v1.2 |
+|---|---|---|
+| Reputation | 30 (awards ½, review volume ½) | 20 (awards only, up to 5) |
+| Review strength | 20 | 0 (not a component) |
+| Experience | 15 | 30 |
+| Practice-area relevance | 15 | 20 |
+| Professional credentials | 10 | 15 |
+| Local relevance | 5 | 5 |
+| Data quality | 5 | 10 (rating and review count leave the key-fact check) |
+
+- Defined in `ScoreVersions::builtin()` with the parameter `reviews_scored = 0`;
+  components weighted 0 are left out of the breakdown.
+- Sites still on v1.1 move to v1.2 once, on the schema v10 upgrade; a version
+  chosen deliberately in Settings stays.
+- Earlier snapshots keep the version that produced them and still reproduce.
+- Approved LexRanked reviews are recorded as `rating`/`review_count` evidence
+  (source type `lexranked_reviews`, tier 5), ready for a later version that
+  scores them.
+
+## v1.1: scores from evidence
 
 v1.1 uses exactly the v1.0 weights and formulas below. The only change is
 **where the inputs come from**: the evidence-backed fact layer
@@ -67,7 +93,7 @@ The frontend shows both in a "Why #N?" disclosure on every entry.
 
 ## v1.0
 
-| Component | Weight | Factor (0–1) |
+| Component | Weight | Factor (0-1) |
 |-----------|--------|--------------|
 | Reputation | 30 | 0.5 × min(awards, 5)/5 + 0.5 × ln(1 + reviews)/ln(1 + 500) |
 | Review strength | 20 | Bayesian rating (below), mapped linearly from 3.0 → 0 to 5.0 → 1 |
@@ -135,7 +161,7 @@ A contextual ranking (car accidents, Spanish-speaking, for businesses)
   `wp lexranked recalculate`.
 
 Each run writes rows to `{prefix}lr_ranking_snapshots` (`run_id`,
-`ranking_id` — 0 for entity-level scores — `entity_id`, `position`, `score`,
+`ranking_id` - 0 for entity-level scores - `entity_id`, `position`, `score`,
 `score_version`, `context`, `components`, `inputs`, `calculated_at`). Runs
 are inserted in a transaction. Public rankings are served from the latest
 run, with **movement** measured against the previous run. The history is

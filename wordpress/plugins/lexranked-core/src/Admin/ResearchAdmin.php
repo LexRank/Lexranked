@@ -77,13 +77,13 @@ final class ResearchAdmin {
 		}
 		$rows = array(
 			'Status'            => (string) $job['status'],
-			'Worker'            => (string) ( $job['worker'] ?? '—' ),
+			'Worker'            => (string) ( $job['worker'] ?? '-' ),
 			'Processed records' => (string) $job['processedCount'],
-			'Cursor'            => (string) ( $job['cursor'] ?? '—' ),
+			'Cursor'            => (string) ( $job['cursor'] ?? '-' ),
 			'Retries used'      => $job['retryCount'] . ' / ' . (int) $this->services->settings->get( 'research_max_retries' ),
-			'Lease expires'     => (string) ( $job['lockedUntil'] ?? '—' ),
-			'Next retry'        => (string) ( $job['nextRetryAt'] ?? '—' ),
-			'Last error'        => (string) ( $job['error'] ?? '—' ),
+			'Lease expires'     => (string) ( $job['lockedUntil'] ?? '-' ),
+			'Next retry'        => (string) ( $job['nextRetryAt'] ?? '-' ),
+			'Last error'        => (string) ( $job['error'] ?? '-' ),
 		);
 		echo '<table class="widefat striped" style="max-width:720px"><tbody>';
 		foreach ( $rows as $label => $value ) {
@@ -138,7 +138,7 @@ final class ResearchAdmin {
 
 		$counts = $this->services->candidates->counts();
 		printf(
-			'<p>Candidates — matched: %d · drafted: %d · needs review: %d · rejected: %d. <a href="%s">Research drafts: lawyers</a> · <a href="%s">law firms</a></p>',
+			'<p>Candidates - matched: %d · drafted: %d · needs review: %d · rejected: %d. <a href="%s">Research drafts: lawyers</a> · <a href="%s">law firms</a></p>',
 			(int) $counts['matched'],
 			(int) $counts['created'],
 			(int) $counts['needs_review'],
@@ -172,7 +172,7 @@ final class ResearchAdmin {
 					'unsure'    => 'unsure',
 				);
 				$suggested .= sprintf(
-					'<br><em>AI suggestion (advisory): %s, %d%% — %s</em>',
+					'<br><em>AI suggestion (advisory): %s, %d%% - %s</em>',
 					esc_html( $verdicts[ (string) $c['aiNote']['verdict'] ] ?? '' ),
 					(int) round( 100 * (float) $c['aiNote']['confidence'] ),
 					esc_html( (string) $c['aiNote']['reason'] )
@@ -235,7 +235,7 @@ final class ResearchAdmin {
 		foreach ( $claims as $claim ) {
 			$post    = get_post( $claim['entity_id'] );
 			$type    = 'law_firm' === $claim['entity_type'] ? $this->services->law_firm : $this->services->lawyer;
-			$current = '—';
+			$current = '-';
 			if ( $post instanceof \WP_Post ) {
 				$record  = $this->services->entities->record( $post, $type );
 				$current = 'name' === $claim['field_name'] ? $record['title'] : self::display( $record['fields'][ $claim['field_name'] ] ?? null );
@@ -356,7 +356,7 @@ final class ResearchAdmin {
 	 */
 	private static function display( mixed $value ): string {
 		if ( null === $value || '' === $value ) {
-			return '—';
+			return '-';
 		}
 		if ( is_scalar( $value ) ) {
 			return (string) $value;

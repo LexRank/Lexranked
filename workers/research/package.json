@@ -8,7 +8,8 @@
     "node": ">=22"
   },
   "bin": {
-    "lexranked-research": "dist/cli.js"
+    "lexranked-research": "dist/cli.js",
+    "lexranked-images": "dist/images-cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

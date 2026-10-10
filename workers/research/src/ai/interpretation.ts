@@ -4,7 +4,7 @@
  * LexRanked's data flows one way: data → evidence → ranking → page → AI text.
  * The model sits at the very end and only INTERPRETS what the backend has
  * already established: it may summarize, explain, compare, classify and
- * write — from the numbered facts it is given. It may not invent facts,
+ * write - from the numbered facts it is given. It may not invent facts,
  * research from memory, compute new numbers or decide, change or judge a
  * position. Everything it writes is a draft that deterministic QA checks and
  * an editor approves.
@@ -12,7 +12,7 @@
 
 export type InterpretationTask = 'summarize' | 'explain' | 'compare' | 'classify' | 'write';
 
-export const INTERPRETATION_VERSION = 'interp/1';
+export const INTERPRETATION_VERSION = 'interp/2';
 
 /** What each task may do, stated to the model and in docs/ai-interpretation.md. */
 export const TASK_DESCRIPTIONS: Record<InterpretationTask, string> = {
@@ -33,6 +33,7 @@ export const INTERPRETATION_RULES: readonly string[] = [
   'If the facts do not support a statement, leave it out.',
   'Never add names, dates, awards, reviews, fees, case outcomes or credentials that are not in the facts. Do not give legal advice.',
   'Do not call anyone "the best", do not promise results, do not include links, phone numbers or calls to action.',
+  'Add something a generic page on the same topic would not have: at least one specific, useful point taken from these facts (for example a verified credential, a check date, or a market figure with its sample size). It must be true and cited; if the facts offer nothing distinctive, add nothing.',
   'US English, neutral and factual, written for someone choosing a lawyer.',
 ];
 

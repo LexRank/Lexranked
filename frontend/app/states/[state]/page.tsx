@@ -1,4 +1,5 @@
 import { redirectIfMoved } from "@/lib/content/moved";
+import { placeJsonLd } from "@/lib/seo/jsonld";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -44,7 +45,8 @@ export async function generateMetadata(props: PageProps<"/states/[state]">): Pro
   if (!data?.eligibility.exists) return { robots: { index: false } };
   return buildMetadata({
     title: `Top-Rated Lawyers in ${data.state.name}`,
-    description: `Top-rated lawyers and law firms in ${data.state.name}: ${data.state.lawyerCount} lawyer profiles and ${data.rankings.length} rankings by practice area, scored with a transparent methodology.`,
+    // The hub's answer-first summary makes the best snippet; the generic line is the fallback.
+    description: data.state.content?.summary ?? `Top-rated lawyers and law firms in ${data.state.name}: ${data.state.lawyerCount} lawyer profiles and ${data.rankings.length} rankings by practice area, scored with a transparent methodology.`,
     path: data.state.path,
     noindex: !data.eligibility.indexable,
   });
@@ -66,6 +68,7 @@ export default async function StatePage(props: PageProps<"/states/[state]">) {
       ]}
       path={s.path}
       eyebrow={s.code ? `State · ${s.code}` : "State"}
+      about={[placeJsonLd({ city: null, state: s.name })]}
       title={`Top-rated lawyers in ${s.name}`}
       lead={`Rankings, lawyers and law firms in ${s.name}, scored with the LexRank methodology from sourced, verified data.`}
       counts={s}

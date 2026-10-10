@@ -88,6 +88,13 @@ final class ScoreVersion {
 	}
 
 	/**
+	 * Whether client reviews count (optional param reviews_scored, default yes).
+	 */
+	public function reviews_scored(): bool {
+		return (float) ( $this->params['reviews_scored'] ?? 1 ) > 0;
+	}
+
+	/**
 	 * Public description.
 	 *
 	 * @return array{id: string, input: string, weights: array<int, array{key: string, label: string, weight: float}>, params: array<string, float>}

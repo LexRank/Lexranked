@@ -19,7 +19,7 @@ use LexRanked\Core\PostTypes\Lawyer;
 use LexRanked\Core\Services;
 
 /**
- * GET /compare?type=lawyer&entities=12,34 — side-by-side comparison of two to
+ * GET /compare?type=lawyer&entities=12,34 - side-by-side comparison of two to
  * four published entities of one type, by stable entity ID (merged IDs follow
  * to the surviving entity). Built by ComparisonEngine from the same public
  * detail DTOs the profiles use, so it can never show more than a profile does.
@@ -53,7 +53,7 @@ final class CompareController extends RestController {
 						'validate_callback' => 'rest_validate_request_arg',
 					),
 					'entities' => array(
-						'description'       => 'Comma-separated entity IDs (' . ComparisonEngine::MIN . '–' . ComparisonEngine::MAX . ').',
+						'description'       => 'Comma-separated entity IDs (' . ComparisonEngine::MIN . '-' . ComparisonEngine::MAX . ').',
 						'type'              => 'string',
 						'required'          => true,
 						'pattern'           => '^[0-9]{1,10}(,[0-9]{1,10}){0,9}$',

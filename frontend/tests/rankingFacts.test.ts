@@ -30,7 +30,7 @@ describe("ranking facts", () => {
     expect(text).toContain("As of September 26, 2026, the top-ranked personal injury lawyers in Miami, Florida are");
     expect(text).toContain("Test Lawyer 1 (LexRank 94.00), Test Lawyer 2 (93.00) and Test Lawyer 3 (92.00).");
     expect(text).toContain("LexRanked ranked 3 lawyers with the LexRank v1.0 methodology; 3 of them have fully verified profiles.");
-    expect(text).toContain("average client rating is 4.5 out of 5 across 30 reviews");
+    expect(text).toContain("average client rating of 4.5 out of 5 across 30 reviews, for information only");
   });
 
   it("omits claims it cannot support", () => {

@@ -15,6 +15,7 @@ import type {
   LawyerDetail,
   LawyerSummary,
   MarketDto,
+  StateStatsDto,
   MethodologyDto,
   PageEligibilityModelDto,
   PlacementDto,
@@ -146,6 +147,38 @@ export const submitClaim = (body: ClaimSubmission) =>
 export const confirmClaim = (token: string) =>
   apiRequest<{ status: string }>("claims/confirm", { method: "POST", body: { token }, timeoutMs: 15000 });
 
+export interface ReviewSubmission {
+  entityType: "lawyer" | "law_firm";
+  entityId: number;
+  rating: number;
+  title: string;
+  body: string;
+  name: string;
+  email: string;
+  serviceYear: number;
+  client: true;
+}
+
+/** Submit a client review (server action only). */
+export const submitReview = (body: ReviewSubmission) =>
+  apiRequest<{ status: string }>("reviews", { method: "POST", body, timeoutMs: 15000 });
+
+/** Confirm a reviewer's email with the token from the link. */
+export const confirmReview = (token: string) =>
+  apiRequest<{ status: string }>("reviews/confirm", { method: "POST", body: { token }, timeoutMs: 15000 });
+
+export interface ContactSubmission {
+  name: string;
+  email: string;
+  topic: "general" | "correction" | "lawyer" | "privacy" | "press";
+  page: string;
+  message: string;
+}
+
+/** Send a contact message to the editors (server action only; it is emailed, not stored). */
+export const sendContact = (body: ContactSubmission) =>
+  apiRequest<{ status: string }>("contact", { method: "POST", body, timeoutMs: 15000 });
+
 /** Current entity for a current or former slug (renames and merges); null when unknown. */
 export async function resolveEntity(type: EntityType, slug: string, opts?: Opts): Promise<EntityDto | null> {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return null;
@@ -165,7 +198,7 @@ export const getAttributes = (opts?: Opts) =>
 export const getDataQualityModel = (opts?: Opts) =>
   apiRequest<DataQualityModelDto>("data-quality", { revalidate: 3600, ...opts }).then((r) => r.data);
 
-/** Side-by-side comparison of 2–4 entities by stable entity ID; null when any is unknown or unpublished. */
+/** Side-by-side comparison of 2-4 entities by stable entity ID; null when any is unknown or unpublished. */
 export async function getComparison(type: ComparableType, ids: number[], opts?: Opts): Promise<ComparisonDto | null> {
   try {
     return (await apiRequest<ComparisonDto>("compare", { query: { type, entities: ids.join(",") }, ...opts })).data;
@@ -191,6 +224,19 @@ export async function getMarket(scope: { location?: string | null; practice_area
     return (await apiRequest<MarketDto>("market", { query, ...opts })).data;
   } catch (error) {
     if (error instanceof WordPressApiError && (error.status === 404 || error.status === 400)) return null;
+    throw error;
+  }
+}
+
+/**
+ * Statewide figures for the data pages (API 1.23); null when the state is
+ * unknown or the CMS is older than 1.23 (no route).
+ */
+export async function getStateStats(state: string, opts?: Opts): Promise<StateStatsDto | null> {
+  try {
+    return (await apiRequest<StateStatsDto>(`stats/${encodeURIComponent(state)}`, { revalidate: 3600, tags: ["lexranked"], ...opts })).data;
+  } catch (error) {
+    if (error instanceof WordPressApiError && error.status === 404) return null;
     throw error;
   }
 }

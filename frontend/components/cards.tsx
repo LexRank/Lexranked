@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { guideImage } from "@/lib/content/articles";
 import type { ArticleSummary, LawFirmSummary, LawyerSummary, RankingContextDto, RankingDetail, RankingEntry as RankingEntryDto, RankingSummary } from "@/types/api";
 import { contextualAttributes } from "@/lib/content/contextualAttributes";
 import { compareHref } from "@/lib/content/compare";
@@ -64,8 +65,11 @@ export function FirmCard({ firm }: { firm: LawFirmSummary }) {
 
 export function ArticleCard({ article }: { article: ArticleSummary }) {
   const date = formatDate(article.updatedAt ?? article.publishedAt);
+  const image = guideImage(article);
   return (
-    <Link href={article.path} className="card card--link">
+    <Link href={article.path} className="card card--link card--guide">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="card__thumb" src={image.url} width={image.width} height={image.height} alt="" loading="lazy" />
       <p className="eyebrow" style={{ marginBottom: "0.5rem" }}>
         Guide{article.categories[0] ? ` · ${article.categories[0].name}` : ""}
       </p>
@@ -114,7 +118,7 @@ export function Movement({ movement, isNew }: { movement: number | null; isNew: 
   if (movement === 0)
     return (
       <span className="move move--same" title="No change since the previous calculation">
-        <span aria-hidden="true">–</span>
+        <span aria-hidden="true">-</span>
         <span className="sr-only">No change</span>
       </span>
     );
@@ -177,7 +181,7 @@ const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 /**
  * "Why #N?": a native disclosure (no JavaScript) built only from the stored
- * score components and snapshot differences — never generated text.
+ * score components and snapshot differences - never generated text.
  */
 export function WhyRankedHere({ entry }: { entry: RankingEntryDto }) {
   const why = entry.why;
@@ -262,7 +266,7 @@ export function CompareLinks({ ranking }: { ranking: RankingDetail }) {
   );
 }
 
-/** Key attributes chosen by the ranking's context (spec §22–23). */
+/** Key attributes chosen by the ranking's context (spec §22-23). */
 export function ContextualAttributes({ entry, context }: { entry: RankingEntryDto; context?: RankingContextDto | null }) {
   const attributes = contextualAttributes(entry, context);
   if (attributes.length === 0) return null;

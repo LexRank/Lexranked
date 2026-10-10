@@ -18,6 +18,7 @@ use LexRanked\Core\Ranking\ContextDiscovery;
 use LexRanked\Core\Ranking\ContextEligibility;
 use LexRanked\Core\Ranking\RankingQualifier;
 use LexRanked\Core\REST\DTO\RankingMapper;
+use LexRanked\Core\Research\AutoPublisher;
 use LexRanked\Core\Research\JobException;
 use LexRanked\Core\Research\JobPolicy;
 use LexRanked\Core\Services;
@@ -165,7 +166,7 @@ final class Command {
 				$status = 'failed' === $lawyer['verified'] && 'bar_status' === $vtype ? 'failed' : ( 'verified' === $lawyer['verified'] ? 'verified' : 'pending' );
 				$this->create(
 					$s->verification,
-					sprintf( '%s — %s', $lawyer['title'], $vtype ),
+					sprintf( '%s - %s', $lawyer['title'], $vtype ),
 					'',
 					array(
 						'entity_id'         => $id,
@@ -568,7 +569,7 @@ final class Command {
 					'profile' => get_the_title( (int) $r['entity_id'] ) . ' (#' . $r['entity_id'] . ')',
 					'ranking' => $r['ranking_id'],
 					'term'    => max( (int) $r['location_term_id'], (int) $r['practice_area_term_id'] ),
-					'period'  => substr( (string) $r['starts_at'], 0, 10 ) . ' – ' . substr( (string) $r['ends_at'], 0, 10 ),
+					'period'  => substr( (string) $r['starts_at'], 0, 10 ) . ' - ' . substr( (string) $r['ends_at'], 0, 10 ),
 					'status'  => \LexRanked\Core\Commercial\PlacementPolicy::is_live( $r, $now ) ? 'live' : $r['status'],
 				),
 				$this->services->commercial->placements->list( true )
@@ -916,7 +917,7 @@ final class Command {
 			\WP_CLI::error( 'Lawyer or firm entity not found.' );
 		}
 		$result = $s->quality->compute( (string) $row['entity_type'], (int) $row['wp_id'] );
-		\WP_CLI::log( sprintf( '%s — Data Quality %s%% (%s)', $row['canonical_name'], $result['score'], $result['version'] ) );
+		\WP_CLI::log( sprintf( '%s - Data Quality %s%% (%s)', $row['canonical_name'], $result['score'], $result['version'] ) );
 		\WP_CLI\Utils\format_items( 'table', $result['dimensions'], array( 'label', 'weight', 'score', 'detail' ) );
 		foreach ( array( 'missing', 'unsourced', 'stale', 'conflicts' ) as $key ) {
 			if ( array() !== $result[ $key ] ) {
@@ -996,10 +997,10 @@ final class Command {
 				'attribute'     => $attribute,
 				'fact'          => wp_json_encode( $fact['value'] ),
 				'status'        => $fact['status'],
-				'claim'         => null === $claim ? '—' : sprintf( '#%d raw=%s via %s (%s, conf %.2f, %s)', $claim['claim_id'], wp_json_encode( $claim['value'] ), $claim['method'], $claim['verification_status'], $claim['confidence'], substr( $claim['retrieved_at'], 0, 10 ) ),
-				'source'        => null === $source ? ( $claim['source_url'] ?? '—' ) : sprintf( '#%d %s (%s, tier %d)', $source->ID, get_the_title( $source ), $claim['source_type'] ?? '', (int) $fact['source_tier'] ),
+				'claim'         => null === $claim ? '-' : sprintf( '#%d raw=%s via %s (%s, conf %.2f, %s)', $claim['claim_id'], wp_json_encode( $claim['value'] ), $claim['method'], $claim['verification_status'], $claim['confidence'], substr( $claim['retrieved_at'], 0, 10 ) ),
+				'source'        => null === $source ? ( $claim['source_url'] ?? '-' ) : sprintf( '#%d %s (%s, tier %d)', $source->ID, get_the_title( $source ), $claim['source_type'] ?? '', (int) $fact['source_tier'] ),
 				'research_job'  => null === $job ? 'editor / seed' : sprintf( '#%d %s', $job->ID, get_the_title( $job ) ),
-				'ranking_input' => null === $snapshot || ! array_key_exists( $attribute, (array) $snapshot['inputs'] ) ? '—' : sprintf( '%s in run %s (%s)', wp_json_encode( $snapshot['inputs'][ $attribute ] ), substr( (string) $snapshot['run_id'], 0, 8 ), $snapshot['calculated_at'] ),
+				'ranking_input' => null === $snapshot || ! array_key_exists( $attribute, (array) $snapshot['inputs'] ) ? '-' : sprintf( '%s in run %s (%s)', wp_json_encode( $snapshot['inputs'][ $attribute ] ), substr( (string) $snapshot['run_id'], 0, 8 ), $snapshot['calculated_at'] ),
 			);
 		}
 		if ( 'json' === ( $assoc_args['format'] ?? 'table' ) ) {
@@ -1174,13 +1175,58 @@ final class Command {
 			return;
 		}
 		foreach ( array( 'jobType', 'status', 'processedCount', 'cursor', 'retryCount', 'nextRetryAt', 'lockedUntil', 'worker', 'error' ) as $key ) {
-			\WP_CLI::line( sprintf( '%-15s %s', $key, is_scalar( $job[ $key ] ) ? (string) $job[ $key ] : '—' ) );
+			\WP_CLI::line( sprintf( '%-15s %s', $key, is_scalar( $job[ $key ] ) ? (string) $job[ $key ] : '-' ) );
 		}
 		\WP_CLI::line( sprintf( '%-15s %s', 'stats', (string) wp_json_encode( $job['stats'] ) ) );
 		\WP_CLI::line( sprintf( '%-15s %s', 'candidates', (string) wp_json_encode( array_filter( $job['candidateCounts'] ) ) ) );
 		foreach ( $job['log'] as $entry ) {
 			\WP_CLI::line( sprintf( '  %s %-7s %-10s %s', $entry['createdAt'], $entry['level'], $entry['stage'], $entry['message'] ) );
 		}
+	}
+
+	/**
+	 * Apply the autonomous-research publication rules to a completed job now.
+	 *
+	 * Publishes the job's drafts that pass every check (with their verification
+	 * records and sources), keeps the rest as drafts with the reason, and
+	 * creates missing rankings. Works whether or not "Autonomous research" is
+	 * on, so an administrator can apply the rules to a job on demand.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <id>
+	 * : Job ID.
+	 *
+	 * @subcommand research-auto-publish
+	 *
+	 * @param array<int, string>    $args       Positional args.
+	 * @param array<string, string> $assoc_args Assoc args.
+	 */
+	public function research_auto_publish( array $args, array $assoc_args ): void {
+		unset( $assoc_args );
+		$id = (int) ( $args[0] ?? 0 );
+		try {
+			$job = $this->services->jobs->view( $id );
+		} catch ( JobException $e ) {
+			\WP_CLI::error( $e->getMessage() );
+		}
+		if ( 'completed' !== $job['status'] ) {
+			\WP_CLI::error( sprintf( 'Job %d is %s; only completed jobs can be published.', $id, (string) $job['status'] ) );
+		}
+		$summary = ( new AutoPublisher( $this->services, $this->services->research_log ) )->run( $id );
+		foreach ( $summary['held'] as $entity_id => $reasons ) {
+			\WP_CLI::line( sprintf( '  kept #%d as draft: %s', $entity_id, implode( '; ', $reasons ) ) );
+		}
+		\WP_CLI::success(
+			sprintf(
+				'%d published, %d kept as drafts, %d verification records and %d sources published, %d rankings created.',
+				count( $summary['published'] ),
+				count( $summary['held'] ),
+				$summary['verifications'],
+				$summary['sources'],
+				count( $summary['rankings'] )
+			)
+		);
 	}
 
 	/**

@@ -2,7 +2,7 @@
  * HTML → plain text for model input and quote checking.
  */
 
-const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '–', mdash: '—', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“' };
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '-', mdash: '-', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“' };
 
 export function htmlToText(html: string, maxChars = 12_000): string {
   const text = html

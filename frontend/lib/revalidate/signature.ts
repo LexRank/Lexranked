@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
  * Verifies `X-LexRanked-Signature: t=<unix>,v1=<hex>` = HMAC-SHA256 of
- * "<t>.<body>" with the shared REVALIDATE_SECRET — the counterpart of
+ * "<t>.<body>" with the shared REVALIDATE_SECRET - the counterpart of
  * LexRanked\Core\Integration\Signature in the plugin.
  */
 

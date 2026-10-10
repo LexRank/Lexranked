@@ -3,7 +3,7 @@ import type { CityDto, LawFirmSummary, LawyerSummary, MarketDto, PlacementDto, R
 import { MarketStats } from "./MarketStats";
 import { PlacementBlock } from "./commercial/Commercial";
 import { pluralize } from "@/lib/format";
-import type { Crumb } from "@/lib/seo/jsonld";
+import type { Crumb, JsonLdObject } from "@/lib/seo/jsonld";
 import { collectionPageJsonLd, rankingPageJsonLd } from "@/lib/seo/jsonld";
 import { formatDate } from "@/lib/format";
 import { EditorialBody, FaqSection } from "./ranking/RankingContent";
@@ -31,6 +31,7 @@ export function HubPage({
   featured = [],
   groupBy,
   market,
+  about = [],
 }: {
   crumbs: Crumb[];
   path: string;
@@ -52,15 +53,22 @@ export function HubPage({
   groupBy?: "practice" | "city";
   /** Market statistics computed by the CMS for this hub (Etap I). */
   market?: MarketDto | null;
+  /** schema.org nodes the page is about (place, practice area). */
+  about?: Array<JsonLdObject | undefined>;
 }) {
   const groups = groupBy ? hubGroups(lawyers, rankings, groupBy) : [];
   const reviewed = formatDate(content?.reviewedAt ?? null);
   const hasDemo = lawyers.some((l) => l.isDemo) || rankings.some((r) => r.isDemo);
   return (
     <>
-      <JsonLd data={collectionPageJsonLd(title, path, lead)} />
+      <JsonLd
+        data={collectionPageJsonLd(title, path, content?.summary ?? lead, {
+          about,
+          items: [...lawyers, ...firms].map((e) => ({ name: e.name, path: e.path })),
+        })}
+      />
       {content && (content.reviewedBy || content.reviewedAt) && (
-        <JsonLd data={rankingPageJsonLd({ name: title, path, description: content.summary ?? lead, dateModified: null, reviewedBy: content.reviewedBy, reviewedAt: content.reviewedAt })} />
+        <JsonLd data={rankingPageJsonLd({ name: title, path, description: content.summary ?? lead, dateModified: null, reviewedBy: content.reviewedBy, reviewedAt: content.reviewedAt, about })} />
       )}
       <PageHeader crumbs={crumbs} eyebrow={eyebrow} title={title} lead={lead}>
         <div className="page-header__meta">
@@ -98,10 +106,19 @@ export function HubPage({
           {rankings.length > 0 && (
             <section>
               <h2>Rankings</h2>
+              <p>
+                <strong>
+                  {pluralize(rankings.length, "ranking")}, each ordering lawyers by the LexRank score
+                  {rankings.some((r) => !r.location?.citySlug) ? "; the statewide ranking, which compares every city, comes first" : ""}.
+                </strong>
+              </p>
               <div className="grid grid--2">
-                {rankings.map((r) => (
-                  <RankingCard key={r.id} ranking={r} />
-                ))}
+                {/* Statewide rankings ("Best … Lawyers in Florida") lead: they cover every city. */}
+                {[...rankings]
+                  .sort((a, b) => Number(Boolean(a.location?.citySlug)) - Number(Boolean(b.location?.citySlug)))
+                  .map((r) => (
+                    <RankingCard key={r.id} ranking={r} />
+                  ))}
               </div>
             </section>
           )}
@@ -109,6 +126,11 @@ export function HubPage({
           {groups.length > 1 && (
             <section aria-labelledby="hub-tree-heading">
               <h2 id="hub-tree-heading">{groupBy === "city" ? "By city" : "By practice area"}</h2>
+              <p>
+                <strong>
+                  The highest-scoring lawyers on this page, grouped by {groupBy === "city" ? "city" : "practice area"}; each ranking above lists every lawyer.
+                </strong>
+              </p>
               <ul className="hub-tree">
                 {groups.map((g) => (
                   <li key={g.key}>
@@ -133,6 +155,9 @@ export function HubPage({
               <div className="section__head" style={{ marginBottom: "1rem" }}>
                 <h2>{lawyersHeading}</h2>
               </div>
+              <p>
+                <strong>The {lawyers.length} highest LexRank scores on this page; each profile shows the sources behind its facts.</strong>
+              </p>
               <div className="grid grid--2">
                 {lawyers.map((l) => (
                   <LawyerCard key={l.id} lawyer={l} />

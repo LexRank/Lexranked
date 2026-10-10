@@ -1,7 +1,10 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo/urls";
-import type { ArticleSummary, CityDto, LawFirmSummary, LawyerSummary, PracticeAreaDto, RankingSummary, StateDto } from "@/types/api";
-import { articleEligibility, listingEligibility, MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
+import { categoryCounts } from "./articles";
+import { AUTHORS, authorPath } from "./authors";
+import { DATA_INDEX_PATH, DATA_PAGES, dataPath, publishedDataPages } from "./data-pages";
+import type { ArticleSummary, CityDto, LawFirmSummary, LawyerSummary, PracticeAreaDto, RankingSummary, StateDto, StateStatsDto } from "@/types/api";
+import { articleEligibility, indexPageIndexable, listingEligibility, MIN_LAWYERS_FOR_HUB_PAGE, profileEligibility, rankingEligibility } from "./eligibility";
 
 /**
  * Pure sitemap assembly: only indexable pages. Excludes demo data, thin
@@ -16,9 +19,14 @@ export interface SitemapInput {
   cities: CityDto[];
   practiceAreas: PracticeAreaDto[];
   articles?: ArticleSummary[];
+  /** Statewide figures (API 1.23): the statistics pages that have enough data are listed too. */
+  stats?: StateStatsDto | null;
 }
 
-export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/", "/rankings/", "/states/", "/cities/", "/practice-areas/"];
+export const STATIC_PATHS = ["/", "/methodology/", "/verified/", "/advertising/", "/about/", "/editorial-policy/", "/contact/", "/privacy/", "/terms/", "/disclaimer/", ...AUTHORS.map((a) => authorPath(a.slug)), DATA_INDEX_PATH, ...DATA_PAGES.filter((p) => !p.stats).map((p) => dataPath(p.slug))];
+
+/** Index pages, listed once they link to enough pages (indexPageIndexable). */
+export const INDEX_PATHS = { rankings: "/rankings/", states: "/states/", cities: "/cities/", practiceAreas: "/practice-areas/" } as const;
 
 /** Listing pages that are noindex until they list real profiles (see listingEligibility). */
 export const LISTING_PATHS = { lawyers: "/lawyers/", lawFirms: "/law-firms/" } as const;
@@ -44,6 +52,7 @@ function realLawyerCount(lawyers: LawyerSummary[], match: (l: LawyerSummary) => 
 
 export function buildSitemap(input: SitemapInput): MetadataRoute.Sitemap {
   const entries: Entry[] = STATIC_PATHS.map((p) => entry(p, undefined, p === "/" ? 1 : 0.6));
+  for (const p of publishedDataPages(input.stats ?? null).filter((d) => d.stats)) entries.push(entry(dataPath(p.slug), undefined, 0.6));
   if (listingEligibility(input.lawyers).indexable) entries.push(entry(LISTING_PATHS.lawyers, undefined, 0.6));
   if (listingEligibility(input.lawFirms).indexable) entries.push(entry(LISTING_PATHS.lawFirms, undefined, 0.6));
 
@@ -71,9 +80,21 @@ export function buildSitemap(input: SitemapInput): MetadataRoute.Sitemap {
     if (hubIndexable(area, (l) => l.practiceAreas.some((p) => p.slug === area.slug))) entries.push(entry(area.path, undefined, 0.6));
   }
 
+  const exists = (hubs: Array<{ eligibility?: { exists: boolean } }>) => hubs.filter((h) => h.eligibility?.exists).length;
+  const indexes: Array<[string, number]> = [
+    [INDEX_PATHS.rankings, input.rankings.filter((r) => r.path && !r.isThin).length],
+    [INDEX_PATHS.states, exists(input.states)],
+    [INDEX_PATHS.cities, exists(input.cities)],
+    [INDEX_PATHS.practiceAreas, exists(input.practiceAreas)],
+  ];
+  for (const [path, count] of indexes) if (indexPageIndexable(count)) entries.push(entry(path, undefined, 0.6));
+
   const articles = (input.articles ?? []).filter((a) => articleEligibility(a).indexable);
   if (articles.length > 0) entries.push(entry("/articles/", undefined, 0.6));
   for (const article of articles) entries.push(entry(article.path, article.updatedAt, 0.6));
+  for (const category of categoryCounts(articles)) {
+    if (indexPageIndexable(category.count)) entries.push(entry(`/articles/category/${category.slug}/`, undefined, 0.5));
+  }
 
   // De-duplicate by URL (first wins) for safety.
   const seen = new Set<string>();
