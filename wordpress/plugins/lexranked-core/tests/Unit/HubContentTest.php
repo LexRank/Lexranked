@@ -79,6 +79,48 @@ final class HubContentTest extends TestCase {
 		}
 	}
 
+	public function testOnlyPublishedGuidesAreLinked(): void {
+		$pack             = RankingContentService::load_pack( 'FL' );
+		$pack['articles'] = array( '/articles/florida-divorce-process/' );
+		$c                = HubContentBuilder::area(
+			$pack,
+			array(
+				'area_slug' => 'family-law',
+				'area_name' => 'Family',
+				'rankings'  => array(
+					array(
+						'path'    => '/rankings/florida/tampa/family-law/',
+						'city'    => 'Tampa',
+						'entries' => 12,
+					),
+				),
+			),
+			'October 2026',
+			'2026-10-10'
+		);
+		$this->assertStringContainsString( 'href="/articles/florida-divorce-process/"', $c['body'] );
+		$this->assertStringNotContainsString( 'href="/articles/florida-child-custody-time-sharing/"', $c['body'] );
+		$pack['articles'] = array();
+		$c                = HubContentBuilder::area(
+			$pack,
+			array(
+				'area_slug' => 'family-law',
+				'area_name' => 'Family',
+				'rankings'  => array(
+					array(
+						'path'    => '/rankings/florida/tampa/family-law/',
+						'city'    => 'Tampa',
+						'entries' => 12,
+					),
+				),
+			),
+			'October 2026',
+			'2026-10-10'
+		);
+		$this->assertStringNotContainsString( '<h2>Guides</h2>', $c['body'] );
+		$this->assertStringNotContainsString( '/articles/', $c['body'] );
+	}
+
 	public function testNothingToDescribeMeansNoText(): void {
 		$pack = RankingContentService::load_pack( 'FL' );
 		$this->assertNull(

@@ -117,7 +117,7 @@ final class HubContentBuilder {
 		$body[] = '<p><strong>' . $e( 'By the LexRank score: experience, credentials, practice relevance, location and data quality, using only facts with a cited source.' ) . '</strong> '
 			. $e( sprintf( 'Data checked %s against each lawyer\'s %s profile. Payment never changes a position.', $checked, $short ) ) . ' <a href="/methodology/">See how we rank</a>.</p>';
 
-		$guides = (array) ( $area['guides'] ?? array() );
+		$guides = array_values( array_filter( (array) ( $area['guides'] ?? array() ), static fn( $g ): bool => is_array( $g ) && self::published( $pack, (string) ( $g[0] ?? '' ) ) ) );
 		if ( array() !== $guides ) {
 			$body[] = '<h2>Guides</h2>';
 			$body[] = '<p><strong>' . $e( sprintf( 'Read these before you hire a %s lawyer:', $noun ) ) . '</strong></p>';
@@ -235,7 +235,8 @@ final class HubContentBuilder {
 		);
 		$body[]  = '<h2>' . $e( sprintf( 'How LexRanked ranks lawyers in %s', $name ) ) . '</h2>';
 		$body[]  = '<p><strong>' . $e( 'By the LexRank score, calculated only from facts with a cited source; payment never changes a position.' ) . '</strong> '
-			. $e( sprintf( 'Data checked %s against each lawyer\'s %s profile.', $checked, $short ) ) . ' <a href="/methodology/">See how we rank</a>. Before you hire, read <a href="/articles/questions-to-ask-a-lawyer/">questions to ask a lawyer</a>.</p>';
+			. $e( sprintf( 'Data checked %s against each lawyer\'s %s profile.', $checked, $short ) ) . ' <a href="/methodology/">See how we rank</a>.'
+			. ( self::published( $pack, '/articles/questions-to-ask-a-lawyer/' ) ? ' Before you hire, read <a href="/articles/questions-to-ask-a-lawyer/">questions to ask a lawyer</a>.' : '' ) . '</p>';
 		$sources = array( array( (string) $pack['bar']['directory'], $bar . ': Find a Lawyer directory' ) );
 		foreach ( (array) ( $pack['courts']['src'] ?? array() ) as $src ) {
 			$sources[] = $src;
@@ -329,6 +330,18 @@ final class HubContentBuilder {
 		$faq[] = self::qa( sprintf( 'How do I check if a lawyer is licensed in %s?', $state ), sprintf( 'Search the lawyer\'s name in %s\'s Find a Lawyer directory; the status must read "eligible to practice in Florida".', $bar ) );
 		$faq[] = self::qa( 'How are LexRanked rankings ordered?', 'By the LexRank score, calculated only from facts with a cited source. Payment never changes a position.' );
 		return self::result( $summary, $body, $faq, $today );
+	}
+
+	/**
+	 * Whether an internal guide link may be used: the caller lists the
+	 * published article paths in `articles`; without the list every link is
+	 * allowed (the pack's guides are published articles).
+	 *
+	 * @param array<string, mixed> $pack Pack, optionally with `articles` (paths).
+	 * @param string               $path Site path.
+	 */
+	private static function published( array $pack, string $path ): bool {
+		return ! isset( $pack['articles'] ) || in_array( $path, (array) $pack['articles'], true );
 	}
 
 	/**

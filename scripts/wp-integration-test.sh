@@ -454,12 +454,16 @@ wp term delete lr_practice_area "$(wp term get lr_practice_area health-law --by=
 expect "additions removed" '(.areas | index("health-law")) == null and (.cities | index("key-west")) == null and (.cities | index("miami")) != null' "$API/editorial/knowledge/FL" -u "itEditor:$ED_PW"
 
 echo "==> Generated hub text"
-HIALEAH_ID="$(curl -sS "$API/cities" | jq -r '.[] | select(.slug == "hialeah") | .id')"
 PI_ID="$(curl -sS "$API/practice-areas" | jq -r '.[] | select(.slug == "personal-injury") | .id')"
-expect "a city hub gets generated text with an answer under every heading" '.generated == true and (.summary | test("Hialeah, Florida")) and (.body | test("<h2>Which court handles cases in Hialeah\\?</h2>\n<p><strong>")) and (.faq | length) >= 5' "$API/editorial/terms/location/$HIALEAH_ID/generate" -u "itEditor:$ED_PW" -X POST
-expect "a practice-area hub gets generated text" '.generated == true and (.body | test("What does a personal injury lawyer do\\?")) and (.body | test("/rankings/florida/hialeah/personal-injury/"))' "$API/editorial/terms/practice-area/$PI_ID/generate" -u "itEditor:$ED_PW" -X POST
-expect "the public hub shows the generated summary" '(.[] | select(.slug == "hialeah") | .content.summary) | test("LexRanked lists")' "$API/cities"
-expect "an editor's text turns generation off" '.generated == false and .summary == "Edited by hand."' "$API/editorial/terms/location/$HIALEAH_ID" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d '{"summary":"Edited by hand."}'
+TERM_KEYS='{summary: (.summary // ""), body: (.body // ""), faq}'
+MIAMI_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/terms/location/$ED_CITY" | jq -c "$TERM_KEYS")"
+PI_BEFORE="$(curl -sS -u "itEditor:$ED_PW" "$API/editorial/terms/practice-area/$PI_ID" | jq -c "$TERM_KEYS")"
+expect "a city hub gets generated text with an answer under every heading" '.generated == true and (.summary | test("Miami, Florida")) and (.body | test("<h2>Which court handles cases in Miami\\?</h2>\n<p><strong>")) and (.faq | length) >= 5' "$API/editorial/terms/location/$ED_CITY/generate" -u "itEditor:$ED_PW" -X POST
+expect "a practice-area hub gets generated text" '.generated == true and (.body | test("What does a personal injury lawyer do\\?")) and (.body | test("/rankings/florida/miami/personal-injury/"))' "$API/editorial/terms/practice-area/$PI_ID/generate" -u "itEditor:$ED_PW" -X POST
+expect "hub text links only published guides" '(.body | test("/articles/personal-injury-lawyer-cost/")) | not' "$API/editorial/terms/practice-area/$PI_ID" -u "itEditor:$ED_PW"
+expect "the public hub shows the generated summary" '(.[] | select(.slug == "miami") | .content.summary) | test("LexRanked lists")' "$API/cities"
+expect "an editor's text turns generation off" '.generated == false' "$API/editorial/terms/location/$ED_CITY" -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$MIAMI_BEFORE"
+curl -sS -o /dev/null -u "itEditor:$ED_PW" -H 'Content-Type: application/json' -d "$PI_BEFORE" "$API/editorial/terms/practice-area/$PI_ID"
 
 echo "==> Client reviews (email-confirmed, editor-approved)"
 AVERY_ID="$(curl -sS "$API/lawyers/avery-example-demo" | jq .id)"

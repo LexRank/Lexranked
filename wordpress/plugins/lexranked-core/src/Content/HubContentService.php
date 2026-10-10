@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace LexRanked\Core\Content;
 
 use LexRanked\Core\Plugin;
+use LexRanked\Core\PostTypes\Article;
 use LexRanked\Core\Services;
 use LexRanked\Core\Taxonomies\Location;
 use LexRanked\Core\Taxonomies\PracticeArea;
@@ -34,6 +35,13 @@ final class HubContentService {
 	 * @var array<int, array<string, mixed>>|null
 	 */
 	private ?array $rankings = null;
+
+	/**
+	 * Published article paths, loaded once per request.
+	 *
+	 * @var array<int, string>|null
+	 */
+	private ?array $articles = null;
 
 	/**
 	 * Constructor.
@@ -153,6 +161,7 @@ final class HubContentService {
 	 */
 	public function refresh_all(): int {
 		$this->rankings = null;
+		$this->articles = null;
 		$terms          = get_terms(
 			array(
 				'taxonomy'   => array( PracticeArea::SLUG, Location::SLUG ),
@@ -287,7 +296,35 @@ final class HubContentService {
 	 */
 	private function pack_for( array $rankings ): ?array {
 		$code = (string) ( $rankings[0]['location']['stateCode'] ?? '' );
-		return '' === $code ? null : $this->services->ranking_content->pack( $code );
+		$pack = '' === $code ? null : $this->services->ranking_content->pack( $code );
+		if ( null === $pack ) {
+			return null;
+		}
+		// Link only guides that are published, so a hub never points at a missing page.
+		$pack['articles'] = $this->article_paths();
+		return $pack;
+	}
+
+	/**
+	 * Paths of published articles, loaded once per request.
+	 *
+	 * @return array<int, string>
+	 */
+	private function article_paths(): array {
+		if ( null === $this->articles ) {
+			$slugs          = get_posts(
+				array(
+					'post_type'        => Article::SLUG,
+					'post_status'      => 'publish',
+					'posts_per_page'   => 1000,
+					'fields'           => 'ids',
+					'no_found_rows'    => true,
+					'suppress_filters' => false,
+				)
+			);
+			$this->articles = array_map( static fn( $id ): string => '/articles/' . get_post_field( 'post_name', (int) $id ) . '/', $slugs );
+		}
+		return $this->articles;
 	}
 
 	/**
