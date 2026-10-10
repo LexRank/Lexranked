@@ -164,6 +164,50 @@ final class EntityPresenter {
 	}
 
 	/**
+	 * The published entries of a ranking's latest run, as references only
+	 * (`entity.id`, in ranking order): what the ranking list needs for its
+	 * counts and page decisions, without building every profile summary.
+	 * Counts match ranking_entries(), which drops unpublished profiles too.
+	 *
+	 * @param array<string, mixed> $record Ranking record.
+	 * @return array{entries: array<int, array{entity: array{id: int}}>, calculated_at: string|null}
+	 */
+	public function ranking_entry_refs( array $record ): array {
+		$snapshots = $this->services->snapshots;
+		$runs      = $snapshots->run_ids( (int) $record['id'], 1 );
+		if ( array() === $runs ) {
+			return array(
+				'entries'       => array(),
+				'calculated_at' => null,
+			);
+		}
+		$rows      = $snapshots->run_rows( $runs[0] );
+		$ids       = array_map( 'intval', array_column( $rows, 'entity_id' ) );
+		$published = array() === $ids ? array() : get_posts(
+			array(
+				'post_type'        => 'law_firm' === ( $rows[0]['entity_type'] ?? 'lawyer' ) ? LawFirm::SLUG : Lawyer::SLUG,
+				'post_status'      => 'publish',
+				'post__in'         => $ids,
+				'posts_per_page'   => count( $ids ),
+				'fields'           => 'ids',
+				'no_found_rows'    => true,
+				'suppress_filters' => false,
+			)
+		);
+		$visible   = array_flip( array_map( 'intval', $published ) );
+		$entries   = array();
+		foreach ( $ids as $id ) {
+			if ( isset( $visible[ $id ] ) ) {
+				$entries[] = array( 'entity' => array( 'id' => $id ) );
+			}
+		}
+		return array(
+			'entries'       => $entries,
+			'calculated_at' => $rows[0]['calculated_at'] ?? null,
+		);
+	}
+
+	/**
 	 * Entries for a ranking from its latest snapshot run.
 	 *
 	 * @param array<string, mixed> $record Ranking record.

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FinderOption } from "@/lib/content/rankings";
+import { FinderSelect } from "./FinderSelect";
 
 /**
  * Location → practice area → ranking. Options come only from rankings that
@@ -46,31 +47,18 @@ export function RankingFinder({ options, variant = "card" }: { options: FinderOp
       <p>Choose a location and practice area to see the current ranking.</p>
       <div className="finder__fields">
         <div className="field">
-          <label htmlFor="finder-location">Location</label>
-          <select
-            id="finder-location"
+          <FinderSelect
+            label="Location"
             value={location}
-            onChange={(e) => {
-              setLocation(e.target.value);
-              setPath(options.find((o) => o.locationKey === e.target.value)?.path ?? "");
+            options={locations.map(([key, label]) => ({ value: key, label }))}
+            onChange={(key) => {
+              setLocation(key);
+              setPath(options.find((o) => o.locationKey === key)?.path ?? "");
             }}
-          >
-            {locations.map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
+          />
         </div>
         <div className="field">
-          <label htmlFor="finder-practice">Practice area</label>
-          <select id="finder-practice" value={path} onChange={(e) => setPath(e.target.value)}>
-            {practices.map((o) => (
-              <option key={o.path} value={o.path}>
-                {o.practiceLabel}
-              </option>
-            ))}
-          </select>
+          <FinderSelect label="Practice area" value={path} options={practices.map((o) => ({ value: o.path, label: o.practiceLabel }))} onChange={setPath} />
         </div>
         <button className="btn btn--primary" type="submit">
           See the ranking
