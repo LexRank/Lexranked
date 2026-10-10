@@ -3,6 +3,8 @@ import { formatDate, isoDate } from "@/lib/format";
 import { googleReviewsUrl } from "@/lib/reviews/validate";
 import { StarRating } from "../ui";
 import { ReviewForm } from "./ReviewForm";
+import Link from "next/link";
+import { reviewsStatement } from "@/lib/methodology";
 
 /**
  * Client reviews on a profile: approved LexRanked reviews, a link to the
@@ -34,6 +36,9 @@ export function ClientReviews({
         </h2>
         {count > 0 && reviews?.average != null && <StarRating rating={reviews.average} count={count} />}
       </div>
+      <p style={{ margin: 0, fontSize: "0.92rem" }}>
+        <strong>{reviewsStatement(false)}</strong> <Link href="/methodology/#client-reviews">How we rank</Link>
+      </p>
       {count === 0 ? (
         <p className="muted" style={{ margin: 0 }}>
           No client reviews on LexRanked yet. If {name.replace(/\s*\(Demo\)\s*$/, "")} represented you, your review helps others choose.

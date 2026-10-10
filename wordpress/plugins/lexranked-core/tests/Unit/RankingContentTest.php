@@ -89,9 +89,16 @@ final class RankingContentTest extends TestCase {
 
 	public function testBodyHasEverySectionWithAnswersTablesAndSources(): void {
 		$c = self::build();
-		foreach ( array( 'What sets these Miami lawyers apart', 'About this ranking', 'Florida rules to know', 'Miami-Dade County crashes by the numbers', 'How to choose among these lawyers', 'Further reading', 'Sources' ) as $h ) {
+		foreach ( array( 'What sets these Miami lawyers apart', 'Who is included in this ranking?', 'Florida rules to know', 'Miami-Dade County crashes by the numbers', 'How to choose among these lawyers', 'Further reading', 'Sources for the rules above' ) as $h ) {
 			$this->assertStringContainsString( '<h2>' . $h . '</h2>', $c['body'] );
 		}
+		// The page has one methodology section and one "About this ranking" (both on the page template), so the text repeats neither.
+		$this->assertStringNotContainsString( 'About this ranking', $c['body'] );
+		$this->assertStringNotContainsString( 'Data checked', $c['body'] );
+		$order = array_values( array_filter( $c['faq'], static fn( array $q ): bool => 'How is this ranking ordered?' === $q['question'] ) );
+		$this->assertCount( 1, $order );
+		$this->assertStringContainsString( 'awards on record', $order[0]['answer'] );
+		$this->assertStringContainsString( RankingContentBuilder::REVIEWS_NOTE, $order[0]['answer'] );
 		// A direct answer opens every section that is not a list of links.
 		$this->assertSame( 5, substr_count( $c['body'], '</h2>' . "\n" . '<p><strong>' ) );
 		$this->assertGreaterThanOrEqual( 3, substr_count( $c['body'], '<table>' ) );

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLd } from "@/components/JsonLd";
 import { PageHeader } from "@/components/PageHeader";
-import { componentsWithWeights, METHODOLOGY_PRINCIPLES } from "@/lib/methodology";
+import { FaqSection } from "@/components/ranking/RankingContent";
+import { componentsWithWeights, METHODOLOGY_PRINCIPLES, REVIEWS_QUESTION, reviewsStatement } from "@/lib/methodology";
 import { load } from "@/lib/data/loaders";
 import { formatDate, humanize, isoDate } from "@/lib/format";
 import { getDataQualityModel, getMethodology, getPageEligibilityModel, getScoreVersions } from "@/lib/wordpress/api";
@@ -128,7 +129,7 @@ export default async function MethodologyPage() {
             <h2>{reviewsScored ? "Why star ratings alone are not enough" : "Client reviews"}</h2>
             {!reviewsScored && (
               <p>
-                <strong>Client reviews do not count towards {versionLabel}.</strong> Ratings from Google and other platforms may not be
+                <strong>{reviewsStatement(false)}</strong> This applies to {versionLabel}. Ratings from Google and other platforms may not be
                 stored, so LexRanked collects its own reviews: the reviewer confirms their email address, states they were a client, and
                 an editor reads every review before it is published on the profile. Until enough reviews exist to compare lawyers
                 fairly, rankings use only verifiable records; when reviews are scored, it will be in a new methodology version with the
@@ -347,6 +348,20 @@ export default async function MethodologyPage() {
               organic score, are always labelled as paid, and are never an input to the scoring engine.
             </p>
           </section>
+
+          <FaqSection
+            items={[
+              { question: REVIEWS_QUESTION, answer: reviewsStatement(reviewsScored) },
+              {
+                question: "Can a lawyer pay for a better position?",
+                answer: "No. Claimed profiles, premium profiles and featured or sponsored placements are stored separately from the organic score, always labelled as paid, and never an input to the scoring engine.",
+              },
+              {
+                question: "What makes up the LexRank score?",
+                answer: `${components.map((c) => `${c.label} (${c.weight} points)`).join(", ")}, calculated only from facts with a cited source. The same data and methodology version always produce the same score.`,
+              },
+            ]}
+          />
 
           <section>
             <h2>What a ranking is - and isn&apos;t</h2>

@@ -3,7 +3,7 @@
  * Plugin Name:       LexRanked Core
  * Plugin URI:        https://lexranked.com
  * Description:       Core data model, ranking engine and REST API for LexRanked. Contains all LexRanked business logic; the public site is rendered by the headless Next.js frontend.
- * Version:           0.29.1
+ * Version:           0.29.2
  * Requires at least: 6.5
  * Requires PHP:      8.2
  * Author:            LexRanked
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'LEXRANKED_CORE_VERSION', '0.29.1' );
+define( 'LEXRANKED_CORE_VERSION', '0.29.2' );
 define( 'LEXRANKED_CORE_FILE', __FILE__ );
 define( 'LEXRANKED_CORE_DIR', __DIR__ );
 define( 'LEXRANKED_CORE_MIN_PHP', '8.2' );

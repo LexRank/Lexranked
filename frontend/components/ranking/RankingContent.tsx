@@ -4,7 +4,7 @@ import { wrapTables } from "@/lib/content/articles";
 import { groupRankingSources } from "@/lib/content/rankingSources";
 import type { RankingFacts } from "@/lib/content/rankingFacts";
 import { formatCount, formatDate, isoDate } from "@/lib/format";
-import { METHODOLOGY_VERSION } from "@/lib/methodology";
+import { methodologyLabel } from "@/lib/methodology";
 import { faqJsonLd } from "@/lib/seo/jsonld";
 import { JsonLd } from "../JsonLd";
 
@@ -21,7 +21,7 @@ export function RankingOverview({ answer, summary, facts, noun }: { answer: stri
     { label: `${noun[0]!.toUpperCase()}${noun.slice(1)} ranked`, value: formatCount(facts.count) },
     { label: "Fully verified", value: `${facts.verifiedCount} of ${facts.count}` },
     facts.averageRating !== null ? { label: "Avg. client rating", value: `${facts.averageRating.toFixed(1)} ★` } : null,
-    facts.totalReviews > 0 ? { label: "Reviews analyzed", value: formatCount(facts.totalReviews) } : null,
+    facts.totalReviews > 0 ? { label: "Client reviews on record", value: formatCount(facts.totalReviews) } : null,
   ].filter((t): t is { label: string; value: string | null } => t !== null);
 
   return (
@@ -81,7 +81,7 @@ export function FaqSection({ items }: { items: Array<FaqItem & { link?: { href: 
   );
 }
 
-export function AboutRanking({ ranking, facts }: { ranking: RankingDetail; facts: RankingFacts }) {
+export function AboutRanking({ ranking }: { ranking: RankingDetail }) {
   const updated = formatDate(ranking.updatedAt);
   const reviewed = formatDate(ranking.editorial.reviewedAt);
   return (
@@ -100,11 +100,7 @@ export function AboutRanking({ ranking, facts }: { ranking: RankingDetail; facts
         )}
         <dt>Methodology</dt>
         <dd>
-          <Link href="/methodology/">{METHODOLOGY_VERSION}</Link> - deterministic, reproducible scoring
-        </dd>
-        <dt>Entries</dt>
-        <dd>
-          {facts.count} ranked, {facts.verifiedCount} fully verified
+          <Link href="/methodology/">{methodologyLabel(ranking.entries[0]?.scoreVersion)}</Link> - deterministic, reproducible scoring
         </dd>
         {ranking.editorial.reviewedBy && (
           <>
@@ -148,7 +144,7 @@ export function RankingSources({ sources, noun, rankedCount = 0 }: { sources: Ra
   return (
     <section id="sources" className="card" aria-labelledby="sources-heading">
       <h2 id="sources-heading" style={{ fontSize: "1.4rem" }}>
-        Sources
+        Data sources behind the scores
       </h2>
       <p className="muted" style={{ fontSize: "0.9rem" }}>
         Every score on this page is calculated from facts backed by these sources. Each profile shows which source supports which fact

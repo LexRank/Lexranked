@@ -58,7 +58,7 @@ const GOOD: Generated = {
     {
       heading: 'How positions are decided',
       paragraphs: [
-        { text: 'Positions follow the LexRank score under methodology v1.0, a deterministic score from verified data, sources, experience and reviews. Payment never affects positions, and the ranking was last calculated on 2026-09-20.', factRefs: ['F6', 'F7', 'F8'] },
+        { text: 'Positions follow the LexRank score under methodology v1.0, a deterministic score from sourced facts; client reviews do not affect the LexRank score. Payment never affects positions, and the ranking was last calculated on 2026-09-20.', factRefs: ['F6', 'F7', 'F8'] },
       ],
     },
   ],

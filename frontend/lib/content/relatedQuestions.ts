@@ -1,5 +1,6 @@
 import type { RankingDetail, RankingSummary } from "@/types/api";
 import { formatScore } from "@/lib/format";
+import { REVIEWS_QUESTION, reviewsStatement } from "@/lib/methodology";
 import { compareHref } from "./compare";
 
 /**
@@ -34,6 +35,11 @@ export function relatedQuestions(ranking: RankingDetail, all: RankingSummary[] =
     link: { href: "/methodology/", label: "How we rank" },
   });
 
+  // The reviews question, asked the same way on every page with the same answer as the methodology page and profiles.
+  if (!ranking.faq.some((f) => f.question === REVIEWS_QUESTION)) {
+    out.push({ question: REVIEWS_QUESTION, answer: reviewsStatement(false), link: { href: "/methodology/#client-reviews", label: "How we rank" } });
+  }
+
   const verified = entries.filter((e) => e.entity.verification.status === "verified").map((e) => e.entity.name);
   out.push({
     question: `Which ${noun} are verified?`,
@@ -47,7 +53,7 @@ export function relatedQuestions(ranking: RankingDetail, all: RankingSummary[] =
   if (reviewed.length >= 2) {
     out.push({
       question: `Which ${noun} have the most reviews?`,
-      answer: `${names(reviewed.slice(0, 3).map((e) => `${e.entity.name} (${(e.entity.reviewCount ?? 0).toLocaleString("en-US")})`))}. Review counts come from the cited review platforms; ratings are adjusted for volume in the score.`,
+      answer: `${names(reviewed.slice(0, 3).map((e) => `${e.entity.name} (${(e.entity.reviewCount ?? 0).toLocaleString("en-US")})`))}. Review counts come from the cited review platforms and are shown for information: ${reviewsStatement(false)}`,
     });
   }
 

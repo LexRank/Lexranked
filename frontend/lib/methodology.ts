@@ -13,6 +13,21 @@ export function methodologyLabel(version?: string | null): string {
   return version ? `LexRank ${version}` : METHODOLOGY_VERSION;
 }
 
+/** The FAQ question every page asks the same way. */
+export const REVIEWS_QUESTION = "Do client reviews affect the LexRank score?";
+
+/**
+ * The one explanation of how client reviews relate to the score, used word for
+ * word on the methodology page, in FAQs and on profiles (the plugin's ranking
+ * text states the same first sentence). `scored` follows the active version's
+ * review-strength weight.
+ */
+export function reviewsStatement(scored = false): string {
+  return scored
+    ? "Client reviews count towards the LexRank score: star ratings, adjusted for the number of reviews, make up the review-strength factor."
+    : "Client reviews do not affect the LexRank score: neither star ratings nor the number of reviews is scored. Reviews are shown on profiles for information only, and Reputation counts only awards on record, such as board certification.";
+}
+
 export interface MethodologyComponent {
   key: string;
   label: string;

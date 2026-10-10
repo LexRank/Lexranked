@@ -18,7 +18,7 @@ namespace LexRanked\Core\Content;
 final class HubContentBuilder {
 
 	/** Content contract version, stored with generated text. */
-	public const VERSION = 'hc-1';
+	public const VERSION = 'hc-2';
 
 	/**
 	 * Practice area hub.
@@ -114,7 +114,7 @@ final class HubContentBuilder {
 		$steps  = array_merge( $steps, array_map( static fn( string $q ): string => 'Ask: ' . $q, null === $hub ? array() : (array) $hub['questions'] ) );
 		$body[] = '<ol>' . implode( '', array_map( static fn( string $s ): string => '<li>' . $e( $s ) . '</li>', $steps ) ) . '</ol>';
 		$body[] = '<h2>' . $e( sprintf( 'How LexRanked ranks %s lawyers', $noun ) ) . '</h2>';
-		$body[] = '<p><strong>' . $e( 'By the LexRank score: experience, credentials, practice relevance, location and data quality, using only facts with a cited source.' ) . '</strong> '
+		$body[] = '<p><strong>' . $e( 'By the LexRank score: ' . RankingContentBuilder::SCORE_PARTS . ', using only facts with a cited source.' ) . '</strong> ' . $e( RankingContentBuilder::REVIEWS_NOTE ) . ' '
 			. $e( sprintf( 'Data checked %s against each lawyer\'s %s profile. Payment never changes a position.', $checked, $short ) ) . ' <a href="/methodology/">See how we rank</a>.</p>';
 
 		$guides = array_values( array_filter( (array) ( $area['guides'] ?? array() ), static fn( $g ): bool => is_array( $g ) && self::published( $pack, (string) ( $g[0] ?? '' ) ) ) );
@@ -234,7 +234,7 @@ final class HubContentBuilder {
 			$e
 		);
 		$body[]  = '<h2>' . $e( sprintf( 'How LexRanked ranks lawyers in %s', $name ) ) . '</h2>';
-		$body[]  = '<p><strong>' . $e( 'By the LexRank score, calculated only from facts with a cited source; payment never changes a position.' ) . '</strong> '
+		$body[]  = '<p><strong>' . $e( 'By the LexRank score, calculated only from facts with a cited source; payment never changes a position.' ) . '</strong> ' . $e( RankingContentBuilder::REVIEWS_NOTE ) . ' '
 			. $e( sprintf( 'Data checked %s against each lawyer\'s %s profile.', $checked, $short ) ) . ' <a href="/methodology/">See how we rank</a>.'
 			. ( self::published( $pack, '/articles/questions-to-ask-a-lawyer/' ) ? ' Before you hire, read <a href="/articles/questions-to-ask-a-lawyer/">questions to ask a lawyer</a>.' : '' ) . '</p>';
 		$sources = array( array( (string) $pack['bar']['directory'], $bar . ': Find a Lawyer directory' ) );
@@ -309,7 +309,7 @@ final class HubContentBuilder {
 		$body[]  = '<h2>' . $e( 'What does board certification mean?' ) . '</h2>';
 		$body[]  = '<p><strong>' . $e( sprintf( 'It is a credential from %s held by about %s of %s lawyers in any field.', $bar, (string) $pack['certification']['share'], $state ) ) . '</strong> ' . $e( (string) ( $pack['certification']['requirements'] ?? '' ) ) . '</p>';
 		$body[]  = '<h2>' . $e( 'How does LexRanked rank lawyers?' ) . '</h2>';
-		$body[]  = '<p><strong>' . $e( 'By the LexRank score: experience, credentials, practice relevance, location and data quality, using only facts with a cited source.' ) . '</strong> ' . $e( sprintf( 'Data checked %s. Payment never changes a position.', $checked ) ) . ' <a href="/methodology/">See how we rank</a>.</p>';
+		$body[]  = '<p><strong>' . $e( 'By the LexRank score: ' . RankingContentBuilder::SCORE_PARTS . ', using only facts with a cited source.' ) . '</strong> ' . $e( RankingContentBuilder::REVIEWS_NOTE ) . ' ' . $e( sprintf( 'Data checked %s. Payment never changes a position.', $checked ) ) . ' <a href="/methodology/">See how we rank</a>.</p>';
 		$sources = array( array( (string) $pack['bar']['directory'], $bar . ': Find a Lawyer directory' ), (array) $pack['certification']['source'] );
 		foreach ( (array) ( $courts['src'] ?? array() ) as $src ) {
 			$sources[] = $src;
@@ -328,7 +328,7 @@ final class HubContentBuilder {
 			$faq[] = self::qa( sprintf( 'How many judicial circuits does %s have?', $state ), sprintf( '%d judicial circuits, with %d district courts of appeal above them.', (int) $courts['circuits'], (int) $courts['appellateDistricts'] ) );
 		}
 		$faq[] = self::qa( sprintf( 'How do I check if a lawyer is licensed in %s?', $state ), sprintf( 'Search the lawyer\'s name in %s\'s Find a Lawyer directory; the status must read "eligible to practice in Florida".', $bar ) );
-		$faq[] = self::qa( 'How are LexRanked rankings ordered?', 'By the LexRank score, calculated only from facts with a cited source. Payment never changes a position.' );
+		$faq[] = self::qa( 'How are LexRanked rankings ordered?', 'By the LexRank score, calculated only from facts with a cited source: ' . RankingContentBuilder::SCORE_PARTS . '. ' . RankingContentBuilder::REVIEWS_NOTE . ' Payment never changes a position.' );
 		return self::result( $summary, $body, $faq, $today );
 	}
 

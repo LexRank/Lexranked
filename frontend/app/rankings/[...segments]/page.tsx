@@ -104,7 +104,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
   const related = others.filter((r) => r !== statewide && !samePractice.includes(r) && !sameCity.includes(r) && sameState(r)).slice(0, 4);
   const noun = ranking.entityType === "law_firm" ? "firm" : "lawyer";
   const facts = rankingFacts(ranking);
-  const answer = rankingAnswer(ranking, facts);
+  const answer = rankingAnswer(ranking, facts, { brief: Boolean(ranking.summary) });
   // One FAQ: editorial questions about the practice area and place first, then what this ranking's data answers.
   const faq = [...ranking.faq, ...relatedQuestions(ranking, rankings)];
   const toc = [
@@ -213,7 +213,7 @@ export default async function RankingPage(props: PageProps<"/rankings/[...segmen
           <EditorialBody html={ranking.body} />
 
           <FaqSection items={faq} />
-          <AboutRanking ranking={ranking} facts={facts} />
+          <AboutRanking ranking={ranking} />
           <div className="card">
             <p className="panel-title">Explore</p>
             <ul className="chips">
