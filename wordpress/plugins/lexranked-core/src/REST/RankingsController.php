@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace LexRanked\Core\REST;
 
+use LexRanked\Core\Support\ResponseCache;
 use LexRanked\Core\Sources\SourceTiers;
 use LexRanked\Core\Ranking\RankingRunner;
 use LexRanked\Core\Quality\DataQuality;
@@ -138,7 +139,31 @@ final class RankingsController extends RestController {
 		}
 
 		// Rankings are few; evaluate thinness for all, then paginate in PHP so
-		// `indexable` filtering and totals stay consistent.
+		// `indexable` filtering and totals stay consistent. Building every DTO
+		// loads each ranking's entries, so the full list is cached per filter
+		// (invalidated by any content change or recalculation).
+		$params    = array(
+			'location'      => (string) $request['location'],
+			'practice_area' => (string) $request['practice_area'],
+			'order'         => $order,
+			'orderby'       => 'title' === $request['orderby'] ? 'title' : 'modified',
+			'indexable'     => null === $request['indexable'] ? null : (bool) $request['indexable'],
+		);
+		[ $items ] = ResponseCache::remember( '/rankings', $params, fn(): array => $this->all_items( $request, $order, $tax_query ) );
+
+		$per_page = (int) $request['per_page'];
+		return $this->collection_response( array_slice( $items, ( (int) $request['page'] - 1 ) * $per_page, $per_page ), count( $items ), $per_page );
+	}
+
+	/**
+	 * Every published ranking matching the filters, as list DTOs.
+	 *
+	 * @param \WP_REST_Request                 $request   Request.
+	 * @param string                           $order     ASC or DESC.
+	 * @param array<int, array<string, mixed>> $tax_query Taxonomy filters.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function all_items( \WP_REST_Request $request, string $order, array $tax_query ): array {
 		$posts = get_posts(
 			array(
 				'post_type'        => Ranking::SLUG,
@@ -165,9 +190,7 @@ final class RankingsController extends RestController {
 			}
 			$items[] = $dto;
 		}
-
-		$per_page = (int) $request['per_page'];
-		return $this->collection_response( array_slice( $items, ( (int) $request['page'] - 1 ) * $per_page, $per_page ), count( $items ), $per_page );
+		return $items;
 	}
 
 	/**
